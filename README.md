@@ -60,23 +60,6 @@ To make it permanent, add that line to your `~/.bashrc`.
 
 ---
 
-## 📦 Project Setup with `.dockero`
-
-Dockero supports declarative setup via `.dockero` file placed in your project root:
-
-```ini
-[default]
-name = mydebian
-image = debian:latest
-command = echo hello from debian
-
-[volumes]
-data = /opt/mydebian:/workspace
-port = 8080:80
-```
-
----
-
 ## 🤝 Contributing
 
 We welcome contributors. Fork the repo, make your changes, and open a PR.
