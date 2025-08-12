@@ -8,6 +8,7 @@ help() {
   echo "
 Usage 🪬 :"
 
+  log.sub "dockero net      ${YELLOW}<command> [<args>]                          ${RESET_COLOR}Manage Docker networks (new, delete, add, remove, rename, list)."
   log.sub "dockero run      ${YELLOW}<name> [<image>]                            ${RESET_COLOR}Run an existing container or create a new one."
   log.sub "dockero list     ${YELLOW}[-img]                                      ${RESET_COLOR}List containers or images."
   log.sub "dockero stop     ${YELLOW}<container> [--timeout <seconds>]           ${RESET_COLOR}Stop a container with an optional delay."
@@ -135,3 +136,27 @@ help-remove() {
 "
 }
 
+help-net() {
+  echo "
+💠 dockero net new <network>
+  🔹 Create a new Docker network with the specified <network> name.
+
+💠 dockero net delete <network>
+  🔹 Remove the specified Docker network.
+  🔹 Containers connected to the network will be disconnected automatically.
+
+💠 dockero net add <container> <network>
+  🔹 Connect an existing container to the specified Docker network.
+
+💠 dockero net remove <container> <network>
+  🔹 Disconnect a container from the specified Docker network.
+
+💠 dockero net rename <network> <new_name>
+  🔹 Rename an existing Docker network.
+  🔹 This is achieved by creating a new network and reconnecting all containers from the old network.
+
+💠 dockero net list
+  🔹 Display all Docker networks along with their connected containers.
+"
+  exit 0
+}
