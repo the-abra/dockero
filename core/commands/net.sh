@@ -18,28 +18,24 @@ net() {
     fi
     log.info "Creating network: $name1"
     docker network create "$name1" || return 1
-    log.endline "$name1"
     ;;
 
   delete)
     [[ -z "$name1" ]] && log.hint "net delete <network_name>" && return 1
     log.info "Deleting network: $name1"
     docker network rm "$name1" || return 1
-    log.endline "$name1"
     ;;
 
   add)
     [[ -z "$name1" || -z "$name2" ]] && log.hint "net add <container> <network>" && return 1
     log.info "Connecting container '$name1' to network '$name2'"
     docker network connect "$name2" "$name1" || return 1
-    log.endline "$name1"
     ;;
 
   remove)
     [[ -z "$name1" || -z "$name2" ]] && log.hint "net remove <container> <network>" && return 1
     log.info "Disconnecting container '$name1' from network '$name2'"
     docker network disconnect "$name2" "$name1" || return 1
-    log.endline "$name1"
     ;;
 
   rename)
@@ -58,7 +54,6 @@ net() {
       docker network connect "$name2" "$container"
     done
     docker network rm "$name1"
-    log.endline "$name2"
     ;;
 
   list)
@@ -67,7 +62,6 @@ net() {
       containers=$(docker network inspect -f '{{range .Containers}}{{.Name}} {{end}}' "$netname")
       printf "%-20s %s\n" "$netname" "$containers"
     done
-    log.endline "networks"
     ;;
 
   *)
