@@ -39,7 +39,7 @@
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/temelyus/dockero.git
+git clone https://github.com/the-abra/dockero.git
 cd dockero
 ```
 
