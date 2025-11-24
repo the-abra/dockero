@@ -60,7 +60,7 @@ _dockero_autocomplete() {
   prev="${COMP_WORDS[COMP_CWORD - 1]}"
   
   # Static options - no need to compute
-  local base_opts="run list stop start export import rename setup remove net --help --version"
+  local base_opts="run list stop start export import rename setup remove net sync compose env validate system learn explain show heal --help --version"
 
   case $COMP_CWORD in
   1)
@@ -90,6 +90,31 @@ _dockero_autocomplete() {
       ;;
     net)
       COMPREPLY=($(compgen -W "new delete add remove rename list" -- "${cur}"))
+      ;;
+    sync)
+      COMPREPLY=($(compgen -W "push pull watch status init" -- "${cur}"))
+      ;;
+    compose)
+      COMPREPLY=($(compgen -W "up down start stop restart ps logs" -- "${cur}"))
+      ;;
+    env)
+      COMPREPLY=($(compgen -W "list use show create delete switch" -- "${cur}"))
+      ;;
+    system)
+      COMPREPLY=($(compgen -W "service config info cleanup install" -- "${cur}"))
+      ;;
+    learn)
+      COMPREPLY=($(compgen -W "start basic intermediate advanced docker concepts examples" -- "${cur}"))
+      ;;
+    explain)
+      # Complete with common dockero commands
+      COMPREPLY=($(compgen -W "run setup compose start stop list env sync" -- "${cur}"))
+      ;;
+    show)
+      COMPREPLY=($(compgen -W "dashboard commands demo visual containers status" -- "${cur}"))
+      ;;
+    heal)
+      COMPREPLY=($(compgen -W "check fix auto diagnose cleanup monitor" -- "${cur}"))
       ;;
     esac
     ;;
