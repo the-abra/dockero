@@ -179,9 +179,13 @@ sync_watch() {
     # This is a simple implementation - in a real system we'd want more robust change detection
     while true; do
         # Wait for file changes in the current directory
-        inotifywait -r -e modify,create,delete,move --format '%w%f %e' "$host_path" 2>/dev/null | while read -r file event; do
+        inotifywait -r -e modify,create,delete,move --format '%w%f %e' "$host_path" 2>/dev/null | while IFS= read -r line; do
+            # Split the line into file and event
+            local file=$(echo "$line" | cut -d' ' -f1)
+            local event=$(echo "$line" | cut -d' ' -f2-)
+
             log.info "File $event: $file"
-            
+
             # Perform a quick sync
             if tar -cf - -C "$host_path" "$(basename "$file")" 2>/dev/null | \
                docker exec -i "$container_name" tar -xf - -C "$container_path" 2>/dev/null; then

@@ -111,7 +111,10 @@ compose_up() {
         # Check dependencies if specified
         if [[ -n "$depends_on" ]]; then
             local dep_service
-            for dep_service in $depends_on; do
+            # Split depends_on by spaces/comma into an array properly
+            local deps=()
+            IFS=', ' read -ra deps <<< "$depends_on"
+            for dep_service in "${deps[@]}"; do
                 # Wait for dependency to be healthy (simple check - running)
                 local max_wait=30
                 local count=0
@@ -146,51 +149,54 @@ compose_up() {
             # Container doesn't exist, create and start it
             log.sub "Creating and starting container: $container_name"
             
-            # Build docker run command
-            local docker_cmd="docker run -d --name $container_name"
-            
+            # Build docker run command properly using arrays to avoid eval
+            local docker_cmd=(docker run -d --name "$container_name")
+
             # Add ports if specified
             if [[ -n "$ports" ]]; then
                 IFS=',' read -ra port_array <<< "$ports"
-                for port_mapping in "${port_array[@]}"; do
-                    docker_cmd="$docker_cmd -p $port_mapping"
+                local port
+                for port in "${port_array[@]}"; do
+                    docker_cmd+=(-p "$port")
                 done
             fi
-            
+
             # Add volumes if specified
             if [[ -n "$volumes" ]]; then
                 IFS=',' read -ra vol_array <<< "$volumes"
-                for volume_mapping in "${vol_array[@]}"; do
-                    docker_cmd="$docker_cmd -v $volume_mapping"
+                local vol
+                for vol in "${vol_array[@]}"; do
+                    docker_cmd+=(-v "$vol")
                 done
             fi
-            
+
             # Add environment variables if specified
             if [[ -n "$environment" ]]; then
                 IFS=',' read -ra env_array <<< "$environment"
+                local env_var
                 for env_var in "${env_array[@]}"; do
-                    docker_cmd="$docker_cmd -e $env_var"
+                    docker_cmd+=(-e "$env_var")
                 done
             fi
-            
+
             # Add restart policy if specified
             local restart_policy=$(inipars.get "service:$service" "restart" "$compose_file")
             if [[ -n "$restart_policy" ]]; then
-                docker_cmd="$docker_cmd --restart $restart_policy"
+                docker_cmd+=(--restart "$restart_policy")
             else
-                docker_cmd="$docker_cmd --restart no"
+                docker_cmd+=(--restart no)
             fi
-            
+
             # Add the image
-            docker_cmd="$docker_cmd $image"
-            
+            docker_cmd+=("$image")
+
             # Add command if specified
             if [[ -n "$command" ]]; then
-                docker_cmd="$docker_cmd $command"
+                docker_cmd+=($command)  # This is intentional to allow multiple command args
             fi
-            
+
             # Execute the docker run command
-            if ! eval "$docker_cmd" > /dev/null 2>&1; then
+            if ! "${docker_cmd[@]}" > /dev/null 2>&1; then
                 log.error "Failed to create container: $container_name"
                 return 1
             fi

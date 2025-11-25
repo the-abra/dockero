@@ -77,7 +77,8 @@ env_list() {
     done
     
     # Remove duplicates and show list
-    local unique_envs=($(printf '%s\n' "${envs[@]}" | sort -u))
+    local unique_envs
+    mapfile -t unique_envs < <(printf '%s\n' "${envs[@]}" | sort -u)
     
     for env in "${unique_envs[@]}"; do
         if [[ "$env" == "$(get_current_env)" ]]; then
@@ -205,7 +206,7 @@ EOF
     
     # Set as current environment if user wants to
     echo -e "${YELLOW}Make '$env_name' the current environment?${RESET_COLOR} [y/N]: \c"
-    read -r response
+    read -rp "Make '$env_name' the current environment? " response
     if [[ "$response" =~ ^[Yy]$ ]]; then
         set_current_env "$env_name"
         log.info "Environment set to: $env_name"
@@ -251,7 +252,7 @@ env_delete() {
     done
     
     echo -e "${YELLOW}Confirm deletion?${RESET_COLOR} [y/N]: \c"
-    read -r response
+    read -rp "Confirm deletion? " response
     if [[ ! "$response" =~ ^[Yy]$ ]]; then
         log.info "Deletion cancelled"
         return 0

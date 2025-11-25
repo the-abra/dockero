@@ -1,1 +1,57 @@
+# Logs
+*.log
+*.tmp
+*.temp
+/tmp/
+
+# User configuration
+~/.dockero/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker specific
+.docker/
+!docker-compose.yml
+!Dockerfile
+
+# Environment specific
+.env
+.env.local
+.env.*.local
+
+# Cache directories
+.cache/
+*/cache/
+*.cache
+
+# Temporary files
+*.tar
+*.tar.gz
+*.zip
+
+# Build artifacts
+build/
+dist/
+*.out
+
+# Shell-specific
+.history
+.bash_history
+.zsh_history
+
+# Documentation
 docs/TODO

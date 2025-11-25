@@ -84,7 +84,8 @@ heal_check() {
 
             # Check for stopped containers
             log.info "Checking containers..."
-            local stopped_containers=$(docker ps -a --filter "status=exited" -q | wc -l)
+            local stopped_containers
+            stopped_containers=$(docker ps -a --filter "status=exited" -q | wc -l)
             if [[ "$stopped_containers" -gt 20 ]]; then
                 log.warn "$stopped_containers stopped containers found"
                 ((issues_found++))

@@ -88,46 +88,71 @@ show_commands() {
 }
 
 show_dashboard() {
-    log.setline "📊 Dockero Command Dashboard"
-    
-    # Show system status
-    local docker_status="(not running)"
-    if command -v docker &> /dev/null && docker info &> /dev/null; then
-        docker_status="✓ Running"
+    # Source the dashboard function from the dedicated file
+    source "${CORE_DIR}/commands/dashboard.sh" 2>/dev/null || true
+    if declare -f dashboard &>/dev/null; then
+        dashboard
     else
-        docker_status="✗ Not available" 
+        # Fallback to the original dashboard
+        log.setline "📊 Dockero Command Dashboard"
+
+        # Show system status with more details
+        local docker_status="(not running)"
+        local docker_version="N/A"
+        local system_memory="N/A"
+        local system_cpu="N/A"
+
+        if command -v docker &> /dev/null && docker info &> /dev/null; then
+            docker_status="✓ Running"
+            docker_version=$(docker --version 2>/dev/null | cut -d' ' -f3)
+        else
+            docker_status="✗ Not available"
+        fi
+
+        # Get system resource information
+        if command -v docker &> /dev/null; then
+            local docker_info_json
+            docker_info_json=$(docker info --format '{{json .}}' 2>/dev/null)
+            if [[ $? -eq 0 ]]; then
+                # These would work with a JSON parser, but we'll use a simpler approach
+                system_memory=$(docker system df --format='{{.Size}}' 2>/dev/null | head -1 || echo "N/A")
+            fi
+        fi
+
+        echo
+        printf "${BOLD_YELLOW}System Status${RESET_COLOR}\n"
+        printf "  Docker: %s | Version: %s\n" "$docker_status" "$docker_version"
+        printf "  Dockero: v$DOCKERO_VERSION\n"
+
+        # Count containers, images, volumes, networks
+        local total_containers=$(docker ps -a -q | wc -l 2>/dev/null || echo 0)
+        local running_containers=$(docker ps -q | wc -l 2>/dev/null || echo 0)
+        local total_images=$(docker images -q | wc -l 2>/dev/null || echo 0)
+        local total_volumes=$(docker volume ls -q | wc -l 2>/dev/null || echo 0)
+        local total_networks=$(docker network ls -q | wc -l 2>/dev/null || echo 0)
+
+        printf "  Containers: %s total (%s running)\n" "$total_containers" "$running_containers"
+        printf "  Images: %s | Volumes: %s | Networks: %s\n" "$total_images" "$total_volumes" "$total_networks"
+
+        echo
+        printf "${BOLD_YELLOW}Getting Started${RESET_COLOR}\n"
+        printf "  ${GREEN}dockero run${RESET_COLOR} <name> [image]         ${CYAN}# Create/start containers${RESET_COLOR}\n"
+        printf "  ${GREEN}dockero setup${RESET_COLOR} <path>            ${CYAN}# Project setup${RESET_COLOR}\n"
+        printf "  ${GREEN}dockero list${RESET_COLOR}                    ${CYAN}# View containers${RESET_COLOR}\n"
+        printf "  ${GREEN}dockero registry login${RESET_COLOR}         ${CYAN}# Login to container registry${RESET_COLOR}\n"
+
+        echo
+        printf "${BOLD_YELLOW}Popular Commands${RESET_COLOR}\n"
+        printf "  ${GREEN}dockero compose up${RESET_COLOR}             ${CYAN}# Start multi-container${RESET_COLOR}\n"
+        printf "  ${GREEN}dockero sync push${RESET_COLOR} <c>          ${CYAN}# Sync files${RESET_COLOR}\n"
+        printf "  ${GREEN}dockero env list${RESET_COLOR}              ${CYAN}# View environments${RESET_COLOR}\n"
+        printf "  ${GREEN}dockero explain run${RESET_COLOR}           ${CYAN}# Command explanations${RESET_COLOR}\n"
+
+        echo
+        log.info "🔍 Use 'dockero show commands' for full command reference"
+        log.info "🎓 Use 'dockero learn start' to begin Docker journey"
+        log.info "🔐 Use 'dockero secrets create' to manage sensitive data"
     fi
-    
-    echo
-    printf "${BOLD_YELLOW}System Status${RESET_COLOR}\n"
-    printf "  Docker: %s\n" "$docker_status"
-    printf "  Dockero: v$DOCKERO_VERSION\n"
-    
-    # Count containers
-    local total_containers=$(docker ps -a -q | wc -l)
-    local running_containers=$(docker ps -q | wc -l)
-    
-    if [[ "$total_containers" -gt 0 ]]; then
-        printf "  Containers: %s total, %s running\n" "$total_containers" "$running_containers"
-    fi
-    
-    echo
-    printf "${BOLD_YELLOW}Getting Started${RESET_COLOR}\n"
-    printf "  ${GREEN}dockero run${RESET_COLOR} <name> [image]         ${CYAN}# Create/start containers${RESET_COLOR}\n"
-    printf "  ${GREEN}dockero setup${RESET_COLOR} <path>            ${CYAN}# Project setup${RESET_COLOR}\n" 
-    printf "  ${GREEN}dockero list${RESET_COLOR}                    ${CYAN}# View containers${RESET_COLOR}\n"
-    printf "  ${GREEN}dockero learn basic${RESET_COLOR}            ${CYAN}# Start Docker learning${RESET_COLOR}\n"
-    
-    echo  
-    printf "${BOLD_YELLOW}Popular Commands${RESET_COLOR}\n"
-    printf "  ${GREEN}dockero compose up${RESET_COLOR}             ${CYAN}# Start multi-container${RESET_COLOR}\n"
-    printf "  ${GREEN}dockero sync push${RESET_COLOR} <c>          ${CYAN}# Sync files${RESET_COLOR}\n"
-    printf "  ${GREEN}dockero env list${RESET_COLOR}              ${CYAN}# View environments${RESET_COLOR}\n"
-    printf "  ${GREEN}dockero explain run${RESET_COLOR}           ${CYAN}# Command explanations${RESET_COLOR}\n"
-    
-    echo
-    log.info "🔍 Use 'dockero show commands' for full command reference"
-    log.info "🎓 Use 'dockero learn start' to begin Docker journey"
 }
 
 show_demo() {

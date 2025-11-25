@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 remove() {
   local input="${args[1]}"
 
@@ -7,11 +9,14 @@ remove() {
   fi
 
   # Parse target and tag
-  local name="${input%%:*}"
-  local tag="${input#*:}"
+  local name
+  local tag
+  name="${input%%:*}"
+  tag="${input#*:}"
   [[ "$input" == "$tag" ]] && tag="latest"
 
-  local target="$name:$tag"
+  local target
+  target="$name:$tag"
 
   # Check for container first
   if docker ps -a --format '{{.Names}}' | grep -q "^$name$" && ! [[ $input =~ ':' ]]; then

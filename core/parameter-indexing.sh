@@ -2,7 +2,7 @@
 
 declare -A params  # Named parameters: --key value
 args=()            # Positional arguments
-full_arr=($@)
+full_arr=("$@")
 
 parameter-indexing() {
 while [[ $# -gt 0 ]]; do
@@ -21,7 +21,7 @@ while [[ $# -gt 0 ]]; do
     -*) # Dynamic Named
       key="${1##-}"
       params["$key"]="true"
-      shift 
+      shift
       ;;
     *)   # Positional argument
       args+=("$1")

@@ -54,13 +54,13 @@ _dockero_get_tars() {
 }
 
 _dockero_autocomplete() {
-  local cur prev opts
+  local cur prev
   COMPREPLY=()
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD - 1]}"
-  
+
   # Static options - no need to compute
-  local base_opts="run list stop start export import rename setup remove net sync compose env validate system learn explain show heal --help --version"
+  local base_opts="run list stop start export import rename setup remove net sync compose env validate system learn explain show heal registry secrets monitor wizard --help --version"
 
   case $COMP_CWORD in
   1)
@@ -72,17 +72,20 @@ _dockero_autocomplete() {
     case "$prev" in
     run|rename|start|export|remove)
       # Use cached container list
-      local containers=$(_dockero_get_containers)
+      local containers
+      containers=$(_dockero_get_containers)
       COMPREPLY=($(compgen -W "${containers}" -- "${cur}"))
       ;;
     stop)
       # Use cached running containers
-      local running=$(_dockero_get_running)
+      local running
+      running=$(_dockero_get_running)
       COMPREPLY=($(compgen -W "${running}" -- "${cur}"))
       ;;
     import)
       # Use cached tar file list
-      local tars=$(_dockero_get_tars)
+      local tars
+      tars=$(_dockero_get_tars)
       COMPREPLY=($(compgen -W "${tars}" -- "${cur}"))
       ;;
     list)
@@ -116,6 +119,18 @@ _dockero_autocomplete() {
     heal)
       COMPREPLY=($(compgen -W "check fix auto diagnose cleanup monitor" -- "${cur}"))
       ;;
+    registry)
+      COMPREPLY=($(compgen -W "login push pull list ls search logout" -- "${cur}"))
+      ;;
+    secrets)
+      COMPREPLY=($(compgen -W "create ls list rm remove show inspect" -- "${cur}"))
+      ;;
+    monitor)
+      COMPREPLY=($(compgen -W "top stats health logs watch" -- "${cur}"))
+      ;;
+    wizard)
+      COMPREPLY=($(compgen -W "start setup init quickstart beginner" -- "${cur}"))
+      ;;
     esac
     ;;
   *)
@@ -123,7 +138,8 @@ _dockero_autocomplete() {
     if [[ "${COMP_WORDS[1]}" == "net" ]]; then
       case "${COMP_WORDS[2]}" in
       add|remove|rename)
-        local containers=$(_dockero_get_containers)
+        local containers
+        containers=$(_dockero_get_containers)
         COMPREPLY=($(compgen -W "${containers}" -- "${cur}"))
         ;;
       delete)

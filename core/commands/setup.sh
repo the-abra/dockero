@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 setup() {
     # Access the global params and args arrays set by parameter-indexing.sh
 
@@ -68,16 +70,24 @@ setup_run() {
     fi
 
     # Parse .dockero configuration
-    name=$(inipars.get "default" "name")
-    image=$(inipars.get "default" "image")
-    command=$(inipars.get "default" "command")
-    env=$(inipars.get "volumes" "env")
-    port=$(inipars.get "volumes" "port")
-    restart_policy=$(inipars.get "default" "restart_policy")
+    local name
+    local image
+    local command
+    local env
+    local port
+    local restart_policy
+    name=$(inipars.get "default" "name" "$CONF_FILE")
+    image=$(inipars.get "default" "image" "$CONF_FILE")
+    command=$(inipars.get "default" "command" "$CONF_FILE")
+    env=$(inipars.get "volumes" "env" "$CONF_FILE")
+    port=$(inipars.get "volumes" "port" "$CONF_FILE")
+    restart_policy=$(inipars.get "default" "restart_policy" "$CONF_FILE")
 
     # Read user info (if present)
-    user_name=$(inipars.get "user" "name")
-    user_gid=$(inipars.get "user" "gid")
+    local user_name
+    local user_gid
+    user_name=$(inipars.get "user" "name" "$CONF_FILE")
+    user_gid=$(inipars.get "user" "gid" "$CONF_FILE")
 
     if [[ "$image" != *:* ]]; then
         search_image="$image:latest"
@@ -218,12 +228,18 @@ setup_update() {
     log.info "Updating .dockero configuration for: $project_path"
 
     # Read current values
-    current_name=$(inipars.get "default" "name")
-    current_image=$(inipars.get "default" "image")
-    current_port=$(inipars.get "volumes" "port")
-    current_env=$(inipars.get "volumes" "env")
-    current_command=$(inipars.get "default" "command")
-    current_restart=$(inipars.get "default" "restart_policy")
+    local current_name
+    local current_image
+    local current_port
+    local current_env
+    local current_command
+    local current_restart
+    current_name=$(inipars.get "default" "name" "$CONF_FILE")
+    current_image=$(inipars.get "default" "image" "$CONF_FILE")
+    current_port=$(inipars.get "volumes" "port" "$CONF_FILE")
+    current_env=$(inipars.get "volumes" "env" "$CONF_FILE")
+    current_command=$(inipars.get "default" "command" "$CONF_FILE")
+    current_restart=$(inipars.get "default" "restart_policy" "$CONF_FILE")
 
     # Interactive update
     echo -e "${YELLOW}Container Name${RESET_COLOR} [current: $current_name]: \c"
@@ -278,7 +294,8 @@ setup_teardown() {
     fi
 
     # Parse .dockero configuration to get container name
-    name=$(inipars.get "default" "name")
+    local name
+    name=$(inipars.get "default" "name" "$CONF_FILE")
 
     if [[ -z "$name" ]]; then
         log.error "Container name not found in $CONF_FILE"
@@ -334,16 +351,24 @@ setup_run_with_dryrun() {
     fi
 
     # Parse .dockero configuration
-    name=$(inipars.get "default" "name")
-    image=$(inipars.get "default" "image")
-    command=$(inipars.get "default" "command")
-    env=$(inipars.get "volumes" "env")
-    port=$(inipars.get "volumes" "port")
-    restart_policy=$(inipars.get "default" "restart_policy")
+    local name
+    local image
+    local command
+    local env
+    local port
+    local restart_policy
+    name=$(inipars.get "default" "name" "$CONF_FILE")
+    image=$(inipars.get "default" "image" "$CONF_FILE")
+    command=$(inipars.get "default" "command" "$CONF_FILE")
+    env=$(inipars.get "volumes" "env" "$CONF_FILE")
+    port=$(inipars.get "volumes" "port" "$CONF_FILE")
+    restart_policy=$(inipars.get "default" "restart_policy" "$CONF_FILE")
 
     # Read user info (if present)
-    user_name=$(inipars.get "user" "name")
-    user_gid=$(inipars.get "user" "gid")
+    local user_name
+    local user_gid
+    user_name=$(inipars.get "user" "name" "$CONF_FILE")
+    user_gid=$(inipars.get "user" "gid" "$CONF_FILE")
 
     # Validate required fields
     if [[ -z "$name" || -z "$image" ]]; then
@@ -369,16 +394,16 @@ docker_run() {
     local user_gid="$2"
 
     docker run -it \
-    $( [ -e /dev/snd ] && echo "--device /dev/snd" ) \
-    $( [ -n "$DISPLAY" ] && echo "-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix" ) \
-    $( [ -n "$WAYLAND_DISPLAY" ] && echo "-e WAYLAND_DISPLAY=$WAYLAND_DISPLAY -v $XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:/tmp/xdg/$WAYLAND_DISPLAY -e XDG_RUNTIME_DIR=/tmp/xdg" ) \
-    $( [ -d /run/user/$(id -u)/pulse ] && echo "-v /run/user/$(id -u)/pulse:/run/user/$(id -u)/pulse -e PULSE_SERVER=unix:/run/user/$(id -u)/pulse/native" ) \
-    $( command -v nvidia-smi >/dev/null 2>&1 && echo "--gpus all" ) \
-    -v /run/user/$(id -u)/bus:/run/user/$(id -u)/bus \
+    $( [ -e /dev/snd ] && echo "--device /dev/snd" || true) \
+    $( [ -n "$DISPLAY" ] && echo "-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix" || true) \
+    $( [ -n "$WAYLAND_DISPLAY" ] && echo "-e WAYLAND_DISPLAY=$WAYLAND_DISPLAY -v $XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:/tmp/xdg/$WAYLAND_DISPLAY -e XDG_RUNTIME_DIR=/tmp/xdg" || true) \
+    $( [ -d /run/user/$(id -u)/pulse ] && echo "-v /run/user/$(id -u)/pulse:/run/user/$(id -u)/pulse -e PULSE_SERVER=unix:/run/user/$(id -u)/pulse/native" || true) \
+    $( command -v nvidia-smi >/dev/null 2>&1 && echo "--gpus all" || true) \
+    -v /run/user/"$(id -u)"/bus:/run/user/"$(id -u)"/bus \
     -v "$volume_mount" \
     -p "$port_mapping" \
     --name "${name}" \
-    $( [[ -n "$restart_policy" ]] && echo "--restart $restart_policy" ) \
-    $( [[ -n "$user_name" ]] && echo "--user $user_name:$user_gid" ) \
+    $( [[ -n "$restart_policy" ]] && echo "--restart $restart_policy" || true) \
+    $( [[ -n "$user_name" ]] && echo "--user $user_name:$user_gid" || true) \
     "$image" ${command:+sh -c "$command"}
 }

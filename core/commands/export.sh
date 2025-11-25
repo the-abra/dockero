@@ -1,21 +1,31 @@
+#!/usr/bin/env bash
+
 export() {
 # === INPUT VALIDATION ===
 if [[ ! -n "${args[1]}" ]]; then
-  log.hint "Usage: $0 export <container-name>"
-  exit 1
+  log.hint "Usage: dockero export <container-name>"
+  return 1
 fi
 
 
 # === PARAMETERS ===
+local container_name
 container_name="${args[1]}"
 
+# Validate container name
+if ! validate_container_name "$container_name"; then
+  return 1
+fi
+
 # === PRE-CHECKS ===
-if ! [[ $(docker ps -a --format '{{.Names}}' | grep "${container_name}" | head -n 1) == "${container_name}" ]]; then
+if ! docker ps -a --format '{{.Names}}' | grep -q "^${container_name}$"; then
   log.warn "Container '${container_name}' does not exists. Aborting."
-  exit 1
+  return 1
 fi
 
 #image_name="$(docker inspect --format='{{.Config.Image}}' $(docker ps -aqf "name=${container_name}") 2>/dev/null)"
+local host_path
+local build_name
 host_path="/opt/${container_name}/"
 build_name="${container_name}.tar"
 
@@ -29,10 +39,14 @@ echo "🏗️  Build Name      : ${build_name}"
 
 log.info "Initiating container export with major versioning scheme..."
 
+local base_image
+local commit_log
 base_image="${container_name}"
 commit_log="/tmp/export.${container_name}.log"
 
 
+local commit_image
+local export_path
 commit_image="${base_image}:latest"
 export_path="${HOME}/${container_name}.tar"
 
@@ -42,7 +56,7 @@ log.sub "Resolved image version: latest"
 if ! docker commit "$container_name" "$commit_image" 2> "$commit_log"; then
     log.error "Failed to commit container: $container_name"
     log.sub "Details logged at: $commit_log"
-    exit 1
+    return 1
 fi
 
 log.info "Container committed successfully as: $commit_image"
@@ -51,7 +65,7 @@ log.info "Container committed successfully as: $commit_image"
 if ! docker save -o "$export_path" "$commit_image" 2>> "$commit_log"; then
     log.error "Docker image export failed: $commit_image"
     log.sub "Details logged at: $commit_log"
-    exit 1
+    return 1
 fi
 
 # Validate the tarball
@@ -60,7 +74,7 @@ if [[ -f "$export_path" ]]; then
 else
     log.error "Export verification failed. File not found: $export_path"
     log.sub "Details logged at: $commit_log"
-    exit 1
+    return 1
 fi
 
 return 0
