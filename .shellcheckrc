@@ -1,0 +1,11 @@
+# Shellcheck configuration for Dockero project
+# Exclude common warnings that are acceptable in this project context
+
+# Allow external commands without PATH specification since we check with command -v
+exclude=SC2154,SC2148,SC2034
+
+# This file is sourced, so it doesn't need a shebang
+exclude=SC2154,SC2148
+
+# Variables that are defined elsewhere (like in sourced files)
+shell=bash

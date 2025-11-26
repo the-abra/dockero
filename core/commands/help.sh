@@ -2,39 +2,60 @@
 
 # === TITLE ===
 log.setline "Dockero - V$DOCKERO_VERSION"
-echo "Dockero - Simplified Docker CLI"
+echo -e "${BOLD_YELLOW}Dockero - Simplified Docker CLI${RESET_COLOR}"
 
 help() {
-  echo "
-Usage 🪬 :"
+  echo -e "
+${BOLD_CYAN}Usage 🪬 :${RESET_COLOR}
 
-  log.sub "dockero net      ${YELLOW}<command> [<args>]                          ${RESET_COLOR}Manage Docker networks (new, delete, add, remove, rename, list)."
-  log.sub "dockero run      ${YELLOW}<name> [<image>]                            ${RESET_COLOR}Run an existing container or create a new one."
-  log.sub "dockero list     ${YELLOW}[-img]                                      ${RESET_COLOR}List containers or images."
-  log.sub "dockero stop     ${YELLOW}<container> [--timeout <seconds>]           ${RESET_COLOR}Stop a container with an optional delay."
-  log.sub "dockero setup    ${YELLOW}<project-path>                              ${RESET_COLOR}Set up a containerized environment for a project. (.dockero)"
-  log.sub "dockero start    ${YELLOW}<container> [-c <command>]                  ${RESET_COLOR}Start a container, optionally with a custom command."
-  log.sub "dockero sync     ${YELLOW}<push|pull|watch|status|init>              ${RESET_COLOR}Synchronize files between host and container."
-  log.sub "dockero compose  ${YELLOW}<up|down|start|stop|restart|ps|logs>       ${RESET_COLOR}Manage multi-container applications."
-  log.sub "dockero env      ${YELLOW}<list|use|show|create|delete>              ${RESET_COLOR}Manage deployment environments."
-  log.sub "dockero validate ${YELLOW}[path] [config-file]                       ${RESET_COLOR}Validate configuration files."
-  log.sub "dockero system   ${YELLOW}<service|config|info|cleanup|install>      ${RESET_COLOR}System integration and management."
-  log.sub "dockero learn    ${YELLOW}<basic|intermediate|advanced|examples>      ${RESET_COLOR}Interactive Docker learning system."
-  log.sub "dockero explain  ${YELLOW}<command>                                 ${RESET_COLOR}Explain what Dockero commands do."
-  log.sub "dockero show     ${YELLOW}<commands|dashboard|demo|visual>          ${RESET_COLOR}Visual command dashboard and demonstrations."
-  log.sub "dockero heal     ${YELLOW}<check|fix|auto|diagnose|cleanup>         ${RESET_COLOR}Self-healing automation system."
-  log.sub "dockero export   ${YELLOW}<container-name>                            ${RESET_COLOR}Export a container as a .tar archive to \$HOME."
-  log.sub "dockero import   ${YELLOW}</path/to/archive.tar>                      ${RESET_COLOR}Import a .tar archive as a container image."
-  log.sub "dockero rename   ${YELLOW}<old-name>[:tag] <new-name>[:tag] [-img]    ${RESET_COLOR}Rename an existing container or image."
-  log.sub "dockero remove   ${YELLOW}<container|image>[:tag]                     ${RESET_COLOR}Remove a container(s) or an image(s)."
+${BOLD_GREEN}Enhanced UX Commands:${RESET_COLOR}
+  dockero tui      ${YELLOW}                                             ${RESET_COLOR}Launch interactive TUI dashboard.
+  dockero create-interactive ${YELLOW}                                    ${RESET_COLOR}Interactive container creation wizard.
+
+${BOLD_GREEN}Container Management:${RESET_COLOR}
+  dockero run      ${YELLOW}<name> [<image>]${RESET_COLOR}                            Run an existing container or create a new one.
+  dockero start    ${YELLOW}<container> [-c <command>]${RESET_COLOR}                  Start a container, optionally with a custom command.
+  dockero stop     ${YELLOW}<container> [--timeout <seconds>]${RESET_COLOR}           Stop a container with an optional delay.
+  dockero list     ${YELLOW}[-img]${RESET_COLOR}                                      List containers or images.
+  dockero remove   ${YELLOW}<container|image>[:tag]${RESET_COLOR}                     Remove a container(s) or an image(s).
+  dockero rename   ${YELLOW}<old-name>[:tag] <new-name>[:tag] [-img]${RESET_COLOR}    Rename an existing container or image.
+  dockero export   ${YELLOW}<container-name>${RESET_COLOR}                            Export a container as a .tar archive to \$HOME.
+  dockero import   ${YELLOW}</path/to/archive.tar>${RESET_COLOR}                      Import a .tar archive as a container image.
+
+${BOLD_GREEN}Project & Environment Setup:${RESET_COLOR}
+  dockero setup    ${YELLOW}<project-path>${RESET_COLOR}                              Set up a containerized environment for a project. (.dockero)
+  dockero env      ${YELLOW}<list|use|show|create|delete>${RESET_COLOR}              Manage deployment environments.
+  dockero compose  ${YELLOW}<up|down|start|stop|restart|ps|logs>${RESET_COLOR}       Manage multi-container applications.
+
+${BOLD_GREEN}Networking & Sync:${RESET_COLOR}
+  dockero net      ${YELLOW}<command> [<args>]${RESET_COLOR}                          Manage Docker networks (new, delete, add, remove, rename, list).
+  dockero sync     ${YELLOW}<push|pull|watch|status|init>${RESET_COLOR}              Synchronize files between host and container.
+
+${BOLD_GREEN}Monitoring & Management:${RESET_COLOR}
+  dockero monitor  ${YELLOW}<top|stats|health|logs|watch>${RESET_COLOR}             Container monitoring and metrics.
+  dockero registry ${YELLOW}<login|push|pull|list|search|logout>${RESET_COLOR}       Container registry management.
+  dockero secrets  ${YELLOW}<create|list|show|remove>${RESET_COLOR}                 Manage sensitive data (Docker Swarm).
+  dockero system   ${YELLOW}<service|config|info|cleanup|install>${RESET_COLOR}      System integration and management.
+  dockero heal     ${YELLOW}<check|fix|auto|diagnose|cleanup>${RESET_COLOR}         Self-healing automation system.
+  dockero validate ${YELLOW}[path] [config-file]${RESET_COLOR}                       Validate configuration files.
+
+${BOLD_GREEN}Learning & Help:${RESET_COLOR}
+  dockero explain  ${YELLOW}<command>${RESET_COLOR}                                 Explain what Dockero commands do.
+  dockero show     ${YELLOW}<commands|dashboard|demo|visual>${RESET_COLOR}          Visual command dashboard and demonstrations.
+  dockero learn    ${YELLOW}<basic|intermediate|advanced|examples>${RESET_COLOR}      Interactive Docker learning system.
+  dockero wizard   ${YELLOW}[start|setup|init]${RESET_COLOR}                         Interactive setup assistant for beginners."
 
   log.hint 'Check out the wiki section on the github page for more detailed information.'
+  log.hint "Run 'dockero <command> -h' for help on specific commands."
+  log.hint "Run 'dockero tui' for interactive dashboard experience."
 
   log.endline
   exit 0
 }
 
+# shellcheck disable=SC2317
 help-() { help && exit 0; }
+# shellcheck disable=SC2317
 help-help() { help && exit 0; }
 
 help-run() {
@@ -553,6 +574,138 @@ Usage:
 
 💡 The heal command provides comprehensive self-healing
    capabilities to maintain Dockero system health automatically.
+
+EOF
+}
+
+help-registry() {
+  cat <<EOF
+
+📦 Container Registry Management
+
+Usage:
+
+ dockero registry login [registry-url] [-u username]
+  • Authenticate to a container registry.
+  • Prompts for username if not provided.
+
+ dockero registry logout [registry-url]
+  • Remove local authentication credentials.
+
+ dockero registry push <image>[:tag]
+  • Upload an image to a registry.
+
+ dockero registry pull <image>[:tag]
+  • Download an image from a registry.
+
+ dockero registry search <term>
+  • Search Docker Hub for images.
+
+ dockero registry list | dockero registry ls
+  • List images in registry (not supported by Docker API).
+
+📋 Registry Examples:
+  • dockero registry login -u myuser
+  • dockero registry push myapp:latest
+  • dockero registry pull nginx:alpine
+  • dockero registry search redis
+
+🔐 Registry authentication credentials are stored securely
+   using Docker's credential store.
+
+EOF
+}
+
+help-secrets() {
+  cat <<EOF
+
+🔐 Secret Management System
+
+Usage:
+
+ dockero secrets create <name> [source]
+  • Create a secret from file or stdin.
+  • If no source provided, reads from standard input.
+
+ dockero secrets list | dockero secrets ls
+  • List all secrets.
+
+ dockero secrets show <name> | dockero secrets inspect <name>
+  • Display details about a secret.
+
+ dockero secrets remove <name> | dockero secrets rm <name>
+  • Remove a secret (requires confirmation).
+
+📋 Secret Management Tips:
+  • Secrets are encrypted in transit and at rest
+  • Use for passwords, API keys, certificates
+  • Not available in standalone containers (requires Swarm mode)
+
+⚠️  Security Warning:
+  • Secrets are only available in swarm services
+  • For standalone containers, consider environment files
+  • Always remove temporary files after creating secrets
+
+EOF
+}
+
+help-monitor() {
+  cat <<EOF
+
+📊 Container Monitoring System
+
+Usage:
+
+ dockero monitor top [container]
+  • Show running processes in a container.
+  • If no container specified, list all running containers.
+
+ dockero monitor stats [container] [-f]
+  • Display resource usage statistics for containers.
+  • Use -f flag for live updating statistics.
+
+ dockero monitor health [container]
+  • Check the health status of containers.
+  • Shows health check results and status.
+
+ dockero monitor logs <container> [-f] [-t <lines>]
+  • View logs from a container.
+  • Use -f to follow logs, -t to specify number of lines.
+
+ dockero monitor watch [container] [--interval <seconds>] [--duration <seconds>]
+  • Continuously monitor container statistics.
+
+📈 Monitoring Examples:
+  • dockero monitor stats           → Stats for all containers
+  • dockero monitor stats web-app  → Stats for specific container
+  • dockero monitor logs web-app   → View logs
+  • dockero monitor logs web-app -f -t 50  → Follow last 50 lines
+
+EOF
+}
+
+help-wizard() {
+  cat <<EOF
+
+🎯 Interactive Setup Wizard
+
+Usage:
+
+ dockero wizard
+  • Interactive guide to get started with Dockero.
+  • Helps with common use cases like web servers, development environments, databases.
+
+ dockero wizard start | dockero wizard setup | dockero wizard init
+  • Quick start wizard for project setup.
+  • Detects project types and creates appropriate configurations.
+
+📋 Wizard Features:
+  • Beginner-friendly step-by-step instructions
+  • Project type detection (Node.js, Python, Ruby, etc.)
+  • Automatic configuration file generation
+  • Common use case examples
+
+💡 Run 'dockero wizard' to begin your Docker journey!
 
 EOF
 }

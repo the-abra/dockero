@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 start() {
 
   [[ "${full_arr[1]}" =~ ^"-" ]] && log.warn "You cannot set paramter before container!" && return 1

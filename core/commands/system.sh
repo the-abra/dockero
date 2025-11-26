@@ -138,7 +138,8 @@ system_config() {
     case "$operation" in
         "get")
             if [[ -n "$key" ]]; then
-                local result=$(grep "^${key}=" "$config_file" 2>/dev/null | cut -d'=' -f2-)
+                local result
+                result=$(grep "^${key}=" "$config_file" 2>/dev/null | cut -d'=' -f2-)
                 echo "${result:-}"
             else
                 if [[ -f "$config_file" ]]; then
@@ -212,15 +213,18 @@ system_info() {
     fi
     
     # Check file system type for Docker
-    local docker_root_dir=$(docker info --format '{{.DockerRootDir}}' 2>/dev/null || echo "/var/lib/docker")
+    local docker_root_dir
+    docker_root_dir=$(docker info --format '{{.DockerRootDir}}' 2>/dev/null || echo "/var/lib/docker")
     if [[ -d "$docker_root_dir" ]]; then
-        local fs_type=$(df -T "$docker_root_dir" | tail -1 | awk '{print $2}')
+        local fs_type
+        fs_type=$(df -T "$docker_root_dir" | tail -1 | awk '{print $2}')
         log.info "Docker storage filesystem: $fs_type"
     fi
     
     # Check available disk space
     if command -v df &> /dev/null; then
-        local docker_space=$(df -h "$docker_root_dir" 2>/dev/null | tail -1 | awk '{print $4}')
+        local docker_space
+        docker_space=$(df -h "$docker_root_dir" 2>/dev/null | tail -1 | awk '{print $4}')
         log.info "Available Docker space: ${docker_space:-Unknown}"
     fi
     

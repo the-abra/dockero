@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 rename() {
     if [[ -n "${args[1]}" && -n "${args[2]}" ]]; then
         local current_name="${args[1]}"
@@ -25,8 +27,7 @@ container-renaming() {
 
     # Check if current_name exists as a container
     if docker ps -a --format '{{.Names}}' | grep -q "^${current_name}$"; then
-        docker rename "${current_name}" "${new_name}"
-        if [[ $? -eq 0 ]]; then
+        if docker rename "${current_name}" "${new_name}"; then
             log.done "Container '${current_name}' renamed to '${new_name}'."
             return 0
         else
@@ -48,8 +49,7 @@ image-renaming() {
 
     # Check if current_name exists
     if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${current_name}$"; then
-        docker tag "${current_name}" "${new_name}"
-        if [[ $? -eq 0 ]]; then
+        if docker tag "${current_name}" "${new_name}"; then
             log.done "Image '${current_name}' retagged as '${new_name}'."
             return 0
         else

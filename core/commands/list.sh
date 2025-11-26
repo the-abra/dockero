@@ -6,6 +6,11 @@ list() {
     printf "%-20s %-30s %-25s %-15s %-10s\n" "NAME" "IMAGE" "STATUS" "PORTS" "IP"
 
     while IFS= read -r container_id; do
+      local name
+      local image
+      local status
+      local ports
+      local ip
       name=$(docker inspect -f '{{.Name}}' "$container_id" | cut -c2-)
       image=$(docker inspect -f '{{.Config.Image}}' "$container_id")
       status=$(docker inspect -f '{{.State.Status}}' "$container_id")

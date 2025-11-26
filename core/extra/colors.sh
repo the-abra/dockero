@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2034
 
 # COLOR
 BLACK="\e[0;30m"
