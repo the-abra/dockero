@@ -70,9 +70,11 @@ heal_check() {
 
             # Check disk space
             log.info "Checking disk space..."
-            local docker_root=$(docker info --format '{{.DockerRootDir}}' 2>/dev/null || echo "/var/lib/docker")
+            local docker_root
+            docker_root=$(docker info --format '{{.DockerRootDir}}' 2>/dev/null || echo "/var/lib/docker")
             if [[ -d "$docker_root" ]]; then
-                local disk_usage=$(df "$docker_root" | awk 'NR==2 {print $5}' | sed 's/%//')
+                local disk_usage
+                disk_usage=$(df "$docker_root" | awk 'NR==2 {print $5}' | sed 's/%//')
                 if [[ "$disk_usage" -gt 90 ]]; then
                     log.warn "Docker directory >90% full: ${disk_usage}%"
                     ((issues_found++))
@@ -98,7 +100,8 @@ heal_check() {
 
             # Check for dangling images
             log.info "Checking for unused images..."
-            local dangling_images=$(docker images -f "dangling=true" -q | wc -l)
+            local dangling_images
+            dangling_images=$(docker images -f "dangling=true" -q | wc -l)
             if [[ "$dangling_images" -gt 5 ]]; then
                 log.warn "$dangling_images dangling images found"
                 ((issues_found++))
@@ -109,7 +112,8 @@ heal_check() {
 
             # Check for unused volumes
             log.info "Checking for unused volumes..."
-            local unused_volumes=$(docker volume ls -q -f "dangling=true" | wc -l)
+            local unused_volumes
+            unused_volumes=$(docker volume ls -q -f "dangling=true" | wc -l)
             if [[ "$unused_volumes" -gt 5 ]]; then
                 log.warn "$unused_volumes unused volumes found"
                 ((issues_found++))
@@ -121,8 +125,10 @@ heal_check() {
             ;;
         "containers")
             log.info "Checking containers..."
-            local running_containers=$(docker ps -q | wc -l)
-            local total_containers=$(docker ps -a -q | wc -l)
+            local running_containers
+            running_containers=$(docker ps -q | wc -l)
+            local total_containers
+            total_containers=$(docker ps -a -q | wc -l)
             local stopped_containers=$((total_containers - running_containers))
 
             log.sub "Running: $running_containers, Stopped: $stopped_containers, Total: $total_containers"
@@ -142,7 +148,8 @@ heal_check() {
             ;;
         "networks")
             log.info "Checking networks..."
-            local networks=$(docker network ls --format "{{.Name}}")
+            local networks
+            networks=$(docker network ls --format "{{.Name}}")
             log.sub "Networks: $(echo "$networks" | wc -l) total"
             echo "$networks" | while read -r net; do
                 if [[ "$net" != "bridge" && "$net" != "host" && "$net" != "none" ]]; then
@@ -188,7 +195,8 @@ heal_fix() {
             if [[ -n "$specific_item" ]]; then
                 # Fix specific container
                 if docker ps -a --format '{{.Names}}' | grep -q "^$specific_item$"; then
-                    local status=$(docker inspect -f '{{.State.Status}}' "$specific_item" 2>/dev/null)
+                    local status
+            status=$(docker inspect -f '{{.State.Status}}' "$specific_item" 2>/dev/null)
                     case "$status" in
                         "exited")
                             log.info "Starting stopped container: $specific_item"
@@ -215,7 +223,8 @@ heal_fix() {
                 fi
             else
                 # Fix all containers with issues
-                local stopped_containers=$(docker ps -a --filter "status=exited" -q)
+                local stopped_containers
+                stopped_containers=$(docker ps -a --filter "status=exited" -q)
                 if [[ -n "$stopped_containers" ]]; then
                     log.info "Starting $stopped_containers containers..."
                     echo "$stopped_containers" | xargs -r docker start > /dev/null 2>&1
@@ -227,7 +236,8 @@ heal_fix() {
             ;;
         "images")
             log.info "Cleaning dangling images..."
-            local dangling_count=$(docker images -f "dangling=true" -q | wc -l)
+            local dangling_count
+            dangling_count=$(docker images -f "dangling=true" -q | wc -l)
             if [[ $dangling_count -gt 0 ]]; then
                 docker image prune -f > /dev/null 2>&1
                 log.done "Removed $dangling_count dangling images"
@@ -237,7 +247,8 @@ heal_fix() {
             ;;
         "volumes")
             log.info "Cleaning unused volumes..."
-            local unused_count=$(docker volume ls -q -f "dangling=true" | wc -l)
+            local unused_count
+            unused_count=$(docker volume ls -q -f "dangling=true" | wc -l)
             if [[ $unused_count -gt 0 ]]; then
                 docker volume prune -f > /dev/null 2>&1
                 log.done "Removed $unused_count unused volumes"
@@ -365,11 +376,13 @@ heal_diagnose() {
             ;;
         "network")
             log.info "Diagnosing network issues..."
-            local bridge_info=$(docker network inspect bridge 2>/dev/null | grep Gateway)
+            local bridge_info
+            bridge_info=$(docker network inspect bridge 2>/dev/null | grep Gateway)
             log.sub "Bridge gateway: $bridge_info"
 
             # Check if containers can connect internally
-            local test_result=$(docker run --rm alpine ping -c 1 -W 3 8.8.8.8 2>/dev/null && echo "OK" || echo "FAIL")
+            local test_result
+            test_result=$(docker run --rm alpine ping -c 1 -W 3 8.8.8.8 2>/dev/null && echo "OK" || echo "FAIL")
             log.sub "Internet connectivity test: $test_result"
 
             if [[ "$test_result" == "FAIL" ]]; then
@@ -382,7 +395,8 @@ heal_diagnose() {
             log.info "Diagnosing performance issues..."
 
             # Check Docker disk usage
-            local disk_usage=$(docker system df -q 2>/dev/null | grep "Local Images" | awk '{print $3}')
+            local disk_usage
+            disk_usage=$(docker system df -q 2>/dev/null | grep "Local Images" | awk '{print $3}')
             log.sub "Docker disk usage: $disk_usage"
 
             # Check running container resource usage
@@ -391,7 +405,8 @@ heal_diagnose() {
             fi
 
             # Check for resource constraints
-            local mem_limit=$(docker info --format '{{.MemTotal}}' 2>/dev/null)
+            local mem_limit
+            mem_limit=$(docker info --format '{{.MemTotal}}' 2>/dev/null)
             if [[ -n "$mem_limit" && $mem_limit -gt 0 ]]; then
                 log.sub "System memory available: $((mem_limit / 1024 / 1024)) MB"
             fi
@@ -428,9 +443,11 @@ heal_cleanup() {
             log.info "Performing proactive cleanup..."
 
             # Remove unused containers
-            local unused_containers=$(docker ps -a --filter "status=exited" -q)
+            local unused_containers
+            unused_containers=$(docker ps -a --filter "status=exited" -q)
             if [[ -n "$unused_containers" ]]; then
-                local count=$(echo "$unused_containers" | wc -l)
+                local count
+                count=$(echo "$unused_containers" | wc -l)
                 log.info "Removing $count unused containers..."
                 echo "$unused_containers" | xargs docker rm -v > /dev/null 2>&1
                 log.done "Removed unused containers"
@@ -439,9 +456,11 @@ heal_cleanup() {
             fi
 
             # Remove dangling images
-            local dangling_images=$(docker images -f "dangling=true" -q)
+            local dangling_images
+            dangling_images=$(docker images -f "dangling=true" -q)
             if [[ -n "$dangling_images" ]]; then
-                local count=$(echo "$dangling_images" | wc -l)
+                local count
+                count=$(echo "$dangling_images" | wc -l)
                 log.info "Removing $count dangling images..."
                 docker image prune -f > /dev/null 2>&1
                 log.done "Removed dangling images"
@@ -450,9 +469,11 @@ heal_cleanup() {
             fi
 
             # Remove unused volumes
-            local unused_volumes=$(docker volume ls -q -f "dangling=true")
+            local unused_volumes
+            unused_volumes=$(docker volume ls -q -f "dangling=true")
             if [[ -n "$unused_volumes" ]]; then
-                local count=$(echo "$unused_volumes" | wc -l)
+                local count
+                count=$(echo "$unused_volumes" | wc -l)
                 log.info "Removing $count unused volumes..."
                 docker volume prune -f > /dev/null 2>&1
                 log.done "Removed unused volumes"
@@ -461,9 +482,11 @@ heal_cleanup() {
             fi
 
             # Remove unused networks
-            local unused_networks=$(docker network ls -q --filter "driver=bridge" --filter "name=bridge" --filter="name=host" --filter="name=none" | grep -v "^bridge$\|^host$\|^none$")
+            local unused_networks
+            unused_networks=$(docker network ls -q --filter "driver=bridge" --filter "name=bridge" --filter="name=host" --filter="name=none" | grep -v "^bridge$\|^host$\|^none$")
             if [[ -n "$unused_networks" ]]; then
-                local count=$(echo "$unused_networks" | wc -l)
+                local count
+                count=$(echo "$unused_networks" | wc -l)
                 log.info "Removing $count unused networks..."
                 echo "$unused_networks" | xargs -r docker network rm > /dev/null 2>&1
                 log.done "Removed unused networks"

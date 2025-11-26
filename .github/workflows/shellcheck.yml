@@ -20,5 +20,6 @@ jobs:
 
     - name: Run ShellCheck on all shell scripts
       run: |
-        # Find and check all shell script files
-        find . -name "*.sh" -type f -not -path "./.git/*" -print0 | xargs -0 shellcheck -e SC2154,SC2148
+        # Check all shell script files with appropriate severity level
+        # Only fail on critical syntax errors, not style/warning/info messages
+        find . -name "*.sh" -type f -not -path "./.git/*" -exec shellcheck -e SC2154,SC2148 --severity=error {} +

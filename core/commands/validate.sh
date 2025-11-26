@@ -156,8 +156,10 @@ validate_dockero_config() {
     local errors=0
     
     # Get required fields from the config
-    local name=$(inipars.get "default" "name" "$config_file")
-    local image=$(inipars.get "default" "image" "$config_file")
+    local name
+    name=$(inipars.get "default" "name" "$config_file")
+    local image
+    image=$(inipars.get "default" "image" "$config_file")
     
     # Validate required fields exist
     if [[ -z "$name" ]]; then
@@ -183,7 +185,8 @@ validate_dockero_config() {
     fi
     
     # Validate optional fields have reasonable formats
-    local port=$(inipars.get "volumes" "port" "$config_file")
+    local port
+    port=$(inipars.get "volumes" "port" "$config_file")
     if [[ -n "$port" ]]; then
         # Basic port format validation (host:container or host-port:container-port)
         if [[ ! "$port" =~ ^[0-9]+:[0-9]+$ ]]; then
@@ -191,7 +194,8 @@ validate_dockero_config() {
         fi
     fi
     
-    local restart_policy=$(inipars.get "default" "restart_policy" "$config_file")
+    local restart_policy
+    restart_policy=$(inipars.get "default" "restart_policy" "$config_file")
     if [[ -n "$restart_policy" ]]; then
         # Validate restart policy
         if [[ ! "$restart_policy" =~ ^(no|always|on-failure|unless-stopped)$ ]]; then
@@ -216,7 +220,8 @@ validate_compose_config() {
         # Check for service sections [service:name]
         if [[ $line =~ ^\[service: ]]; then
             ((services_found++))
-            local service_name=$(echo "$line" | sed 's/\[service://' | sed 's/\]//')
+            local service_name
+            service_name=$(echo "$line" | sed 's/\[service://' | sed 's/\]//')
             
             if [[ -z "$service_name" ]]; then
                 log.error "Empty service name in section: $line"
@@ -231,8 +236,10 @@ validate_compose_config() {
             fi
             
             # Validate required fields for the service
-            local container_name=$(inipars.get "service:$service_name" "container_name" "$config_file")
-            local image=$(inipars.get "service:$service_name" "image" "$config_file")
+            local container_name
+            container_name=$(inipars.get "service:$service_name" "container_name" "$config_file")
+            local image
+            image=$(inipars.get "service:$service_name" "image" "$config_file")
             
             if [[ -z "$container_name" ]]; then
                 log.error "Service $service_name missing required field: container_name"
@@ -266,7 +273,8 @@ validate_safe_paths() {
     local config_file="$1"
     
     # Check for potentially dangerous paths in volume configurations
-    local all_content=$(cat "$config_file")
+    local all_content
+    all_content=$(cat "$config_file")
     
     # Check for attempts to escape the filesystem root
     if [[ $all_content =~ \.\./\.\. ]] || [[ $all_content =~ \.\./\.\./ ]] || [[ $all_content =~ /\.\.\.*/ ]] || [[ $all_content =~ /\.\./\.\. ]]; then

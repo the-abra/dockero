@@ -253,7 +253,8 @@ wizard_setup_assistant() {
     
     # Look for other potential project files in subdirectories
     while IFS= read -r -d '' file; do
-        local dir=$(dirname "$file")
+        local dir
+        dir=$(dirname "$file")
         if [[ ! " ${project_dirs[*]} " =~ " ${dir} " ]]; then
             project_dirs+=("$dir")
         fi

@@ -113,8 +113,9 @@ show_dashboard() {
         if command -v docker &> /dev/null; then
             local docker_info_json
             docker_info_json=$(docker info --format '{{json .}}' 2>/dev/null)
-            if [[ $? -eq 0 ]]; then
+            if [ -n "$docker_info_json" ]; then
                 # These would work with a JSON parser, but we'll use a simpler approach
+                local system_memory
                 system_memory=$(docker system df --format='{{.Size}}' 2>/dev/null | head -1 || echo "N/A")
             fi
         fi
@@ -125,11 +126,16 @@ show_dashboard() {
         printf "  Dockero: v$DOCKERO_VERSION\n"
 
         # Count containers, images, volumes, networks
-        local total_containers=$(docker ps -a -q | wc -l 2>/dev/null || echo 0)
-        local running_containers=$(docker ps -q | wc -l 2>/dev/null || echo 0)
-        local total_images=$(docker images -q | wc -l 2>/dev/null || echo 0)
-        local total_volumes=$(docker volume ls -q | wc -l 2>/dev/null || echo 0)
-        local total_networks=$(docker network ls -q | wc -l 2>/dev/null || echo 0)
+        local total_containers
+        total_containers=$(docker ps -a -q | wc -l 2>/dev/null || echo 0)
+        local running_containers
+        running_containers=$(docker ps -q | wc -l 2>/dev/null || echo 0)
+        local total_images
+        total_images=$(docker images -q | wc -l 2>/dev/null || echo 0)
+        local total_volumes
+        total_volumes=$(docker volume ls -q | wc -l 2>/dev/null || echo 0)
+        local total_networks
+        total_networks=$(docker network ls -q | wc -l 2>/dev/null || echo 0)
 
         printf "  Containers: %s total (%s running)\n" "$total_containers" "$running_containers"
         printf "  Images: %s | Volumes: %s | Networks: %s\n" "$total_images" "$total_volumes" "$total_networks"
@@ -348,7 +354,8 @@ EOF
 show_containers_visual() {
     log.setline "📊 Container Status Dashboard"
     
-    local containers_output=$(docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null)
+    local containers_output
+    containers_output=$(docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null)
     
     if [[ -n "$containers_output" ]]; then
         echo "$containers_output"
@@ -369,18 +376,22 @@ show_status_visual() {
     fi
     
     # Count containers
-    local total=$(docker ps -a -q | wc -l 2>/dev/null || echo 0)
-    local running=$(docker ps -q | wc -l 2>/dev/null || echo 0)
+    local total
+    total=$(docker ps -a -q | wc -l 2>/dev/null || echo 0)
+    local running
+    running=$(docker ps -q | wc -l 2>/dev/null || echo 0)
     
     printf "📦 Containers: ${total:-0} total (${running:-0} running)\n"
     
     # Count images  
-    local images=$(docker images -q | wc -l 2>/dev/null || echo 0)
+    local images
+    images=$(docker images -q | wc -l 2>/dev/null || echo 0)
     printf "📚 Images: ${images:-0} available\n"
     
     # Disk usage if available
     if command -v docker &> /dev/null; then
-        local disk_usage=$(docker system df -q 2>/dev/null | grep "Local Images" | awk '{print $3}' 2>/dev/null || echo "N/A")
+        local disk_usage
+        disk_usage=$(docker system df -q 2>/dev/null | grep "Local Images" | awk '{print $3}' 2>/dev/null || echo "N/A")
         printf "💾 Disk usage: $disk_usage\n"
     fi
     
