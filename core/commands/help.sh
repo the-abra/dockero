@@ -53,7 +53,9 @@ ${BOLD_GREEN}Learning & Help:${RESET_COLOR}
   exit 0
 }
 
+# shellcheck disable=SC2317
 help-() { help && exit 0; }
+# shellcheck disable=SC2317
 help-help() { help && exit 0; }
 
 help-run() {

@@ -11,9 +11,7 @@ fi
 
 # Install required Python packages
 echo "Installing required libraries..."
-pip3 install rich npyscreen textual docker
-
-if [ $? -eq 0 ]; then
+if pip3 install rich npyscreen textual docker; then
     echo "✅ Python dependencies installed successfully!"
     echo ""
     echo "You can now use enhanced UX features:"

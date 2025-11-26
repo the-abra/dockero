@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2034
 # log.lib - A Bash library for logging better.
 
 # Color definitions using ANSI escape codes

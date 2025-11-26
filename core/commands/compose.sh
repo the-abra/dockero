@@ -65,7 +65,9 @@ find_compose_file() {
 }
 
 compose_up() {
-    local force_build="$1"
+    local force_build
+    # shellcheck disable=SC2034
+    force_build="$1"
     local compose_file
     compose_file=$(find_compose_file)
     
@@ -83,7 +85,8 @@ compose_up() {
     while IFS= read -r line; do
         if [[ $line =~ ^\[.*\]$ ]]; then
             # Extract service name from [service:service_name] format
-            local service_name=$(echo "$line" | sed 's/\[//g' | sed 's/\]//g' | cut -d':' -f2)
+            local service_name
+            service_name=$(echo "$line" | sed 's/\[//g' | sed 's/\]//g' | cut -d':' -f2)
             if [[ -n "$service_name" && "$service_name" != "global" ]]; then
                 services+=("$service_name")
             fi
@@ -100,13 +103,20 @@ compose_up() {
         log.info "Starting service: $service"
         
         # Get service configuration
-        local container_name=$(inipars.get "service:$service" "container_name" "$compose_file")
-        local image=$(inipars.get "service:$service" "image" "$compose_file")
-        local command=$(inipars.get "service:$service" "command" "$compose_file")
-        local ports=$(inipars.get "service:$service" "ports" "$compose_file")
-        local volumes=$(inipars.get "service:$service" "volumes" "$compose_file")
-        local environment=$(inipars.get "service:$service" "environment" "$compose_file")
-        local depends_on=$(inipars.get "service:$service" "depends_on" "$compose_file")
+        local container_name
+        container_name=$(inipars.get "service:$service" "container_name" "$compose_file")
+        local image
+        image=$(inipars.get "service:$service" "image" "$compose_file")
+        local command
+        command=$(inipars.get "service:$service" "command" "$compose_file")
+        local ports
+        ports=$(inipars.get "service:$service" "ports" "$compose_file")
+        local volumes
+        volumes=$(inipars.get "service:$service" "volumes" "$compose_file")
+        local environment
+        environment=$(inipars.get "service:$service" "environment" "$compose_file")
+        local depends_on
+        depends_on=$(inipars.get "service:$service" "depends_on" "$compose_file")
         
         # Check dependencies if specified
         if [[ -n "$depends_on" ]]; then
@@ -180,7 +190,8 @@ compose_up() {
             fi
 
             # Add restart policy if specified
-            local restart_policy=$(inipars.get "service:$service" "restart" "$compose_file")
+            local restart_policy
+            restart_policy=$(inipars.get "service:$service" "restart" "$compose_file")
             if [[ -n "$restart_policy" ]]; then
                 docker_cmd+=(--restart "$restart_policy")
             else
@@ -192,6 +203,7 @@ compose_up() {
 
             # Add command if specified
             if [[ -n "$command" ]]; then
+                # shellcheck disable=SC2206
                 docker_cmd+=($command)  # This is intentional to allow multiple command args
             fi
 
@@ -222,7 +234,8 @@ compose_down() {
     local services=()
     while IFS= read -r line; do
         if [[ $line =~ ^\[.*\]$ ]]; then
-            local service_name=$(echo "$line" | sed 's/\[//g' | sed 's/\]//g' | cut -d':' -f2)
+            local service_name
+            service_name=$(echo "$line" | sed 's/\[//g' | sed 's/\]//g' | cut -d':' -f2)
             if [[ -n "$service_name" && "$service_name" != "global" ]]; then
                 services+=("$service_name")
             fi
@@ -232,7 +245,8 @@ compose_down() {
     # Stop and remove each service in reverse order
     for (( idx=${#services[@]}-1 ; idx>=0 ; idx-- )) ; do
         service="${services[idx]}"
-        local container_name=$(inipars.get "service:$service" "container_name" "$compose_file")
+        local container_name
+        container_name=$(inipars.get "service:$service" "container_name" "$compose_file")
         
         if docker ps --format '{{.Names}}' | grep -q "^$container_name$"; then
             log.info "Stopping service: $service ($container_name)"
@@ -261,28 +275,30 @@ compose_down() {
 compose_start() {
     local compose_file
     compose_file=$(find_compose_file)
-    
+
     if [[ -z "$compose_file" ]] || [[ ! -f "$compose_file" ]]; then
         log.error "No compose file found (.dockero-compose or .dockero-compose.<env>)"
         return 1
     fi
-    
+
     log.setline "Compose Start"
     log.info "Starting services from: $compose_file"
-    
+
     # Parse services and start them
     local services=()
     while IFS= read -r line; do
         if [[ $line =~ ^\[.*\]$ ]]; then
-            local service_name=$(echo "$line" | sed 's/\[//g' | sed 's/\]//g' | cut -d':' -f2)
+            local service_name
+            service_name=$(echo "$line" | sed 's/\[//g' | sed 's/\]//g' | cut -d':' -f2)
             if [[ -n "$service_name" && "$service_name" != "global" ]]; then
                 services+=("$service_name")
             fi
         fi
     done < <(grep '^\[service:' "$compose_file" 2>/dev/null || grep '^\[.*\]$' "$compose_file")
-    
+
     for service in "${services[@]}"; do
-        local container_name=$(inipars.get "service:$service" "container_name" "$compose_file")
+        local container_name
+        container_name=$(inipars.get "service:$service" "container_name" "$compose_file")
         
         if docker ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
             if docker ps --format '{{.Names}}' | grep -q "^$container_name$"; then
@@ -304,28 +320,30 @@ compose_start() {
 compose_stop() {
     local compose_file
     compose_file=$(find_compose_file)
-    
+
     if [[ -z "$compose_file" ]] || [[ ! -f "$compose_file" ]]; then
         log.error "No compose file found (.dockero-compose or .dockero-compose.<env>)"
         return 1
     fi
-    
+
     log.setline "Compose Stop"
     log.info "Stopping services from: $compose_file"
-    
+
     # Parse services and stop them
     local services=()
     while IFS= read -r line; do
         if [[ $line =~ ^\[.*\]$ ]]; then
-            local service_name=$(echo "$line" | sed 's/\[//g' | sed 's/\]//g' | cut -d':' -f2)
+            local service_name
+            service_name=$(echo "$line" | sed 's/\[//g' | sed 's/\]//g' | cut -d':' -f2)
             if [[ -n "$service_name" && "$service_name" != "global" ]]; then
                 services+=("$service_name")
             fi
         fi
     done < <(grep '^\[service:' "$compose_file" 2>/dev/null || grep '^\[.*\]$' "$compose_file")
-    
+
     for service in "${services[@]}"; do
-        local container_name=$(inipars.get "service:$service" "container_name" "$compose_file")
+        local container_name
+        container_name=$(inipars.get "service:$service" "container_name" "$compose_file")
         
         if docker ps --format '{{.Names}}' | grep -q "^$container_name$"; then
             log.info "Stopping service: $service"
@@ -353,20 +371,22 @@ compose_ps() {
     log.info "Status of services from: $compose_file"
     
     printf "%-20s %-30s %-25s %-15s\n" "SERVICE" "CONTAINER" "STATUS" "PORTS"
-    
+
     # Parse services and get their status
     local services=()
     while IFS= read -r line; do
         if [[ $line =~ ^\[.*\]$ ]]; then
-            local service_name=$(echo "$line" | sed 's/\[//g' | sed 's/\]//g' | cut -d':' -f2)
+            local service_name
+            service_name=$(echo "$line" | sed 's/\[//g' | sed 's/\]//g' | cut -d':' -f2)
             if [[ -n "$service_name" && "$service_name" != "global" ]]; then
                 services+=("$service_name")
             fi
         fi
     done < <(grep '^\[service:' "$compose_file" 2>/dev/null || grep '^\[.*\]$' "$compose_file")
-    
+
     for service in "${services[@]}"; do
-        local container_name=$(inipars.get "service:$service" "container_name" "$compose_file")
+        local container_name
+        container_name=$(inipars.get "service:$service" "container_name" "$compose_file")
         local status="(not created)"
         local ports="(none)"
         
@@ -395,7 +415,8 @@ compose_logs() {
         local services=()
         while IFS= read -r line; do
             if [[ $line =~ ^\[.*\]$ ]]; then
-                local svc_name=$(echo "$line" | sed 's/\[//g' | sed 's/\]//g' | cut -d':' -f2)
+                local svc_name
+                svc_name=$(echo "$line" | sed 's/\[//g' | sed 's/\]//g' | cut -d':' -f2)
                 if [[ -n "$svc_name" && "$svc_name" != "global" ]]; then
                     services+=("$svc_name")
                 fi
@@ -403,7 +424,8 @@ compose_logs() {
         done < <(grep '^\[service:' "$compose_file" 2>/dev/null || grep '^\[.*\]$' "$compose_file")
         
         for svc in "${services[@]}"; do
-            local container_name=$(inipars.get "service:$svc" "container_name" "$compose_file")
+            local container_name
+            container_name=$(inipars.get "service:$svc" "container_name" "$compose_file")
             if docker ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
                 log.setline "Logs for service: $svc"
                 docker logs "$container_name" --tail 50
@@ -411,7 +433,8 @@ compose_logs() {
         done
     else
         # Show logs for specific service
-        local container_name=$(inipars.get "service:$service_name" "container_name" "$compose_file")
+        local container_name
+        container_name=$(inipars.get "service:$service_name" "container_name" "$compose_file")
         if [[ -z "$container_name" ]]; then
             log.error "Service '$service_name' not found in compose file"
             return 1

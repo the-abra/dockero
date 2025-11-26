@@ -14,18 +14,24 @@ USER_CONFIG="${HOME}/.dockero/config"
 
 # Source default configuration
 if [[ -f "$DEFAULT_CONFIG" ]]; then
+    # shellcheck disable=SC1090,SC1091
     source "$DEFAULT_CONFIG"
 fi
 
 # Override with user configuration if it exists
 if [[ -f "$USER_CONFIG" ]]; then
+    # shellcheck disable=SC1090
     source "$USER_CONFIG"
 fi
 
 # === sources ===
+# shellcheck disable=SC1091
 source "${CORE_DIR}/extra/log.sh"
+# shellcheck disable=SC1091
 source "${CORE_DIR}/extra/colors.sh"
+# shellcheck disable=SC1091
 source "${CORE_DIR}/extra/inipars.sh"
+# shellcheck disable=SC1091
 source "${CORE_DIR}/parameter-indexing.sh"
 
 # === Parameter Indexing ===
@@ -69,6 +75,7 @@ validate_image_name() {
 load_command() {
   local cmd_file="${COMMANDS_DIR}/${1}.sh"
   if [[ -f "$cmd_file" ]]; then
+    # shellcheck disable=SC1090
     source "$cmd_file"
     # Validate the command function exists
     if declare -f "$1" >/dev/null 2>&1; then
@@ -102,6 +109,7 @@ if [[ "${args[0]}" == "tui" || "${args[0]}" == "dashboard" ]]; then
     "${CORE_DIR}/extra/run-python-ux.sh" "${args[0]}"  # Pass the actual command ('tui' or 'dashboard')
   else
     log.warn "Python3 not found. Running basic dashboard instead."
+    # shellcheck disable=SC1091
     source "${COMMANDS_DIR}/show.sh"
     show_dashboard
   fi
@@ -118,6 +126,7 @@ elif [[ "${args[0]}" == "create-interactive" ]]; then
 elif [[ -n "${params[v]+set}" || -n "${params[version]+set}" || "${args[0]}" == 'version' ]]; then
   show_version
 elif [[ -n "${params[h]+set}"  || -n "${params[help]+set}" || -z "${args[0]}" ]]; then
+   # shellcheck disable=SC1091
    source "${COMMANDS_DIR}/help.sh"
    help-"${args[0]}"
    log.setline

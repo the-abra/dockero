@@ -12,7 +12,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Run ShellCheck
-      uses: ludeeus/action-shellcheck@2.0.0
-      env:
-        SHELLCHECK_OPTS: -e SC2154,SC2148
+    # Install and run shellcheck to check all .sh files in the project
+    - name: Install ShellCheck
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y shellcheck
+
+    - name: Run ShellCheck on all shell scripts
+      run: |
+        # Find and check all shell script files
+        find . -name "*.sh" -type f -not -path "./.git/*" -print0 | xargs -0 shellcheck -e SC2154,SC2148

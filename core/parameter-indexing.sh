@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2034
 
 declare -A params  # Named parameters: --key value
 args=()            # Positional arguments

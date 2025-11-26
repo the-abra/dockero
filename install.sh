@@ -60,7 +60,8 @@ install_dockero() {
     
     # Determine installation directory
     local install_dir="${1:-/usr/local/bin}"
-    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local script_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     local core_dir="${script_dir}/core"
     
     # Check if we have write permissions
@@ -83,7 +84,8 @@ setup_autocompletion() {
     print_status "Setting up autocompletion..."
     
     local bash_completion_dir=""
-    local completion_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/core/autocompletion/dockero.bash-completion.sh"
+    local completion_script
+    completion_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/core/autocompletion/dockero.bash-completion.sh"
     
     # Try common bash completion directories
     for dir in "/etc/bash_completion.d" "/usr/local/etc/bash_completion.d" "$HOME/.local/etc/bash_completion.d"; do
@@ -152,7 +154,7 @@ verify_installation() {
         print_status "Version: $(dockero version 2>/dev/null || echo 'Unknown')"
     else
         print_warning "Dockero not found in PATH"
-        print_status "You may need to restart your shell or add $(dirname $(which dockero 2>/dev/null || echo '/usr/local/bin/dockero')) to your PATH"
+        print_status "You may need to restart your shell or add $(dirname "$(which dockero 2>/dev/null || echo '/usr/local/bin/dockero')") to your PATH"
     fi
 }
 

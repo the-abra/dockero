@@ -65,6 +65,7 @@ _dockero_autocomplete() {
   case $COMP_CWORD in
   1)
     # First argument - complete base commands
+    # shellcheck disable=SC2207
     COMPREPLY=($(compgen -W "${base_opts}" -- "${cur}"))
     ;;
   2)
@@ -74,61 +75,78 @@ _dockero_autocomplete() {
       # Use cached container list
       local containers
       containers=$(_dockero_get_containers)
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "${containers}" -- "${cur}"))
       ;;
     stop)
       # Use cached running containers
       local running
       running=$(_dockero_get_running)
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "${running}" -- "${cur}"))
       ;;
     import)
       # Use cached tar file list
       local tars
       tars=$(_dockero_get_tars)
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "${tars}" -- "${cur}"))
       ;;
     list)
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "img" -- "${cur}"))
       ;;
     net)
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "new delete add remove rename list" -- "${cur}"))
       ;;
     sync)
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "push pull watch status init" -- "${cur}"))
       ;;
     compose)
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "up down start stop restart ps logs" -- "${cur}"))
       ;;
     env)
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "list use show create delete switch" -- "${cur}"))
       ;;
     system)
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "service config info cleanup install" -- "${cur}"))
       ;;
     learn)
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "start basic intermediate advanced docker concepts examples" -- "${cur}"))
       ;;
     explain)
       # Complete with common dockero commands
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "run setup compose start stop list env sync" -- "${cur}"))
       ;;
     show)
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "dashboard commands demo visual containers status" -- "${cur}"))
       ;;
     heal)
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "check fix auto diagnose cleanup monitor" -- "${cur}"))
       ;;
     registry)
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "login push pull list ls search logout" -- "${cur}"))
       ;;
     secrets)
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "create ls list rm remove show inspect" -- "${cur}"))
       ;;
     monitor)
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "top stats health logs watch" -- "${cur}"))
       ;;
     wizard)
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "start setup init quickstart beginner" -- "${cur}"))
       ;;
     esac
@@ -140,6 +158,7 @@ _dockero_autocomplete() {
       add|remove|rename)
         local containers
         containers=$(_dockero_get_containers)
+        # shellcheck disable=SC2207
         COMPREPLY=($(compgen -W "${containers}" -- "${cur}"))
         ;;
       delete)

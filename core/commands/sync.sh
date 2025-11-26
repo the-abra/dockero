@@ -179,10 +179,12 @@ sync_watch() {
     # This is a simple implementation - in a real system we'd want more robust change detection
     while true; do
         # Wait for file changes in the current directory
-        inotifywait -r -e modify,create,delete,move --format '%w%f %e' "$host_path" 2>/dev/null | while IFS= read -r line; do
+        if ! inotifywait -r -e modify,create,delete,move --format '%w%f %e' "$host_path" 2>/dev/null | while IFS= read -r line; do
             # Split the line into file and event
-            local file=$(echo "$line" | cut -d' ' -f1)
-            local event=$(echo "$line" | cut -d' ' -f2-)
+            local file
+            file=$(echo "$line" | cut -d' ' -f1)
+            local event
+            event=$(echo "$line" | cut -d' ' -f2-)
 
             log.info "File $event: $file"
 
@@ -193,10 +195,8 @@ sync_watch() {
             else
                 log.warn "Failed to sync: $file"
             fi
-        done
-        
-        # Break if inotifywait fails (e.g., due to interruption)
-        if [[ $? -ne 0 ]]; then
+        done; then
+            # Break the loop if inotifywait fails
             break
         fi
     done
@@ -222,9 +222,12 @@ sync_status() {
     log.info "Sync status for container: $container_name"
     
     # Get container details
-    local status=$(docker inspect -f '{{.State.Status}}' "$container_name" 2>/dev/null || echo "missing")
-    local started=$(docker inspect -f '{{.State.StartedAt}}' "$container_name" 2>/dev/null || echo "N/A")
-    local volume_info=$(docker inspect -f '{{range .Mounts}}{{if eq .Type "bind"}}{{.Source}}:{{.Destination}} {{end}}{{end}}' "$container_name" 2>/dev/null | tr ' ' '\n' | grep -v '^$' | head -1)
+    local status
+    status=$(docker inspect -f '{{.State.Status}}' "$container_name" 2>/dev/null || echo "missing")
+    local started
+    started=$(docker inspect -f '{{.State.StartedAt}}' "$container_name" 2>/dev/null || echo "N/A")
+    local volume_info
+    volume_info=$(docker inspect -f '{{range .Mounts}}{{if eq .Type "bind"}}{{.Source}}:{{.Destination}} {{end}}{{end}}' "$container_name" 2>/dev/null | tr ' ' '\n' | grep -v '^$' | head -1)
     
     echo "  🔹 Container Status: $status"
     echo "  🔹 Started At: $started"
@@ -238,7 +241,8 @@ sync_status() {
     # Check if container is running to do deeper analysis
     if docker ps --format '{{.Names}}' | grep -q "^$container_name$"; then
         # Try to get file count from container workspace
-        local file_count=$(docker exec "$container_name" find /workspace -type f 2>/dev/null | wc -l | tr -d ' ')
+        local file_count
+        file_count=$(docker exec "$container_name" find /workspace -type f 2>/dev/null | wc -l | tr -d ' ')
         echo "  🔹 Files in /workspace: ${file_count:-0}"
     else
         echo "  🔹 Files in /workspace: (container not running)"

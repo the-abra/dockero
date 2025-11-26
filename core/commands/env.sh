@@ -59,8 +59,9 @@ env_list() {
     for file in .dockero-*.yaml .dockero-* .dockero.compose-* .dockero-compose-*; do
         if [[ -f "$file" ]]; then
             # Extract environment name from file name
-            local env_name=$(basename "$file" | sed 's/\.dockero[-\.]//' | sed 's/\.yaml$//' | sed 's/\.yml$//')
-            if [[ -n "$env_name" && " ${envs[@]} " != *" $env_name "* ]]; then
+            local env_name
+            env_name=$(basename "$file" | sed 's/\.dockero[-\.]//' | sed 's/\.yaml$//' | sed 's/\.yml$//')
+            if [[ -n "$env_name" && " ${envs[*]} " != *" $env_name "* ]]; then
                 envs+=("$env_name")
             fi
         fi
@@ -69,8 +70,9 @@ env_list() {
     # Also check for any .env files or environment markers
     for dir in .env.* .environment.*; do
         if [[ -d "$dir" || -f "$dir" ]]; then
-            local env_name=$(basename "$dir" | cut -d'.' -f2)
-            if [[ -n "$env_name" && " ${envs[@]} " != *" $env_name "* ]]; then
+            local env_name
+            env_name=$(basename "$dir" | cut -d'.' -f2)
+            if [[ -n "$env_name" && " ${envs[*]} " != *" $env_name "* ]]; then
                 envs+=("$env_name")
             fi
         fi
@@ -92,7 +94,8 @@ env_list() {
 }
 
 env_show() {
-    local current_env=$(get_current_env)
+    local current_env
+    current_env=$(get_current_env)
     log.setline "Current Environment"
     log.info "Active environment: $current_env"
     
@@ -134,7 +137,8 @@ env_use() {
         # Check for any files that might contain this environment
         for file in .dockero-* .dockero-compose-* .env.* .environment.*; do
             if [[ -f "$file" ]]; then
-                local check_env=$(basename "$file" | sed 's/\.dockero[-\.]//' | sed 's/\.env\.//' | sed 's/\.environment\.//' | sed 's/\.yaml$//' | sed 's/\.yml$//')
+                local check_env
+                check_env=$(basename "$file" | sed 's/\.dockero[-\.]//' | sed 's/\.env\.//' | sed 's/\.environment\.//' | sed 's/\.yaml$//' | sed 's/\.yml$//')
                 if [[ "$check_env" == "$env_name" ]]; then
                     env_exists=1
                     break
@@ -147,7 +151,8 @@ env_use() {
         log.warn "Environment '$env_name' files not found, but setting environment anyway"
     fi
     
-    local prev_env=$(get_current_env)
+    local prev_env
+    prev_env=$(get_current_env)
     set_current_env "$env_name"
     
     log.setline "Environment Switch"

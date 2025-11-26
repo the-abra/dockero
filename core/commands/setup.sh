@@ -104,7 +104,7 @@ setup_run() {
     # Check if container name is available
     if [[ $dry_run -eq 0 ]]; then
         if docker ps -a --format '{{.Names}}' | grep -q "^$name$"; then
-            log.error "The container name "$name" is already in use"
+            log.error "The container name $name is already in use"
             return 1
         fi
     fi
@@ -393,17 +393,56 @@ docker_run() {
     local user_name="$1"
     local user_gid="$2"
 
-    docker run -it \
-    $( [ -e /dev/snd ] && echo "--device /dev/snd" || true) \
-    $( [ -n "$DISPLAY" ] && echo "-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix" || true) \
-    $( [ -n "$WAYLAND_DISPLAY" ] && echo "-e WAYLAND_DISPLAY=$WAYLAND_DISPLAY -v $XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:/tmp/xdg/$WAYLAND_DISPLAY -e XDG_RUNTIME_DIR=/tmp/xdg" || true) \
-    $( [ -d /run/user/$(id -u)/pulse ] && echo "-v /run/user/$(id -u)/pulse:/run/user/$(id -u)/pulse -e PULSE_SERVER=unix:/run/user/$(id -u)/pulse/native" || true) \
-    $( command -v nvidia-smi >/dev/null 2>&1 && echo "--gpus all" || true) \
-    -v /run/user/"$(id -u)"/bus:/run/user/"$(id -u)"/bus \
-    -v "$volume_mount" \
-    -p "$port_mapping" \
-    --name "${name}" \
-    $( [[ -n "$restart_policy" ]] && echo "--restart $restart_policy" || true) \
-    $( [[ -n "$user_name" ]] && echo "--user $user_name:$user_gid" || true) \
-    "$image" ${command:+sh -c "$command"}
+    # Build docker arguments array
+    local docker_args=()
+    docker_args+=(-it)
+
+    # Conditionally add sound device
+    if [ -e /dev/snd ]; then
+        docker_args+=(--device /dev/snd)
+    fi
+
+    # Conditionally add X11 display
+    if [ -n "$DISPLAY" ]; then
+        docker_args+=(-e "DISPLAY=$DISPLAY" -v "/tmp/.X11-unix:/tmp/.X11-unix")
+    fi
+
+    # Conditionally add Wayland display
+    if [ -n "$WAYLAND_DISPLAY" ]; then
+        docker_args+=(-e "WAYLAND_DISPLAY=$WAYLAND_DISPLAY" -v "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:/tmp/xdg/$WAYLAND_DISPLAY" -e "XDG_RUNTIME_DIR=/tmp/xdg")
+    fi
+
+    # Conditionally add pulse audio
+    if [ -d "/run/user/$(id -u)/pulse" ]; then
+        docker_args+=(-v "/run/user/$(id -u)/pulse:/run/user/$(id -u)/pulse" -e "PULSE_SERVER=unix:/run/user/$(id -u)/pulse/native")
+    fi
+
+    # Conditionally add NVIDIA GPU
+    if command -v nvidia-smi >/dev/null 2>&1; then
+        docker_args+=(--gpus all)
+    fi
+
+    # Always add bus access
+    docker_args+=(-v "/run/user/$(id -u)/bus:/run/user/$(id -u)/bus")
+
+    # Add volume mount and port mapping
+    docker_args+=(-v "$volume_mount" -p "$port_mapping" --name "${name}")
+
+    # Conditionally add restart policy
+    if [[ -n "$restart_policy" ]]; then
+        docker_args+=(--restart "$restart_policy")
+    fi
+
+    # Conditionally add user
+    if [[ -n "$user_name" ]]; then
+        docker_args+=(--user "$user_name:$user_gid")
+    fi
+
+    # Add image and command
+    docker_args+=("$image")
+    if [[ -n "$command" ]]; then
+        docker_args+=(sh -c "$command")
+    fi
+
+    docker run "${docker_args[@]}"
 }

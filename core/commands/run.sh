@@ -72,17 +72,39 @@ docker_run() {
     local port_arg="-p ${port_mapping}"
   fi
 
-  docker run -it \
-    "${port_arg}" \
-    -v /opt/"${container_name}":/workspace \
-    --name "${container_name}" \
-    $( [ -e /dev/snd ] && echo "--device /dev/snd" || true) \
-    $( [ -n "$DISPLAY" ] && echo "-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix" || true) \
-    $( [ -n "$WAYLAND_DISPLAY" ] && echo "-e WAYLAND_DISPLAY=$WAYLAND_DISPLAY -v $XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:/tmp/xdg/$WAYLAND_DISPLAY -e XDG_RUNTIME_DIR=/tmp/xdg" || true) \
-    $( [ -d /run/user/$(id -u)/pulse ] && echo "-v /run/user/$(id -u)/pulse:/run/user/$(id -u)/pulse -e PULSE_SERVER=unix:/run/user/$(id -u)/pulse/native" || true) \
-    $(command -v nvidia-smi >/dev/null 2>&1 && echo "--gpus all" || true) \
-    -v /run/user/"$(id -u)"/bus:/run/user/"$(id -u)"/bus \
-    "$image_name"
+  # Build docker arguments array
+  local docker_args=()
+  docker_args+=(-it "${port_arg}" -v "/opt/${container_name}:/workspace" --name "${container_name}")
+
+  # Conditionally add sound device
+  if [ -e /dev/snd ]; then
+    docker_args+=(--device /dev/snd)
+  fi
+
+  # Conditionally add X11 display
+  if [ -n "$DISPLAY" ]; then
+    docker_args+=(-e "DISPLAY=$DISPLAY" -v "/tmp/.X11-unix:/tmp/.X11-unix")
+  fi
+
+  # Conditionally add Wayland display
+  if [ -n "$WAYLAND_DISPLAY" ]; then
+    docker_args+=(-e "WAYLAND_DISPLAY=$WAYLAND_DISPLAY" -v "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:/tmp/xdg/$WAYLAND_DISPLAY" -e "XDG_RUNTIME_DIR=/tmp/xdg")
+  fi
+
+  # Conditionally add pulse audio
+  if [ -d "/run/user/$(id -u)/pulse" ]; then
+    docker_args+=(-v "/run/user/$(id -u)/pulse:/run/user/$(id -u)/pulse" -e "PULSE_SERVER=unix:/run/user/$(id -u)/pulse/native")
+  fi
+
+  # Conditionally add NVIDIA GPU
+  if command -v nvidia-smi >/dev/null 2>&1; then
+    docker_args+=(--gpus all)
+  fi
+
+  # Always add bus access
+  docker_args+=(-v "/run/user/$(id -u)/bus:/run/user/$(id -u)/bus")
+
+  docker run "${docker_args[@]}" "$image_name"
 }
 
 image_clonning() {
