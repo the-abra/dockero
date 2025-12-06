@@ -153,12 +153,6 @@ Dockero now includes an enhanced interactive dashboard powered by Python:
 dockero tui
 ```
 
-### Interactive Container Creation
-Create containers with an interactive wizard:
-```bash
-dockero create-interactive
-```
-
 ### Enhanced Progress Indicators
 For operations that support it, Dockero can show detailed progress indicators:
 - Image pulls with progress bars

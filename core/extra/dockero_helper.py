@@ -39,11 +39,6 @@ def main():
         import os
         os.environ.setdefault('TERM', 'xterm-256color')
         run_interactive_dashboard()
-    elif args.command == 'create-container':
-        # Ensure proper terminal handling
-        import os
-        os.environ.setdefault('TERM', 'xterm-256color')
-        create_container_interactive()
     elif args.command == 'progress-demo':
         demo_progress_indicators()
     elif args.command == 'pull':
@@ -67,12 +62,11 @@ def main():
     else:
         print("Dockero Python Helper")
         print("Commands:")
-        print("  tui, dashboard     - Run interactive TUI dashboard")
-        print("  create-container  - Interactive container creation")
-        print("  progress-demo     - Demo progress indicators")
-        print("  pull --image <name>    - Pull image with progress")
+        print("  tui, dashboard           - Run interactive TUI dashboard")
+        print("  progress-demo            - Demo progress indicators")
+        print("  pull --image <name>      - Pull image with progress")
         print("  build --tag <name> --context <path>  - Build image with progress")
-        print("  start --container <name>  - Start container with progress")
+        print("  start --container <name> - Start container with progress")
         print("")
         print("Usage: python3 dockero_helper.py <command> [options]")
 

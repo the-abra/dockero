@@ -16,7 +16,6 @@ if pip3 install rich npyscreen textual docker; then
     echo ""
     echo "You can now use enhanced UX features:"
     echo "  - dockero tui          # Interactive dashboard"
-    echo "  - dockero create-interactive  # Interactive container creation"
     echo ""
     echo "Note: These features require Python 3 and the installed libraries."
 else

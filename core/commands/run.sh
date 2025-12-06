@@ -63,18 +63,22 @@ docker_run() {
   # Use configuration for default port if available
   local port_mapping="${DOCKERO_DEFAULT_PORT:-80}"
 
-  # Ensure proper port mapping format (host_port:container_port)
-  if [[ "$port_mapping" =~ ^[0-9]+$ ]]; then
-    # If it's just a number, map it to the same port in the container
-    local port_arg="-p ${port_mapping}:${port_mapping}"
-  else
-    # If it's already in format like "8080:80", use as is
-    local port_arg="-p ${port_mapping}"
-  fi
+  # Trim leading and trailing whitespace from port_mapping
+  port_mapping=$(echo "$port_mapping" | xargs)
 
   # Build docker arguments array
   local docker_args=()
-  docker_args+=(-it "${port_arg}" -v "/opt/${container_name}:/workspace" --name "${container_name}")
+
+  # Check if port_mapping is in format like "8080:80" or just "80"
+  if [[ "$port_mapping" =~ ^[0-9]+$ ]]; then
+    # If it's just a number, map it to the same port in the container
+    docker_args+=(-it -p "${port_mapping}:${port_mapping}")
+  else
+    # If it's already in format like "8080:80", use as is
+    docker_args+=(-it -p "${port_mapping}")
+  fi
+
+  docker_args+=(-v "/opt/${container_name}:/workspace" --name "${container_name}")
 
   # Conditionally add sound device
   if [ -e /dev/snd ]; then
