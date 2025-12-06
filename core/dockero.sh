@@ -114,15 +114,6 @@ if [[ "${args[0]}" == "tui" || "${args[0]}" == "dashboard" ]]; then
     show_dashboard
   fi
   exit 0
-elif [[ "${args[0]}" == "create-interactive" ]]; then
-  # Interactive container creation
-  if command -v python3 >/dev/null 2>&1; then
-    "${CORE_DIR}/extra/run-python-ux.sh" create-container
-  else
-    log.error "Python3 not found. Interactive creation requires Python."
-    exit 1
-  fi
-  exit 0
 elif [[ -n "${params[v]+set}" || -n "${params[version]+set}" || "${args[0]}" == 'version' ]]; then
   show_version
 elif [[ -n "${params[h]+set}"  || -n "${params[help]+set}" || -z "${args[0]}" ]]; then

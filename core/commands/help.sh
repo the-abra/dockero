@@ -9,10 +9,11 @@ help() {
 ${BOLD_CYAN}Usage 🪬 :${RESET_COLOR}
 
 ${BOLD_GREEN}Enhanced UX Commands:${RESET_COLOR}
-  dockero tui      ${YELLOW}                                             ${RESET_COLOR}Launch interactive TUI dashboard.
-  dockero create-interactive ${YELLOW}                                    ${RESET_COLOR}Interactive container creation wizard.
+  
+  dockero tui              ${YELLOW}                                    ${RESET_COLOR}Launch interactive TUI dashboard.
 
 ${BOLD_GREEN}Container Management:${RESET_COLOR}
+
   dockero run      ${YELLOW}<name> [<image>]${RESET_COLOR}                            Run an existing container or create a new one.
   dockero start    ${YELLOW}<container> [-c <command>]${RESET_COLOR}                  Start a container, optionally with a custom command.
   dockero stop     ${YELLOW}<container> [--timeout <seconds>]${RESET_COLOR}           Stop a container with an optional delay.
@@ -23,31 +24,35 @@ ${BOLD_GREEN}Container Management:${RESET_COLOR}
   dockero import   ${YELLOW}</path/to/archive.tar>${RESET_COLOR}                      Import a .tar archive as a container image.
 
 ${BOLD_GREEN}Project & Environment Setup:${RESET_COLOR}
+  
   dockero setup    ${YELLOW}<project-path>${RESET_COLOR}                              Set up a containerized environment for a project. (.dockero)
-  dockero env      ${YELLOW}<list|use|show|create|delete>${RESET_COLOR}              Manage deployment environments.
-  dockero compose  ${YELLOW}<up|down|start|stop|restart|ps|logs>${RESET_COLOR}       Manage multi-container applications.
+  dockero env      ${YELLOW}<list|use|show|create|delete>${RESET_COLOR}               Manage deployment environments.
+  dockero compose  ${YELLOW}<up|down|start|stop|restart|ps|logs>${RESET_COLOR}        Manage multi-container applications.
 
 ${BOLD_GREEN}Networking & Sync:${RESET_COLOR}
+  
   dockero net      ${YELLOW}<command> [<args>]${RESET_COLOR}                          Manage Docker networks (new, delete, add, remove, rename, list).
-  dockero sync     ${YELLOW}<push|pull|watch|status|init>${RESET_COLOR}              Synchronize files between host and container.
+  dockero sync     ${YELLOW}<push|pull|watch|status|init>${RESET_COLOR}               Synchronize files between host and container.
 
 ${BOLD_GREEN}Monitoring & Management:${RESET_COLOR}
-  dockero monitor  ${YELLOW}<top|stats|health|logs|watch>${RESET_COLOR}             Container monitoring and metrics.
-  dockero registry ${YELLOW}<login|push|pull|list|search|logout>${RESET_COLOR}       Container registry management.
-  dockero secrets  ${YELLOW}<create|list|show|remove>${RESET_COLOR}                 Manage sensitive data (Docker Swarm).
-  dockero system   ${YELLOW}<service|config|info|cleanup|install>${RESET_COLOR}      System integration and management.
-  dockero heal     ${YELLOW}<check|fix|auto|diagnose|cleanup>${RESET_COLOR}         Self-healing automation system.
-  dockero validate ${YELLOW}[path] [config-file]${RESET_COLOR}                       Validate configuration files.
+  
+  dockero monitor  ${YELLOW}<top|stats|health|logs|watch>${RESET_COLOR}               Container monitoring and metrics.
+  dockero registry ${YELLOW}<login|push|pull|list|search|logout>${RESET_COLOR}        Container registry management.
+  dockero secrets  ${YELLOW}<create|list|show|remove>${RESET_COLOR}                   Manage sensitive data (Docker Swarm).
+  dockero system   ${YELLOW}<service|config|info|cleanup|install>${RESET_COLOR}       System integration and management.
+  dockero heal     ${YELLOW}<check|fix|auto|diagnose|cleanup>${RESET_COLOR}           Self-healing automation system.
+  dockero validate ${YELLOW}[path] [config-file]${RESET_COLOR}                        Validate configuration files.
 
 ${BOLD_GREEN}Learning & Help:${RESET_COLOR}
-  dockero explain  ${YELLOW}<command>${RESET_COLOR}                                 Explain what Dockero commands do.
-  dockero show     ${YELLOW}<commands|dashboard|demo|visual>${RESET_COLOR}          Visual command dashboard and demonstrations.
+  
+  dockero explain  ${YELLOW}<command>${RESET_COLOR}                                   Explain what Dockero commands do.
+  dockero show     ${YELLOW}<commands|dashboard|demo|visual>${RESET_COLOR}            Visual command dashboard and demonstrations.
   dockero learn    ${YELLOW}<basic|intermediate|advanced|examples>${RESET_COLOR}      Interactive Docker learning system.
-  dockero wizard   ${YELLOW}[start|setup|init]${RESET_COLOR}                         Interactive setup assistant for beginners."
+  dockero wizard   ${YELLOW}[start|setup|init]${RESET_COLOR}                          Interactive setup assistant for beginners."
 
-  log.hint 'Check out the wiki section on the github page for more detailed information.'
+
   log.hint "Run 'dockero <command> -h' for help on specific commands."
-  log.hint "Run 'dockero tui' for interactive dashboard experience."
+  
 
   log.endline
   exit 0
