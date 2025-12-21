@@ -1,210 +1,171 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-# Install script for Dockero
-# This script installs Dockero to your system and sets up autocompletion
-
-set -e  # Exit on any error
+set -e  # Exit immediately if a command exits with a non-zero status
 
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-print_header() {
-    echo -e "${BLUE}
-  ____                        _        _   
- |  _ \                      | |      | |  
- | |_) | ___  _ __ ___   ___ | |_ __ _| |_ 
- |  _ < / _ \| '_ ' _ \ / _ \| __/ _' | __|
- | |_) | (_) | | | | | | (_) | || (_| | |_ 
- |____/ \___/|_| |_| |_|\___/ \__\__,_|\__|
-    ${NC}Simplified Docker CLI with Autocompletion"
-    echo
-}
-
-print_status() {
+# Logging functions
+log_info() {
     echo -e "${GREEN}[INFO]${NC} $1"
 }
 
-print_warning() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
+log_warn() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-print_error() {
+log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Check prerequisites
-check_prerequisites() {
-    print_status "Checking prerequisites..."
-    
-    if ! command -v docker &> /dev/null; then
-        print_error "Docker is not installed or not in PATH"
-        print_warning "Please install Docker first: https://docs.docker.com/get-docker/"
+# Check if running as root
+check_root() {
+    if [[ $EUID -eq 0 ]]; then
+        log_warn "Running as root, continuing..."
+    else
+        log_error "This script must be run as root. Use sudo."
+        exit 1
+    fi
+}
+
+# Detect package manager
+detect_package_manager() {
+    if command -v pacman &> /dev/null; then
+        PM=pacman
+        PKG_MANAGER="pacman"
+    elif command -v apt-get &> /dev/null; then
+        PM=apt
+        PKG_MANAGER="apt"
+    elif command -v yum &> /dev/null; then
+        PM=yum
+        PKG_MANAGER="yum"
+    elif command -v dnf &> /dev/null; then
+        PM=dnf
+        PKG_MANAGER="dnf"
+    elif command -v zypper &> /dev/null; then
+        PM=zypper
+        PKG_MANAGER="zypper"
+    elif command -v apk &> /dev/null; then
+        PM=apk
+        PKG_MANAGER="apk"
+    else
+        log_error "Unsupported package manager. Supported: pacman, apt, yum, dnf, zypper, apk"
         exit 1
     fi
     
-    if ! command -v bash &> /dev/null; then
-        print_error "Bash is not available"
-        exit 1
-    fi
-    
-    print_status "Prerequisites check passed"
+    log_info "Detected package manager: $PKG_MANAGER"
 }
 
-# Install Dockero
-install_dockero() {
-    print_status "Installing Dockero..."
+# Install packages based on detected package manager
+install_packages() {
+    local packages=("$@")
     
-    # Determine installation directory
-    local install_dir="${1:-/usr/local/bin}"
-    local script_dir
-    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    local core_dir="${script_dir}/core"
-    
-    # Check if we have write permissions
-    if [[ ! -w "$install_dir" ]]; then
-        print_warning "No write permission to $install_dir, using sudo"
-        sudo mkdir -p "$install_dir"
-        sudo cp "$core_dir/dockero.sh" "$install_dir/dockero"
-        sudo chmod +x "$install_dir/dockero"
-    else
-        mkdir -p "$install_dir"
-        cp "$core_dir/dockero.sh" "$install_dir/dockero"
-        chmod +x "$install_dir/dockero"
-    fi
-    
-    print_status "Dockero installed to $install_dir/dockero"
+    case $PM in
+        pacman)
+            pacman -Sy --noconfirm "${packages[@]}"
+            ;;
+        apt)
+            apt-get update
+            apt-get install -y "${packages[@]}"
+            ;;
+        yum)
+            yum install -y "${packages[@]}"
+            ;;
+        dnf)
+            dnf install -y "${packages[@]}"
+            ;;
+        zypper)
+            zypper install -y "${packages[@]}"
+            ;;
+        apk)
+            apk add "${packages[@]}"
+            ;;
+    esac
 }
 
-# Setup autocompletion
-setup_autocompletion() {
-    print_status "Setting up autocompletion..."
+# Install Docker
+install_docker() {
+    log_info "Installing Docker..."
     
-    local bash_completion_dir=""
-    local completion_script
-    completion_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/core/autocompletion/dockero.bash-completion.sh"
+    case $PM in
+        pacman)
+            install_packages docker docker-compose
+            systemctl enable docker
+            ;;
+        apt)
+            install_packages ca-certificates curl gnupg lsb-release docker.io docker-compose
+            systemctl enable docker
+            ;;
+        yum|dnf)
+            install_packages docker docker-compose-plugin
+            systemctl enable docker
+            ;;
+        zypper)
+            install_packages docker docker-compose
+            systemctl enable docker
+            ;;
+        apk)
+            install_packages docker docker-compose
+            rc-update add docker
+            ;;
+    esac
     
-    # Try common bash completion directories
-    for dir in "/etc/bash_completion.d" "/usr/local/etc/bash_completion.d" "$HOME/.local/etc/bash_completion.d"; do
-        if [[ -d "$dir" ]] && [[ -w "$dir" ]]; then
-            bash_completion_dir="$dir"
-            break
-        fi
-    done
-    
-    # If no writable directory found, use sudo
-    if [[ -z "$bash_completion_dir" ]]; then
-        # Check if we can write to any of them with sudo
-        for dir in "/etc/bash_completion.d" "/usr/local/etc/bash_completion.d"; do
-            if [[ -d "$dir" ]]; then
-                bash_completion_dir="$dir"
-                break
-            fi
-        done
-        
-        if [[ -n "$bash_completion_dir" ]]; then
-            print_warning "No write permission to bash completion directory, using sudo"
-            sudo cp "$completion_script" "$bash_completion_dir/dockero"
-            print_status "Autocompletion script installed to $bash_completion_dir/dockero"
-        else
-            print_warning "Could not find bash completion directory, will add to .bashrc"
-        fi
-    else
-        cp "$completion_script" "$bash_completion_dir/dockero"
-        print_status "Autocompletion script installed to $bash_completion_dir/dockero"
-    fi
-    
-    # Check if completion is already in .bashrc
-    if ! grep -q "dockero" "$HOME/.bashrc" 2>/dev/null; then
-        # Add source command to .bashrc if completion dir wasn't used
-        if [[ -z "$bash_completion_dir" ]]; then
-            # Try to add to .bashrc
-            {
-                echo ""
-                echo "# Dockero autocompletion"
-                echo "source $completion_script"
-                echo ""
-            } >> "$HOME/.bashrc" 2>/dev/null || {
-                print_warning "Could not add to .bashrc automatically"
-                echo ""
-                echo "To enable autocompletion, add this line to your shell configuration:"
-                echo "source $completion_script"
-                echo ""
-                echo "For bash, add to ~/.bashrc"
-                echo "For zsh, add to ~/.zshrc"
-                echo ""
-            }
-        else
-            print_status "Autocompletion should work automatically in new shells"
-        fi
-    else
-        print_status "Autocompletion already configured"
-    fi
+    log_info "Docker installed and enabled"
 }
 
-# Verify installation
-verify_installation() {
-    print_status "Verifying installation..."
+# Install Python dependencies
+install_python_deps() {
+    log_info "Installing Python dependencies..."
+
+    case $PM in
+        pacman)
+            install_packages python python-textual python-docker
+            ;;
+        apt)
+            install_packages python3 python3-textual python3-docker
+            ;;
+        yum|dnf)
+            install_packages python3 python3-textual python3-docker
+            ;;
+        zypper)
+            install_packages python3 python3-textual python3-docker
+            ;;
+        apk)
+            install_packages python3 py3-textual py3-docker
+            ;;
+    esac
+
+    log_info "Python dependencies installed"
+}
+
+# Create symlink for dockero
+create_symlink() {
+    log_info "Creating symlink for dockero..."
     
-    if command -v dockero &> /dev/null; then
-        print_status "Dockero is available in PATH"
-        print_status "Version: $(dockero version 2>/dev/null || echo 'Unknown')"
-    else
-        print_warning "Dockero not found in PATH"
-        print_status "You may need to restart your shell or add $(dirname "$(which dockero 2>/dev/null || echo '/usr/local/bin/dockero')") to your PATH"
-    fi
+    # Make sure the script is executable
+    chmod +x ./core/dockero.sh
+    
+    # Create symlink - using /usr/local/bin instead of /bin for user-installed software
+    ln -sf "$(pwd)/core/dockero.sh" /usr/local/bin/dockero
+    
+    log_info "Symlink created: /usr/local/bin/dockero -> $(pwd)/core/dockero.sh"
 }
 
-show_next_steps() {
-    echo
-    echo -e "${BLUE}=== Next Steps ===${NC}"
-    echo "1. Restart your shell or run: source ~/.bashrc"
-    echo "2. Try: dockero -h (to see all commands)"
-    echo "3. Run: dockero wizard (for interactive setup)"
-    echo "4. Check: dockero learn basic (for Docker learning)"
-    echo
-    echo -e "${GREEN}Installation complete! 🎉${NC}"
-}
-
-# Main execution
 main() {
-    print_header
-    check_prerequisites
+    log_info "Starting Dockero installation..."
     
-    local install_dir="${1:-/usr/local/bin}"
-    install_dockero "$install_dir"
-    setup_autocompletion
-    verify_installation
-    show_next_steps
+    check_root
+    detect_package_manager
+    install_docker
+    install_python_deps
+    create_symlink
+    
+    log_info "Installation completed successfully!"
+    log_info "You can now run 'dockero' from anywhere."
 }
 
-# Help function
-show_help() {
-    echo "Usage: $0 [OPTIONS] [INSTALL_DIR]"
-    echo "Install Dockero with autocompletion"
-    echo ""
-    echo "OPTIONS:"
-    echo "  -h, --help     Show this help message"
-    echo ""
-    echo "INSTALL_DIR:"
-    echo "  Installation directory (default: /usr/local/bin)"
-    echo ""
-    echo "EXAMPLES:"
-    echo "  $0                    # Install to default location"
-    echo "  $0 ~/bin             # Install to user directory"
-    echo "  $0 /opt/dockero/bin  # Install to custom location"
-}
-
-# Parse arguments
-case "${1:-}" in
-    -h|--help)
-        show_help
-        exit 0
-        ;;
-    *)
-        main "$@"
-        ;;
-esac
+# Run main function
+main "$@"
