@@ -69,14 +69,32 @@ _inipars_key_exists_in_section_range() {
 # Helper: Update an existing key's value within a section
 _inipars_update_key_in_file() {
   local file="$1"
-  local escaped_section="$2"
-  local escaped_key="$3"
-  local key="$4" # Original, unescaped key
-  local value="$5" # Original, unescaped value
+  local escaped_section="$2" # This is used by the section matching in awk
+  local escaped_key="$3"     # This is used by the key matching in awk
+  local key="$4"             # Original, unescaped key
+  local value="$5"           # Original, unescaped value
 
-  # Use sed to update the key's value within its section
-  sed -i.bak -E "/^\[$escaped_section\]$/,/^\[.*\]$/ { s/^[ \t]*$escaped_key[ \t]*=.*/${key} = ${value}/ ; t; }" "$file"
-  rm -f "$file.bak"
+  # Use awk to update the key's value within its section
+  # This approach is more robust for passing variables and avoids sed's string interpolation issues.
+  awk -v target_section="[$escaped_section]" \
+      -v target_key_pattern="^[ \t]*${escaped_key}[ \t]*=" \
+      -v new_line="${key} = ${value}" \
+      'BEGIN { in_target_section = 0 }
+       $0 == target_section {
+           in_target_section = 1
+           print
+           next
+       }
+       /^\[.*\]$/ { # New section header
+           in_target_section = 0
+           print
+           next
+       }
+       in_target_section && $0 ~ target_key_pattern {
+           print new_line
+           next
+       }
+       { print }' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
   return 0
 }
 

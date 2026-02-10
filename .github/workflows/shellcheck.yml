@@ -22,4 +22,4 @@ jobs:
       run: |
         # Check all shell script files with appropriate severity level
         # Only fail on critical syntax errors, not style/warning/info messages
-        find . -name "*.sh" -type f -not -path "./.git/*" -exec shellcheck -e SC2154,SC2148,SC1087 --severity=error {} +
+        find . -name "*.sh" -type f -not -path "./.git/*" -exec shellcheck -e SC2154,SC2148 --severity=error {} +
