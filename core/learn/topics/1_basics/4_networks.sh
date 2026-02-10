@@ -8,16 +8,16 @@ run_lesson() {
     echo "Docker networks allow containers to communicate with each other and with the host machine."
     echo "Without networks, containers would be completely isolated."
     echo ""
-    log.sub "Think of it like a virtual switch that connects your containers."
+    echo -e "  Think of it like a virtual switch that connects your containers."
     echo ""
 
     _press_enter_to_continue
 
     _subheading "Built-in Network Types"
     echo "Docker provides several built-in network drivers:"
-    log.sub "${BOLD_GREEN}bridge${RESET_COLOR}: The default network type. Containers on the same bridge network can communicate by IP address."
-    log.sub "${BOLD_GREEN}host${RESET_COLOR}: Containers share the host's network stack. Less isolated, but can be faster."
-    log.sub "${BOLD_GREEN}none${RESET_COLOR}: The container is completely isolated, no network interfaces are attached."
+    echo -e "  ${BOLD_GREEN}bridge${RESET_COLOR}: The default network type. Containers on the same bridge network can communicate by IP address."
+    echo -e "  ${BOLD_GREEN}host${RESET_COLOR}: Containers share the host's network stack. Less isolated, but can be faster."
+    echo -e "  ${BOLD_GREEN}none${RESET_COLOR}: The container is completely isolated, no network interfaces are attached."
     echo ""
 
     _press_enter_to_continue
@@ -27,25 +27,25 @@ run_lesson() {
     echo "Containers on a custom bridge network can resolve each other by their container names."
     _present_command "dockero net new my-app-network" "Creates a new custom network named 'my-app-network'."
     echo ""
-    _present_command "dockero run --network my-app-network my-web-app nginx" "Connects 'my-web-app' to 'my-app-network'."
+    _present_command "dockero run my-web-app nginx" "Runs 'my-web-app' (nginx). To connect it to a network, use 'dockero net add my-web-app my-app-network'."
     echo ""
 
     _press_enter_to_continue
 
     _subheading "Networks in Dockero"
     echo "Dockero simplifies network management:"
-    log.sub "${BOLD_GREEN}dockero net new <name>${RESET_COLOR}: Create custom networks."
-    log.sub "${BOLD_GREEN}dockero net list${RESET_COLOR}: List all Docker networks."
-    log.sub "When using ${BOLD_GREEN}dockero compose${RESET_COLOR}, networks are often created and managed automatically."
+    echo -e "  ${BOLD_GREEN}dockero net new <name>${RESET_COLOR}: Create custom networks."
+    echo -e "  ${BOLD_GREEN}dockero net list${RESET_COLOR}: List all Docker networks."
+    echo -e "  When using ${BOLD_GREEN}dockero compose${RESET_COLOR}, networks are often created and managed automatically."
     echo ""
 
     _press_enter_to_continue
 
     _subheading "Summary"
     echo "You've learned:"
-    log.sub "Docker networks enable container communication."
-    log.sub "Common network types: bridge, host, none."
-    log.sub "How to create and use custom networks for better service discovery."
+    echo -e "  Docker networks enable container communication."
+    echo -e "  Common network types: bridge, host, none."
+    echo -e "  How to create and use custom networks for better service discovery."
     echo ""
-    log.info "This concludes the basic topics. You can now try 'dockero learn intermediate'."
+    echo "This concludes the basic topics. You can now try 'dockero learn intermediate'."
 }

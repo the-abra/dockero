@@ -465,7 +465,7 @@ compose_logs() {
         fi
         
         # Validate container_name before use
-        if ! validate_container_name "$container_name"; then log.error "Invalid container_name '${RED}$container_name${RESET_COLOR}' for service ${RED}$service_name_arg${RESET_COLOR}."; return 1; }
+        if ! validate_container_name "$container_name"; then log.error "Invalid container_name '${RED}$container_name${RESET_COLOR}' for service ${RED}$service_name_arg${RESET_COLOR}."; return 1; fi
 
         if docker ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
             log.setline "${BOLD_CYAN}Logs for service: ${GREEN}$service_name_arg${RESET_COLOR}"

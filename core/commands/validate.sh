@@ -310,7 +310,7 @@ validate_compose_config() {
     
     if [[ "$services_found" -eq 0 ]]; then
         log.warn "No services found in compose file: ${BOLD_YELLOW}$config_file${RESET_COLOR}."
-    end
+    fi
     
     return $((errors > 0 ? 1 : 0))
 }

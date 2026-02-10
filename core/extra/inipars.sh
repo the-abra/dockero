@@ -75,7 +75,7 @@ _inipars_update_key_in_file() {
   local value="$5" # Original, unescaped value
 
   # Use sed to update the key's value within its section
-  sed -i.bak -E "/^\[$escaped_section\]$/,/^\[.*\]$/ { s/^[ \t]*$escaped_key[ \t]*=.*/$key = $value/ ; t; }" "$file"
+  sed -i.bak -E "/^\[$escaped_section\]$/,/^\[.*\]$/ { s/^[ \t]*$escaped_key[ \t]*=.*/${key} = ${value}/ ; t; }" "$file"
   rm -f "$file.bak"
   return 0
 }
