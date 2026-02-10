@@ -40,8 +40,8 @@ setup() {
 }
 
 setup_run() {
-    local project_path="$1"
-    local dry_run="$2" # 0 for normal run, 1 for dry-run
+    local project_path="${1:-}"
+    local dry_run="${2:-0}" # 0 for normal run, 1 for dry-run
 
     if [[ -z "$project_path" ]]; then
         log.hint "Usage: ${BOLD_YELLOW}dockero setup run <project-path> [--dry-run]${RESET_COLOR}"
@@ -208,7 +208,7 @@ EOF
 }
 
 setup_update() {
-    local project_path="$1"
+    local project_path="${1:-}"
     
     if [[ -z "$project_path" ]]; then
         log.hint "Usage: ${BOLD_YELLOW}dockero setup update <project-path>${RESET_COLOR}"
@@ -276,7 +276,7 @@ setup_update() {
 }
 
 setup_teardown() {
-    local project_path="$1"
+    local project_path="${1:-}"
     
     if [[ -z "$project_path" ]]; then
         log.hint "Usage: ${BOLD_YELLOW}dockero setup teardown <project-path>${RESET_COLOR}"

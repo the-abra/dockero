@@ -36,7 +36,7 @@ ${BOLD_CYAN}🔹 dockero run ${GREEN}<name> [<image>]${RESET_COLOR}
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}docker start -ai <name>${RESET_COLOR}  (if container exists)
      ${YELLOW}docker run -it [default volumes/ports] --name <name> <image>${RESET_COLOR}
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn basic containers${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn basics 1${RESET_COLOR}
 EOF
             ;;
         "list")
@@ -49,7 +49,7 @@ ${BOLD_CYAN}🔹 dockero list [-img]${RESET_COLOR}
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}docker ps -a${RESET_COLOR}  (for containers)
      ${YELLOW}docker images${RESET_COLOR} (for images)
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn basic images${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn basics 2${RESET_COLOR}
 EOF
             ;;
         "rename")
@@ -62,7 +62,7 @@ ${BOLD_CYAN}🔹 dockero rename ${GREEN}<old-name> <new-name> [-img]${RESET_COLO
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}docker rename <old-name> <new-name>${RESET_COLOR} (for containers)
      ${YELLOW}docker tag <old-tag> <new-tag>${RESET_COLOR} (for images)
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn basic containers${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn basics 1${RESET_COLOR}
 EOF
             ;;
         "export")
@@ -75,7 +75,7 @@ ${BOLD_CYAN}🔹 dockero export ${GREEN}<container-name> [--tag <image-tag>]${RE
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}docker commit <container-name> <image-tag>${RESET_COLOR}
      ${YELLOW}docker save -o <path>.tar <image-tag>${RESET_COLOR}
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn basic images${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn basics 2${RESET_COLOR}
 EOF
             ;;
         "import")
@@ -86,7 +86,7 @@ ${BOLD_CYAN}🔹 dockero import ${GREEN}</path/to/archive.tar>${RESET_COLOR}
      • Loads one or more images from a .tar archive into the local Docker image store.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}docker load -i /path/to/archive.tar${RESET_COLOR}
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn basic images${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn basics 2${RESET_COLOR}
 EOF
             ;;
         "start")
@@ -99,7 +99,7 @@ ${BOLD_CYAN}🔹 dockero start ${GREEN}<container-name> [-c <command>]${RESET_CO
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}docker start <container-name>${RESET_COLOR}
      ${YELLOW}docker exec -it <container-name> <command>${RESET_COLOR} (for custom command)
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn concepts lifecycle${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn${RESET_COLOR}
 EOF
             ;;
         "stop")
@@ -110,7 +110,7 @@ ${BOLD_CYAN}🔹 dockero stop ${GREEN}<container-name> [--timeout <seconds>]${RE
      • Sends a SIGTERM signal to the container, waits for a specified timeout, then sends SIGKILL if it hasn't stopped.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}docker stop --time=<seconds> <container-name>${RESET_COLOR}
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn concepts lifecycle${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn${RESET_COLOR}
 EOF
             ;;
         "setup")
@@ -124,7 +124,7 @@ ${BOLD_CYAN}🔹 dockero setup ${GREEN}<project-path>${RESET_COLOR}
      4. Runs container with specified configuration.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}docker run -it [config from .dockero file]${RESET_COLOR} 
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn concepts volumes && dockero learn concepts networks${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn${RESET_COLOR}
 EOF
             ;;
         "remove")
@@ -137,7 +137,7 @@ ${BOLD_CYAN}🔹 dockero remove ${GREEN}<container|image>[:tag]${RESET_COLOR}
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}docker rm -f <container-name>${RESET_COLOR}
      ${YELLOW}docker rmi -f <image-name>:${RESET_COLOR}
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn basic containers${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn basics 1${RESET_COLOR}
 EOF
             ;;
         "sync")
@@ -153,7 +153,7 @@ ${BOLD_CYAN}🔹 dockero sync ${GREEN}<push|pull|watch|status|init> [path]${RESE
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
      ${YELLOW}docker cp${RESET_COLOR} for file copying
      ${YELLOW}docker exec${RESET_COLOR} for executing commands (e.g., tar)
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn basic volumes${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn basics 3${RESET_COLOR}
 EOF
             ;;
         "compose")
@@ -170,7 +170,7 @@ ${BOLD_CYAN}🔹 dockero compose ${GREEN}<up|down|start|stop|restart|ps|logs>${R
      • ${YELLOW}logs [service]:${RESET_COLOR} Shows logs for all services or a specific service.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}docker-compose up/down/start/stop/ps/logs${RESET_COLOR}
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn concepts multi-container${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn${RESET_COLOR}
 EOF
             ;;
         "env")
@@ -185,7 +185,7 @@ ${BOLD_CYAN}🔹 dockero env ${GREEN}<list|use|show|create|delete> [environment]
      • ${YELLOW}delete <env>:${RESET_COLOR} Removes configuration files for the specified environment.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
      ${YELLOW}Different sets of parameters and configuration files${RESET_COLOR} managed manually.
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn intermediate env${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn intermediate${RESET_COLOR}
 EOF
             ;;
         "validate")
@@ -197,7 +197,7 @@ ${BOLD_CYAN}🔹 dockero validate ${GREEN}[path] [config-file]${RESET_COLOR}
      • Can validate a specific file or all '.dockero*' files in a given path.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}Manual inspection of Dockerfile/docker-compose.yml${RESET_COLOR} for syntax and best practices.
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn concepts configuration${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn${RESET_COLOR}
 EOF
             ;;
         "system")
@@ -212,7 +212,7 @@ ${BOLD_CYAN}🔹 dockero system ${GREEN}<service|config|info|cleanup|install> [o
      • ${YELLOW}install:${RESET_COLOR} Install Dockero to a system location.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}docker system prune${RESET_COLOR}, ${YELLOW}docker info${RESET_COLOR}, ${YELLOW}systemctl/service commands${RESET_COLOR}.
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn docker fundamentals${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn${RESET_COLOR}
 EOF
             ;;
         "learn")
@@ -235,7 +235,7 @@ ${BOLD_CYAN}🔹 dockero explain ${GREEN}<command>${RESET_COLOR}
      • Provides a summary of the command's purpose, what actions it performs, and its equivalent standard Docker commands.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}docker <command> --help${RESET_COLOR} combined with conceptual understanding.
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn concepts${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn${RESET_COLOR}
 EOF
             ;;
         "show")
@@ -269,7 +269,7 @@ ${BOLD_CYAN}🔹 dockero net ${GREEN}<command> [<args>]${RESET_COLOR}
      • ${YELLOW}inspect <name>:${RESET_COLOR} Shows detailed information for a network.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}docker network create/rm/connect/disconnect/prune/ls/inspect${RESET_COLOR}.
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn intermediate networks${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn intermediate 1${RESET_COLOR}
 EOF
             ;;
         "heal")
@@ -287,7 +287,7 @@ ${BOLD_CYAN}🔹 dockero heal ${GREEN}<check|fix|auto|diagnose|cleanup|restore|w
      • ${YELLOW}policy <action> [type]:${RESET_COLOR} Manages health policies and automated rules.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}Manual execution of various 'docker' and system commands${RESET_COLOR} for troubleshooting and maintenance.
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn advanced security${RESET_COLOR} (as related to system health)
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn advanced${RESET_COLOR} (as related to system health)
 EOF
             ;;
         "registry")
@@ -303,7 +303,7 @@ ${BOLD_CYAN}🔹 dockero registry ${GREEN}<login|push|pull|list|search|logout> [
      • ${YELLOW}list:${RESET_COLOR} Lists images in a registry (note: direct listing from Docker API not supported).
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}docker login/logout/push/pull/search${RESET_COLOR}.
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn basic images${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn basics 2${RESET_COLOR}
 EOF
             ;;
         "secrets")
@@ -317,7 +317,7 @@ ${BOLD_CYAN}🔹 dockero secrets ${GREEN}<create|list|show|remove> <name> [sourc
      • ${YELLOW}remove <name>:${RESET_COLOR} Removes a secret (requires confirmation).
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}docker secret create/ls/inspect/rm${RESET_COLOR}.
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn advanced security${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn advanced${RESET_COLOR}
 EOF
             ;;
         "monitor")
@@ -332,7 +332,7 @@ ${BOLD_CYAN}🔹 dockero monitor ${GREEN}<top|stats|health|logs|watch> [options]
      • ${YELLOW}watch [container] [--interval --duration]:${RESET_COLOR} Continuously monitors container statistics.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}docker top/stats/inspect/logs${RESET_COLOR}.
-   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn advanced performance${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn advanced${RESET_COLOR}
 EOF
             ;;
         "wizard")
@@ -350,7 +350,7 @@ EOF
         *)
             log.warn "No specific explanation found for '${BOLD_YELLOW}$command_to_explain${RESET_COLOR}'."
             log.sub "This command provides functionality for Docker container management."
-            log.sub "To see detailed explanation, check ${MAGENTA}dockero learn concepts${RESET_COLOR} for related topics."
+            log.sub "To see detailed explanation, check ${MAGENTA}dockero learn${RESET_COLOR} for related topics."
             ;;
     esac
 }

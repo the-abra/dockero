@@ -10,6 +10,108 @@
 _inipars_escape_regex() {
   echo "$1" | sed -e 's/[^^$.*+?|()\[{]/\\&/g'
 }
+# Helper function to escape regex metacharacters for sed/awk
+_inipars_escape_regex() {
+  echo "$1" | sed -e 's/[^^$.*+?|()\[{]/\\&/g'
+}
+
+# Helper: Ensure file exists; if not, create it with the initial section and key/value
+_inipars_ensure_file_exists() {
+  local file="$1"
+  local section="$2"
+  local key="$3"
+  local value="$4"
+
+  if [[ ! -f "$file" ]]; then
+    log.info "Creating new INI file: ${BOLD_YELLOW}$file${RESET_COLOR}"
+    echo "[$section]" > "$file"
+    echo "$key = $value" >> "$file"
+    return 0 # File created and initial content added
+  fi
+  return 1 # File already exists
+}
+
+# Helper: Get start and end line numbers for a section
+# Sets two variables passed by reference: start_line and end_line
+_inipars_get_section_bounds() {
+  local file="$1"
+  local escaped_section="$2"
+  local __start_line_ref="$3" # Variable to store start line
+  local __end_line_ref="$4"   # Variable to store end line (next section or EOF)
+
+  local section_start_line=$(grep -n "^\[$escaped_section\]$" "$file" | cut -d: -f1)
+  if [[ -z "$section_start_line" ]]; then
+    return 1 # Section not found
+  fi
+
+  # Find the line number of the next section, or EOF if this is the last section
+  local next_section_line=$(grep -n "^\[.*\]$" "$file" | awk -v start_line="$section_start_line" '$1 > start_line {print $1; exit}')
+
+  eval "$__start_line_ref='$section_start_line'"
+  eval "$__end_line_ref='${next_section_line:-$(wc -l < "$file")}'" # Default to EOF if no next section
+  return 0
+}
+
+# Helper: Check if a key exists within a specific section range
+_inipars_key_exists_in_section_range() {
+  local file="$1"
+  local start_line="$2"
+  local end_line="$3"
+  local escaped_key="$4"
+
+  # awk: within the section's lines, check if a line starts with the key followed by =
+  awk -v start="$start_line" -v end="$end_line" -v k="$escaped_key" '
+    NR > start && (end == 0 || NR < end) && $0 ~ "^[ \t]*"k"[ \t]*=" { found=1; exit }
+    END { exit !found } # Exit 0 if found, 1 if not
+  ' "$file"
+}
+
+# Helper: Update an existing key's value within a section
+_inipars_update_key_in_file() {
+  local file="$1"
+  local escaped_section="$2"
+  local escaped_key="$3"
+  local key="$4" # Original, unescaped key
+  local value="$5" # Original, unescaped value
+
+  # Use sed to update the key's value within its section
+  sed -i.bak -E "/^\[$escaped_section\]$/,/^\[.*\]$/ { s/^[ \t]*$escaped_key[ \t]*=.*/$key = $value/ ; t; }" "$file"
+  rm -f "$file.bak"
+  return 0
+}
+
+# Helper: Add a new key/value to a section
+_inipars_add_key_to_section_in_file() {
+  local file="$1"
+  local escaped_section="$2"
+  local key="$3"
+  local value="$4"
+  local insert_before_line="$5" # Line number before which to insert
+
+  # If insert_before_line is 0 (i.e., this is the last section), append to EOF
+  if [[ "$insert_before_line" -eq 0 ]]; then
+    sed -i.bak -E "/^\[$escaped_section\]$/a\\$key = $value" "$file"
+  else
+    # Insert before the specified line (which is the start of the next section)
+    sed -i.bak -E "$(($insert_before_line - 1))a\\$key = $value" "$file"
+  fi
+  rm -f "$file.bak"
+  return 0
+}
+
+# Helper: Append a new section and key/value to the end of the file
+_inipars_add_section_and_key_to_file() {
+  local file="$1"
+  local section="$2"
+  local key="$3"
+  local value="$4"
+
+  # Add a newline for separation if file is not empty
+  [[ -s "$file" ]] && echo "" >> "$file"
+  echo "[$section]" >> "$file"
+  echo "$key = $value" >> "$file"
+  return 0
+}
 
 inipars.get() {
   local section="$1"
@@ -60,48 +162,27 @@ inipars.set() {
   local escaped_section=$(_inipars_escape_regex "$section")
   local escaped_key=$(_inipars_escape_regex "$key")
 
-  # Ensure the file exists
-  if [[ ! -f "$file" ]]; then
-    echo "[$section]" > "$file"
-    echo "$key = $value" >> "$file"
-    return 0
+  # 1. Ensure the file exists, creating it with initial content if necessary
+  if _inipars_ensure_file_exists "$file" "$section" "$key" "$value"; then
+      return 0 # File was just created and content added
   fi
 
-  # Check if the section exists
-  if grep -q "^\[$escaped_section\]$" "$file"; then # Use escaped_section
-    # Section exists, check if key exists within the section
-    local -r SECTION_START_LINE=$(grep -n "^\[$escaped_section\]$" "$file" | cut -d: -f1) # Use escaped_section
-    local -r NEXT_SECTION_LINE=$(grep -n "^\[.*\]$" "$file" | awk -v start_line="$SECTION_START_LINE" '$1 > start_line {print $1; exit}')
+  # 2. File now exists. Get section bounds or append if section is new.
+  local section_start_line=""
+  local section_end_line="" # Line number of next section or EOF
 
-    if [[ -z "$NEXT_SECTION_LINE" ]]; then
-      # Section is the last one or there are no other sections
-      # Check if key exists from section start to EOF
-      if awk -v start="$SECTION_START_LINE" -v k="$escaped_key" 'NR > start && $0 ~ "^[ \t]*"k"[ \t]*=" {exit 0} END {exit 1}' "$file"; then # Use escaped_key
-        # Key exists in this section, update its value
-        sed -i.bak -E "/^\[$escaped_section\]$/,/^\[.*\]$/ { s/^[ \t]*$escaped_key[ \t]*=.*/$key = $value/ }" "$file" # Use escaped_section and escaped_key
-        rm -f "$file.bak"
+  if _inipars_get_section_bounds "$file" "$escaped_section" section_start_line section_end_line; then
+      # Section exists. Check if key exists within this section.
+      if _inipars_key_exists_in_section_range "$file" "$section_start_line" "$section_end_line" "$escaped_key"; then
+          # Key exists, update its value.
+          _inipars_update_key_in_file "$file" "$escaped_section" "$escaped_key" "$key" "$value"
       else
-        # Key does not exist in this section, append it
-        sed -i.bak -E "/^\[$escaped_section\]$/a\\$key = $value" "$file" # Use escaped_section
-        rm -f "$file.bak"
+          # Key does not exist, add it to the section.
+          _inipars_add_key_to_section_in_file "$file" "$escaped_section" "$key" "$value" "$section_end_line"
       fi
-    else
-      # Section is not the last one
-      # Check if key exists within this section (between SECTION_START_LINE and NEXT_SECTION_LINE)
-      if awk -v start="$SECTION_START_LINE" -v end="$NEXT_SECTION_LINE" -v k="$escaped_key" 'NR > start && NR < end && $0 ~ "^[ \t]*"k"[ \t]*=" {exit 0} END {exit 1}' "$file"; then # Use escaped_key
-        # Key exists in this section, update its value
-        sed -i.bak -E "/^\[$escaped_section\]$/,/^\[.*\]$/ { /$escaped_key[ \t]*=/{s/^[ \t]*$escaped_key[ \t]*=.*/$key = $value/;q} }" "$file" # Use escaped_section and escaped_key
-        rm -f "$file.bak"
-      else
-        # Key does not exist in this section, insert it before the next section
-        sed -i.bak -E "$(($NEXT_SECTION_LINE - 1))a\\$key = $value" "$file"
-        rm -f "$file.bak"
-      fi
-    fi
   else
-    # Section does not exist, append section and key/value to the end of the file
-    echo "" >> "$file" # Add a newline for separation if file is not empty
-    echo "[$section]" >> "$file"
-    echo "$key = $value" >> "$file"
+      # Section does not exist, append the new section and key/value.
+      _inipars_add_section_and_key_to_file "$file" "$section" "$key" "$value"
   fi
+  return 0
 }

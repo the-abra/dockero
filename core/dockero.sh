@@ -54,6 +54,10 @@ DOCKERO_VERSION="0.1.1"
 validate_container_name() {
     local name="$1"
     # Docker container names must match this regex: [a-zA-Z0-9][a-zA-Z0-9_.-]+
+    # Regex breakdown:
+    # ^[a-zA-Z0-9]    - Starts with an alphanumeric character
+    # [a-zA-Z0-9_.-]* - Followed by zero or more alphanumeric characters, underscores, periods, or hyphens
+    # $               - Ends of the string
     if [[ ! "$name" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]]; then
         log.error "Invalid container name: ${RED}$name${RESET_COLOR}"
         log.hint "Container names must start with alphanumeric and contain only [a-zA-Z0-9_.-]"
@@ -64,6 +68,11 @@ validate_container_name() {
 validate_image_name() {
     local name="$1"
     # Basic validation for image names
+    # Regex breakdown:
+    # ^[a-zA-Z0-9._-]+      - Starts with one or more alphanumeric, periods, underscores, or hyphens (registry/name part)
+    # (/[a-zA-Z0-9._-]+)*   - Optional: zero or more repetitions of a slash followed by similar characters (more name parts)
+    # (:[a-zA-Z0-9._-]+)?   - Optional: a tag part, starting with a colon followed by similar characters
+    # $                     - End of the string
     if [[ ! "$name" =~ ^[a-zA-Z0-9._-]+(/[a-zA-Z0-9._-]+)*(:[a-zA-Z0-9._-]+)?$ ]]; then
         log.error "Invalid image name: ${RED}$name${RESET_COLOR}"
         log.hint "Image names should follow format: [registry/]name[:tag]"
@@ -91,12 +100,7 @@ load_command() {
     source "$cmd_file"
     
     # Resolve the actual function name
-    local func_name="$cmd_name_from_global_args" # Use global args[0] explicitly
-    if [[ "$cmd_name_from_global_args" == "export" ]]; then
-        func_name="dockero_export"
-    elif [[ "$cmd_name_from_global_args" == "import" ]]; then
-        func_name="dockero_import"
-    fi
+    local func_name="$cmd_name_from_global_args" # The function name is the same as the command name
 
     # Validate the command function exists and call it
     if declare -f "$func_name" >/dev/null 2>&1; then
@@ -119,7 +123,6 @@ show_version() {
   echo -e "Simplified Docker CLI with Autocompletion"
   echo -e "Runtime: ${BOLD_GREEN}${DOCKERO_RUNTIME:-docker}${RESET_COLOR}"
   echo -e "Default Port: ${BOLD_GREEN}${DOCKERO_DEFAULT_PORT:-80}${RESET_COLOR}"
-  exit 0
 }
 
 # === Entrypoint ===

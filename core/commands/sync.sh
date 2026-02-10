@@ -2,7 +2,7 @@
 
 # Helper function to validate container paths for safe use inside containers
 _sync_validate_container_path() {
-    local path="$1"
+    local path="${1:-}"
     if [[ -z "$path" ]]; then
         log.error "Container path cannot be empty."
         return 1
@@ -17,7 +17,7 @@ _sync_validate_container_path() {
 
 # Helper function to validate host paths for safe use
 _sync_validate_host_path() {
-    local path="$1"
+    local path="${1:-}"
     if [[ -z "$path" ]]; then
         log.error "Host path cannot be empty."
         return 1
@@ -76,7 +76,7 @@ sync() {
 
 sync_push() {
     local container_name="$1"
-    local path_arg="$2" # User-supplied path
+    local path_arg="${2:-}" # User-supplied path
     local verbose="$3" # Passed from sync()
     
     if [[ -z "$container_name" ]]; then
@@ -133,7 +133,7 @@ sync_push() {
 
 sync_pull() {
     local container_name="$1"
-    local path_arg="$2" # User-supplied path
+    local path_arg="${2:-}" # User-supplied path
     local verbose="$3" # Passed from sync()
     
     if [[ -z "$container_name" ]]; then
@@ -189,7 +189,7 @@ sync_pull() {
 
 sync_watch() {
     local container_name="$1"
-    local path_arg="$2" # User-supplied path
+    local path_arg="${2:-}" # User-supplied path
     local verbose="$3" # Passed from sync()
     
     if [[ -z "$container_name" ]]; then
@@ -374,8 +374,8 @@ EOF
 # Helper function to get sync configuration
 # Not currently leveraged by other sync_* subcommands, but available for future use.
 get_sync_config() {
-    local container_name="$1"
-    local config_path="$2"
+    local container_name="${1:-}"
+    local config_path="${2:-}"
     
     # Look for dockero sync config in current directory or project root
     local sync_conf="./.dockero-sync"

@@ -2,7 +2,7 @@
 
 # Helper function to validate file paths for safe use
 _validate_file_path_basic() {
-    local path="$1"
+    local path="${1:-}"
     if [[ -z "$path" ]]; then
         log.error "Path cannot be empty."
         return 1
@@ -91,7 +91,7 @@ validate() {
 }
 
 validate_single_config() {
-    local config_file="$1"
+    local config_file="${1:-}"
     local file_type=""
     
     # --- Input Validation ---
@@ -166,7 +166,7 @@ validate_single_config() {
 }
 
 validate_ini_structure() {
-    local config_file="$1"
+    local config_file="${1:-}"
     local sections=0
     local errors_found=0
     
@@ -195,7 +195,7 @@ validate_ini_structure() {
 }
 
 validate_dockero_config() {
-    local config_file="$1"
+    local config_file="${1:-}"
     local errors=0
     
     # config_file is already validated by validate_single_config
@@ -251,7 +251,7 @@ validate_dockero_config() {
 }
 
 validate_compose_config() {
-    local config_file="$1"
+    local config_file="${1:-}"
     local errors=0
     local services_found=0
     
@@ -316,7 +316,7 @@ validate_compose_config() {
 }
 
 validate_safe_paths() {
-    local config_file="$1"
+    local config_file="${1:-}"
     local errors=0
     
     # config_file is already validated by validate_single_config

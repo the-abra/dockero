@@ -166,7 +166,7 @@ registry_pull() {
 }
 
 registry_list() {
-  local registry_url="$1" # Currently unused, as Docker doesn't support
+  local registry_url="${1:-}" # Currently unused, as Docker doesn't support
   
   log.setline "${BOLD_CYAN}📦 Registry List${RESET_COLOR}"
   log.info "Listing images in registry${registry_url:+ at ${BOLD_YELLOW}$registry_url${RESET_COLOR}}."
@@ -189,7 +189,7 @@ registry_search() {
 }
 
 registry_logout() {
-  local registry_url="$1"
+  local registry_url="${1:-}"
   
   log.setline "${BOLD_CYAN}🚪 Registry Logout${RESET_COLOR}"
 

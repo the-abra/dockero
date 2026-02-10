@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-dockero_import() {
+import() {
     if [[ -z "${args[1]}" ]]; then
         log.hint "Usage: ${BOLD_YELLOW}dockero import </path/to/archive.tar>${RESET_COLOR}"
         return 1

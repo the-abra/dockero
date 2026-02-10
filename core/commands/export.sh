@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-dockero_export() {
+export() {
 # === INPUT VALIDATION ===
 if [[ ! -n "${args[1]}" ]]; then
   log.hint "Usage: dockero export <container-name> [--tag <image-tag>]"

@@ -43,7 +43,7 @@ secrets() {
 
 secrets_create() {
   local secret_name="$1"
-  local source_path="$2" # Renamed 'source' to 'source_path' to avoid conflicts
+  local source_path="${2:-}" # Renamed 'source' to 'source_path' to avoid conflicts
   
   if [[ -z "$secret_name" ]]; then
     log.error "Secret name required."

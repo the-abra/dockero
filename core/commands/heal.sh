@@ -189,7 +189,7 @@ heal_check() {
 # Auto-recovery mechanisms
 heal_fix() {
     local target="$1"
-    local specific_item="$2"
+    local specific_item="${2:-}"
 
     if [[ -z "$target" ]]; then
         log.hint "Usage: heal fix <target> [item]"
@@ -710,7 +710,7 @@ heal_watch() {
 # Health policies and automated rules
 heal_policy() {
     local action="$1"
-    local policy_type="$2"
+    local policy_type="${2:-}"
     
     if [[ -z "$action" ]]; then
         log.hint "Usage: heal policy <list|set|get|remove> [policy-type]"

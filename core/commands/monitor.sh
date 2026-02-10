@@ -26,7 +26,7 @@ monitor() {
             monitor_watch "${args[@]:2}"
             ;;
         *)
-            log.error "Unknown monitor subcommand: ${BOLD_RED}$subcommand${RESET_COLOR}"
+            log.error "Unknown monitor subcommand: ${BOLD}$subcommand${RESET_COLOR}"
             log.hint "Usage: dockero monitor <top|stats|health|logs|watch> [options]"
             return 1
             ;;
@@ -34,28 +34,28 @@ monitor() {
 }
 
 monitor_top() {
-    local container_name="$1"
+    local container_name="${1:-}"
     
-    log.setline "${BOLD_CYAN}📈 Container Top Processes${RESET_COLOR}"
+    log.setline "📈 Container Top Processes"
 
     if [[ -n "$container_name" ]]; then
-        log.info "Top processes in container: ${BOLD_GREEN}$container_name${RESET_COLOR}"
+        log.info "Top processes in container: ${BOLD}$container_name${RESET_COLOR}"
         docker top "$container_name"
     else
         log.info "Running containers:"
-        docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Command}}" | sed '1s/.*/\033[1;36m&\033[0m/' # Color header
+        docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Command}}" | sed '1s/.*/'"${COLOR_GENERIC}${BOLD}"'&\033[0m/' # Color header using log.sh vars
     fi
 }
 
 monitor_stats() {
-    local container_name="$1"
+    local container_name="${1:-}"
     local follow="${params[f]:-false}" # Still using params for flags -f
     
-    log.setline "${BOLD_CYAN}📊 Container Statistics${RESET_COLOR}"
+    log.setline "📊 Container Statistics"
 
     if [[ "$follow" == "true" ]]; then
         if [[ -n "$container_name" ]]; then
-            log.info "Live statistics for container: ${BOLD_GREEN}$container_name${RESET_COLOR}"
+            log.info "Live statistics for container: ${BOLD}$container_name${RESET_COLOR}"
             docker stats --no-stream=false "$container_name"
         else
             log.info "Live statistics for all containers"
@@ -63,7 +63,7 @@ monitor_stats() {
         fi
     else
         if [[ -n "$container_name" ]]; then
-            log.info "Statistics for container: ${BOLD_GREEN}$container_name${RESET_COLOR}"
+            log.info "Statistics for container: ${BOLD}$container_name${RESET_COLOR}"
             docker stats --no-stream=true "$container_name"
         else
             log.info "Statistics for all containers"
@@ -73,24 +73,24 @@ monitor_stats() {
 }
 
 monitor_health() {
-    local container_name="$1"
+    local container_name="${1:-}"
     local container_exists=0
     
     if [[ -z "$container_name" ]]; then
         log.info "Health status for all containers:"
-        log.setline "${BOLD_CYAN}❤️  Container Health Status${RESET_COLOR}"
+        log.setline "❤️  Container Health Status"
         docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Image}}" | tail -n +2 | while IFS= read -r line; do
             local name=$(echo "$line" | awk '{print $1}')
             local status=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}N/A{{end}}' "$name" 2>/dev/null || echo "N/A")
             local health_color="${RESET_COLOR}"
             if [[ "$status" == "healthy" ]]; then
-                health_color="${GREEN}"
+                health_color="${COLOR_DONE}"
             elif [[ "$status" == "unhealthy" ]]; then
-                health_color="${RED}"
+                health_color="${COLOR_ERROR}"
             elif [[ "$status" == "starting" ]]; then
-                health_color="${YELLOW}"
+                health_color="${COLOR_WARN}"
             fi
-            printf "${BOLD_YELLOW}%-25s${RESET_COLOR} %-35s %-25s ${health_color}%s${RESET_COLOR}\n" "$name" "$(echo "$line" | awk '{print $2}')" "$(echo "$line" | awk '{print $3}')" "$status"
+            printf "${BOLD}${COLOR_SUB}%-25s${RESET_COLOR} %-35s %-25s ${health_color}%s${RESET_COLOR}\n" "$name" "$(echo "$line" | awk '{print $2}')" "$(echo "$line" | awk '{print $3}')" "$status"
         done
         return 0
     fi
@@ -101,11 +101,11 @@ monitor_health() {
     fi
 
     if [[ "$container_exists" -eq 0 ]]; then
-        log.error "Container not found: ${RED}$container_name${RESET_COLOR}"
+        log.error "Container not found: ${BOLD}$container_name${RESET_COLOR}"
         return 1
     fi
 
-    log.setline "${BOLD_CYAN}❤️  Health Check for ${BOLD_GREEN}$container_name${RESET_COLOR}${RESET_COLOR}"
+    log.setline "❤️  Health Check for ${BOLD}$container_name${RESET_COLOR}"
     local health_json
     health_json=$(docker inspect --format='{{json .State.Health}}' "$container_name" 2>/dev/null)
 
@@ -120,30 +120,30 @@ monitor_health() {
 
         local status_color="${RESET_COLOR}"
         if [[ "$status" == "healthy" ]]; then
-            status_color="${GREEN}"
+            status_color="${COLOR_DONE}"
         elif [[ "$status" == "unhealthy" ]]; then
-            status_color="${RED}"
+            status_color="${COLOR_ERROR}"
         elif [[ "$status" == "starting" ]]; then
-            status_color="${YELLOW}"
+            status_color="${COLOR_WARN}"
         fi
 
-        echo -e "  ${BOLD_WHITE}Status:${RESET_COLOR} ${status_color}$status${RESET_COLOR}"
-        echo -e "  ${BOLD_WHITE}Failing Streak:${RESET_COLOR} ${YELLOW}$failing_streak${RESET_COLOR}"
+        echo -e "  ${BOLD}${COLOR_SUB}Status:${RESET_COLOR} ${status_color}$status${RESET_COLOR}"
+        echo -e "  ${BOLD}${COLOR_SUB}Failing Streak:${RESET_COLOR} ${COLOR_WARN}$failing_streak${RESET_COLOR}"
 
         if [[ -n "$log_entries" ]]; then
-            echo -e "  ${BOLD_WHITE}Recent logs:${RESET_COLOR}"
+            echo -e "  ${BOLD}${COLOR_SUB}Recent logs:${RESET_COLOR}"
             echo "$log_entries" | while IFS= read -r log_line; do
-                echo -e "    ${MAGENTA}$log_line${RESET_COLOR}"
+                echo -e "    ${COLOR_HINT}$log_line${RESET_COLOR}"
             done
         fi
     else
-        log.warn "Health check not enabled or no health status available for container: ${BOLD_YELLOW}$container_name${RESET_COLOR}"
+        log.warn "Health check not enabled or no health status available for container: ${BOLD}$container_name${RESET_COLOR}"
         log.sub "Use HEALTHCHECK instruction in Dockerfile or --health-cmd at runtime."
     fi
 }
 
 monitor_logs() {
-    local container_name="$1"
+    local container_name="${1:-}"
     local follow=false
     local tail=10 # Default to 10 lines
 
@@ -174,7 +174,7 @@ monitor_logs() {
         return 1
     fi
     
-    log.setline "${BOLD_CYAN}📜 Logs for ${BOLD_GREEN}$container_name${RESET_COLOR} (last ${BOLD_YELLOW}$tail${RESET_COLOR} lines)${RESET_COLOR}"
+    log.setline "📜 Logs for ${BOLD}$container_name${RESET_COLOR} (last ${BOLD}$tail${RESET_COLOR} lines)"
 
     local docker_logs_cmd=(docker logs)
     if [[ "$follow" == "true" ]]; then
@@ -187,7 +187,7 @@ monitor_logs() {
 }
 
 monitor_watch() {
-    local container_name="$1"
+    local container_name="${1:-}"
     local interval=5 # Default interval
     local duration=0 # Default duration (0 means indefinite)
 
@@ -218,8 +218,8 @@ monitor_watch() {
         i=$((i+1))
     done
 
-    log.setline "${BOLD_CYAN}👁️  Container Watch System${RESET_COLOR}"
-    log.info "Monitoring containers (interval: ${BOLD_YELLOW}$interval${RESET_COLOR}s)${duration:+, duration: ${BOLD_YELLOW}$duration${RESET_COLOR}s}"
+    log.setline "👁️  Container Watch System"
+    log.info "Monitoring containers (interval: ${BOLD}$interval${RESET_COLOR}s)${duration:+, duration: ${BOLD}$duration${RESET_COLOR}s}"
     log.sub "Press Ctrl+C to stop monitoring."
     
     local docker_stats_cmd=(docker stats --no-stream=true)
@@ -238,8 +238,8 @@ monitor_watch() {
     
     while [[ "$count" -lt "$max_iterations" ]]; do
         clear
-        echo -e "${BOLD_MAGENTA}=== Dockero Container Monitoring ===${RESET_COLOR}"
-        echo -e "${MAGENTA}$(date): Monitoring containers...\n${RESET_COLOR}"
+        echo -e "${COLOR_GENERIC}${BOLD}=== Dockero Container Monitoring ===${RESET_COLOR}" # Use COLOR_GENERIC
+        echo -e "${COLOR_DATE}$(date): Monitoring containers...\n${RESET_COLOR}" # Use COLOR_DATE
         
         "${docker_stats_cmd[@]}"
         
