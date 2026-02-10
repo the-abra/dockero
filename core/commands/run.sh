@@ -1,123 +1,87 @@
 #!/usr/bin/env bash
 
 run() {
+  local container_name="${args[1]}"
+  local image_name="${args[2]:-$container_name}" # If image name not provided, use container name as image name
+  local command_args_array=("${args[@]:3}") # Command and its arguments to run inside the container, as an array
+  local command_args_str="${command_args_array[*]}" # Convert to string for docker_run helper
+
+  # Check for detach flag
+  local detach_mode=false
+  if [[ -n "${params[d]+set}" || -n "${params[detach]+set}" ]]; then
+      detach_mode=true
+  fi
+
   # Validate argument count
-  if [[ -z "${args[1]}" ]]; then
-    log.error "Container name is required"
-    log.hint "Usage: dockero run <name> [<image>]"
+  if [[ -z "$container_name" ]]; then
+    log.error "Container name is required."
+    log.hint "Usage: ${BOLD_YELLOW}dockero run <name> [<image>] [<command>] [options]${RESET_COLOR}"
+    log.hint "  ${BOLD_CYAN}-d, --detach${RESET_COLOR}: Run container in detached mode."
     return 1
   fi
-
-  if [[ -n ${params[*]} ]]; then
-    log.warn "run command may not accept all parameters. Check command documentation."
-  fi
-
-  container_name=${args[1]}
-  image_name=${args[2]:-"${args[1]}"}
 
   # Validate inputs
   if ! validate_container_name "$container_name"; then
     return 1
   fi
 
-  if ! validate_image_name "$image_name"; then
-    return 1
+  # Validate image name only if explicitly provided
+  if [[ "${args[2]}" != "" && ! validate_image_name "$image_name" ]]; then
+      return 1
   fi
 
+  local search_image_name="$image_name"
   if [[ "$image_name" != *:* ]]; then
-    search_name="$image_name:latest"
-  else
-    search_name="$image_name"
+    search_image_name="$image_name:latest"
   fi
+
+  log.setline "${BOLD_CYAN}🚀 Dockero Run: ${GREEN}$container_name${RESET_COLOR}"
 
   # Check if container exists
-  log.setline "$container_name"
-
   if docker ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
-    log.info "Starting existing container: $container_name"
-    docker start -ai "$container_name"
-    log.endline "$container_name"
+    log.info "Container '${BOLD_YELLOW}$container_name${RESET_COLOR}' already exists."
+    if docker ps -a --format '{{.Status}}' --filter "name=^$container_name$" | grep -q "Exited"; then
+      log.info "Starting existing container: ${BOLD_YELLOW}$container_name${RESET_COLOR}"
+      if [[ "$detach_mode" == "true" ]]; then
+          docker start "$container_name" > /dev/null
+          log.done "Container '${BOLD_GREEN}$container_name${RESET_COLOR}' started in detached mode."
+      else
+          log.sub "Attaching to existing container: ${BOLD_YELLOW}$container_name${RESET_COLOR} (Press Ctrl+C to detach)"
+          docker start -a "$container_name"
+          log.done "Container '${BOLD_GREEN}$container_name${RESET_COLOR}' stopped or detached."
+      fi
+    else
+        log.info "Container '${BOLD_GREEN}$container_name${RESET_COLOR}' is already running."
+        if [[ "$detach_mode" != "true" ]]; then
+            log.sub "Attaching to running container: ${BOLD_YELLOW}$container_name${RESET_COLOR} (Press Ctrl+C to detach)"
+            docker attach "$container_name"
+            log.done "Container '${BOLD_GREEN}$container_name${RESET_COLOR}' detached."
+        fi
+    fi
+    log.endline "${BOLD_CYAN}🚀 Dockero Run: ${GREEN}$container_name${RESET_COLOR}"
     return 0
-  elif docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^$search_name$"; then
-    log.info "Creating new container from existing image: $image_name"
-  else
-    log.warn "Image not found. Pulling: $image_name"
-    if ! image_clonning; then
-      log.error "Failed to pull image: $image_name"
-      log.endline "$container_name"
+  fi
+
+  # Pull image if not available locally
+  if ! docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^$search_image_name$"; then
+    log.warn "Image '${BOLD_YELLOW}$image_name${RESET_COLOR}' not found locally. Pulling..."
+    if ! image_pulling "$image_name"; then
+      log.error "Failed to pull image: ${RED}$image_name${RESET_COLOR}."
+      log.endline "${BOLD_CYAN}🚀 Dockero Run: ${GREEN}$container_name${RESET_COLOR}"
       return 1
     fi
+  else
+    log.info "Using local image: ${BOLD_GREEN}$image_name${RESET_COLOR}."
   fi
 
-  if ! docker_run; then
-    log.error "Failed to run container: $container_name"
-    log.endline "$container_name"
+  # Call the global docker_run helper function
+  if ! docker_run "$container_name" "$image_name" "$detach_mode" "$command_args_str" "" "" "" "" ""; then # Pass empty strings for volume, port, restart, user
+    log.error "Failed to run container: ${RED}$container_name${RESET_COLOR}."
+    log.endline "${BOLD_CYAN}🚀 Dockero Run: ${GREEN}$container_name${RESET_COLOR}"
     return 1
   fi
 
-  log.endline "$container_name"
+  log.done "Container '${BOLD_GREEN}$container_name${RESET_COLOR}' started successfully."
+  log.endline "${BOLD_CYAN}🚀 Dockero Run: ${GREEN}$container_name${RESET_COLOR}"
   return 0
-}
-
-docker_run() {
-  # Use configuration for default port if available
-  local port_mapping="${DOCKERO_DEFAULT_PORT:-80}"
-
-  # Trim leading and trailing whitespace from port_mapping
-  port_mapping=$(echo "$port_mapping" | xargs)
-
-  # Build docker arguments array
-  local docker_args=()
-
-  # Check if port_mapping is in format like "8080:80" or just "80"
-  if [[ "$port_mapping" =~ ^[0-9]+$ ]]; then
-    # If it's just a number, map it to the same port in the container
-    docker_args+=(-it -p "${port_mapping}:${port_mapping}")
-  else
-    # If it's already in format like "8080:80", use as is
-    docker_args+=(-it -p "${port_mapping}")
-  fi
-
-  docker_args+=(-v "/opt/${container_name}:/workspace" --name "${container_name}")
-
-  # Conditionally add sound device
-  if [ -e /dev/snd ]; then
-    docker_args+=(--device /dev/snd)
-  fi
-
-  # Conditionally add X11 display
-  if [ -n "$DISPLAY" ]; then
-    docker_args+=(-e "DISPLAY=$DISPLAY" -v "/tmp/.X11-unix:/tmp/.X11-unix")
-  fi
-
-  # Conditionally add Wayland display
-  if [ -n "$WAYLAND_DISPLAY" ]; then
-    docker_args+=(-e "WAYLAND_DISPLAY=$WAYLAND_DISPLAY" -v "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:/tmp/xdg/$WAYLAND_DISPLAY" -e "XDG_RUNTIME_DIR=/tmp/xdg")
-  fi
-
-  # Conditionally add pulse audio
-  if [ -d "/run/user/$(id -u)/pulse" ]; then
-    docker_args+=(-v "/run/user/$(id -u)/pulse:/run/user/$(id -u)/pulse" -e "PULSE_SERVER=unix:/run/user/$(id -u)/pulse/native")
-  fi
-
-  # Conditionally add NVIDIA GPU
-  if command -v nvidia-smi >/dev/null 2>&1; then
-    docker_args+=(--gpus all)
-  fi
-
-  # Always add bus access
-  docker_args+=(-v "/run/user/$(id -u)/bus:/run/user/$(id -u)/bus")
-
-  docker run "${docker_args[@]}" "$image_name"
-}
-
-image_clonning() {
-  if docker pull "$image_name" >"/tmp/$image_name.pull.log" 2>&1; then
-    log.done "$image_name installed."
-    return 0
-  else
-    log.error "Failed to pull image: $image_name"
-    log.sub "Check log: /tmp/$image_name.pull.log"
-    return 1
-  fi
 }

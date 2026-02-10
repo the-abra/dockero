@@ -4,11 +4,11 @@ dashboard() {
   log.setline "Dockero Dashboard"
   
   echo -e "${BOLD_CYAN}┌─────────────────────────────────────────────────────────┐${RESET_COLOR}"
-  echo -e "${BOLD_CYAN}│${RESET_COLOR}                    ${BOLD_YELLOW}Docker Dashboard${RESET_COLOR}                   ${BOLD_CYAN}│${RESET_COLOR}"
+  echo -e "${BOLD_CYAN}│${RESET_COLOR}                    ${BOLD_YELLOW}Docker Dashboard${RESET_COLOR}                     ${BOLD_CYAN}│${RESET_COLOR}"
   echo -e "${BOLD_CYAN}└─────────────────────────────────────────────────────────┘${RESET_COLOR}"
   
   # Check Docker status
-  if command -v docker &> /dev/null && docker info &> /dev/null; then
+  if command -v docker &> /dev/null && docker ps -q &>/dev/null; then
     echo -e "${BOLD_GREEN}✅ Docker Daemon${RESET_COLOR} ${GREEN}Active${RESET_COLOR}"
   else
     echo -e "${BOLD_RED}❌ Docker Daemon${RESET_COLOR} ${RED}Inactive${RESET_COLOR}"
@@ -27,9 +27,9 @@ dashboard() {
   
   echo ""
   echo -e "${BOLD_WHITE}📊 CONTAINER STATS${RESET_COLOR}"
-  echo -e "   ${BOLD_CYAN}Running:${RESET_COLOR} $running_containers"
-  echo -e "   ${BOLD_CYAN}Total:${RESET_COLOR}   $all_containers"
-  echo -e "   ${BOLD_CYAN}Images:${RESET_COLOR}  $all_images"
+  echo -e "   ${BOLD_CYAN}Running:${RESET_COLOR} ${BOLD_GREEN}$running_containers${RESET_COLOR}"
+  echo -e "   ${BOLD_CYAN}Total:${RESET_COLOR}   ${BOLD_GREEN}$all_containers${RESET_COLOR}"
+  echo -e "   ${BOLD_CYAN}Images:${RESET_COLOR}  ${BOLD_GREEN}$all_images${RESET_COLOR}"
   
   # Show running containers with status
   if [ "$running_containers" -gt 0 ]; then

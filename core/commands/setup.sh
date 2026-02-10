@@ -1,35 +1,28 @@
 #!/usr/bin/env bash
 
-setup() {
-    # Access the global params and args arrays set by parameter-indexing.sh
+# Source shared Docker helpers
+# (assuming docker-helpers.sh is sourced by dockero.sh globally now)
 
-    # Check if any parameter flags were passed (e.g., --dry-run or -n)
-    local has_dry_run=0
-    if [[ -n "${params[n]+set}" ]]; then  # Using -n flag for dry-run (like docker)
+setup() {
+    local subcommand="${args[1]}"
+    local has_dry_run=0 # Default to no dry-run
+
+    # Check for --dry-run or -n flag first
+    if [[ -n "${params[n]+set}" || -n "${params[dry-run]+set}" ]]; then
         has_dry_run=1
     fi
 
-    local subcommand="${args[1]}"
-
-    # If no subcommand is provided or if it's a path, use 'run' as default
+    # Default to 'run' subcommand if no explicit subcommand is provided
     if [[ -z "$subcommand" ]] || [[ "$subcommand" != "init" && "$subcommand" != "run" && "$subcommand" != "create" && "$subcommand" != "build" && "$subcommand" != "update" && "$subcommand" != "teardown" && "$subcommand" != "delete" ]]; then
-        if [[ $has_dry_run -eq 1 ]]; then
-            # If --dry-run was specified but no explicit subcommand, assume 'run'
-            setup_run_with_dryrun "${args[1]}"
-        else
-            setup_run "${args[1]}"
-        fi
+        # If the first argument is a path and not a known subcommand, assume 'run'
+        setup_run "${args[1]}" "$has_dry_run"
     else
         case "$subcommand" in
             "init"|"create")
                 setup_init "${args[2]:-./}"
                 ;;
             "run"|"build")
-                if [[ $has_dry_run -eq 1 ]]; then
-                    setup_run_with_dryrun "${args[2]}"
-                else
-                    setup_run "${args[2]}"
-                fi
+                setup_run "${args[2]}" "$has_dry_run"
                 ;;
             "update")
                 setup_update "${args[2]}"
@@ -38,8 +31,8 @@ setup() {
                 setup_teardown "${args[2]}"
                 ;;
             *)
-                log.error "Unknown setup subcommand: $subcommand"
-                log.hint "Usage: dockero setup [init|run|update|teardown] [path]"
+                log.error "Unknown setup subcommand: ${BOLD_RED}$subcommand${RESET_COLOR}"
+                log.hint "Usage: ${BOLD_YELLOW}dockero setup [init|run|update|teardown] [path] [options]${RESET_COLOR}"
                 return 1
                 ;;
         esac
@@ -48,144 +41,150 @@ setup() {
 
 setup_run() {
     local project_path="$1"
-    local dry_run=0
+    local dry_run="$2" # 0 for normal run, 1 for dry-run
 
-    # Check for --dry-run flag in additional parameters if available
-    if [[ -n "${args[2]}" && "${args[2]}" == "--dry-run" ]]; then
-        dry_run=1
+    if [[ -z "$project_path" ]]; then
+        log.hint "Usage: ${BOLD_YELLOW}dockero setup run <project-path> [--dry-run]${RESET_COLOR}"
+        return 1
     fi
 
-    [[ -z "$project_path" ]] && log.hint "setup run <project-path> [--dry-run]" && return 1
-
     [[ "$project_path" != /* ]] && project_path="$PWD/$project_path"
-    CONF_FILE="$project_path/.dockero"
+    local CONF_FILE="$project_path/.dockero"
 
-    if ! [[ -d "$project_path" ]]; then
-        log.warn "Project not found: ${project_path}"
+    if [[ ! -d "$project_path" ]]; then
+        log.error "Project not found: ${RED}$project_path${RESET_COLOR}"
         return 1
-    elif ! [[ -f "$CONF_FILE" ]]; then
-        log.warn ".dockero file not found in project path."
-        log.hint "Use 'dockero setup init <project-path>' to create a new configuration"
+    elif [[ ! -f "$CONF_FILE" ]]; then
+        log.error ".dockero file not found in project path: ${RED}$CONF_FILE${RESET_COLOR}."
+        log.hint "Use '${BOLD_YELLOW}dockero setup init \"$project_path\"${RESET_COLOR}' to create a new configuration."
         return 1
     fi
 
     # Parse .dockero configuration
     local name
     local image
-    local command
-    local env
-    local port
+    local command_str
+    local volume_mount
+    local port_mapping
     local restart_policy
-    name=$(inipars.get "default" "name" "$CONF_FILE")
-    image=$(inipars.get "default" "image" "$CONF_FILE")
-    command=$(inipars.get "default" "command" "$CONF_FILE")
-    env=$(inipars.get "volumes" "env" "$CONF_FILE")
-    port=$(inipars.get "volumes" "port" "$CONF_FILE")
-    restart_policy=$(inipars.get "default" "restart_policy" "$CONF_FILE")
-
-    # Read user info (if present)
     local user_name
     local user_gid
+
+    name=$(inipars.get "default" "name" "$CONF_FILE")
+    image=$(inipars.get "default" "image" "$CONF_FILE")
+    command_str=$(inipars.get "default" "command" "$CONF_FILE")
+    volume_mount=$(inipars.get "volumes" "env" "$CONF_FILE") # 'env' key used for volume_mount
+    port_mapping=$(inipars.get "volumes" "port" "$CONF_FILE")
+    restart_policy=$(inipars.get "default" "restart_policy" "$CONF_FILE")
     user_name=$(inipars.get "user" "name" "$CONF_FILE")
     user_gid=$(inipars.get "user" "gid" "$CONF_FILE")
 
-    if [[ "$image" != *:* ]]; then
-        search_image="$image:latest"
-    else
-        search_image="$image"
-    fi
+    # Set defaults if not provided in .dockero
+    volume_mount="${volume_mount:-$project_path:/workspace}"
+    port_mapping="${port_mapping:-${DOCKERO_DEFAULT_PORT:-80}}" # Use global default if not in .dockero
+    restart_policy="${restart_policy:-no}" # Default to 'no' if not in .dockero
+    user_name="${user_name:-root}"
+    user_gid="${user_gid:-$(id -g root)}" # Default to root's GID
 
     # Validate required fields
     if [[ -z "$name" || -z "$image" ]]; then
-        log.error "Missing required fields in $CONF_FILE: 'name' or 'image'"
+        log.error "Missing required fields in ${RED}$CONF_FILE${RESET_COLOR}: 'name' or 'image'."
         return 1
     fi
 
-    # Check if container name is available
-    if [[ $dry_run -eq 0 ]]; then
+    # Check if container name is available only if not dry-run
+    if [[ "$dry_run" -eq 0 ]]; then
         if docker ps -a --format '{{.Names}}' | grep -q "^$name$"; then
-            log.error "The container name $name is already in use"
+            log.error "The container name ${RED}$name${RESET_COLOR} is already in use. Please choose a different name or remove the existing container."
             return 1
         fi
     fi
 
-    log.setline "$name"
+    log.setline "${BOLD_CYAN}📦 Project Setup: ${GREEN}$name${RESET_COLOR}"
 
-    if [[ $dry_run -eq 1 ]]; then
-        log.info "DRY RUN MODE - Would launch container: $name"
-        log.sub "Image: $image"
-        log.sub "Command: $command"
-        log.sub "Volume Mount: ${env:-$project_path:/workspace}"
-        log.sub "Port Mapping: ${port:-80}"
-        log.sub "Restart Policy: $restart_policy"
-        log.sub "User: $user_name:$user_gid"
-        log.info "DRY RUN MODE - No changes made"
+    if [[ "$dry_run" -eq 1 ]]; then
+        log.info "DRY RUN MODE - Would launch container: ${BOLD_YELLOW}$name${RESET_COLOR}"
+        log.sub "Image: ${YELLOW}$image${RESET_COLOR}"
+        log.sub "Command: ${YELLOW}${command_str:-bash}${RESET_COLOR}"
+        log.sub "Volume Mount: ${YELLOW}$volume_mount${RESET_COLOR}"
+        log.sub "Port Mapping: ${YELLOW}$port_mapping${RESET_COLOR}"
+        log.sub "Restart Policy: ${YELLOW}$restart_policy${RESET_COLOR}"
+        log.sub "User: ${YELLOW}$user_name:$user_gid${RESET_COLOR}"
+        log.info "DRY RUN MODE - No changes made."
         return 0
     fi
 
     # Pull image if not available locally
-    if ! docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^$search_image$"; then
-        if docker pull "$image" > "/tmp/$image.pull.log" 2>&1; then
-            log.done "$image pulled successfully."
-        else
-            log.error "Failed to pull image: $image"
-            log.sub "Check log: /tmp/$image.pull.log"
-            return 1
-        fi
+    local search_image="$image"
+    if [[ "$image" != *:* ]]; then
+        search_image="$image:latest"
     fi
 
-    # Set defaults and run container
-    volume_mount="${env:-$project_path:/workspace}"
-    port_mapping="${port:-80}"
+    if ! docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^$search_image$"; then
+        log.warn "Image '${BOLD_YELLOW}$image${RESET_COLOR}' not found locally. Pulling..."
+        if ! image_pulling "$image"; then
+            log.error "Failed to pull image: ${RED}$image${RESET_COLOR}."
+            return 1
+        fi
+    else
+        log.info "Using local image: ${BOLD_GREEN}$image${RESET_COLOR}."
+    fi
 
-    log.info "Launching container: $name"
-    docker_run "$user_name" "$user_gid"
+    log.info "Launching container: ${BOLD_YELLOW}$name${RESET_COLOR}..."
+    # Call the global docker_run helper function
+    # Arguments: container_name, image_name, detach_mode, cmd_args_array, volume_mount, port_mapping, restart_policy, user_name, user_gid
+    if ! docker_run "$name" "$image" "true" "$command_str" "$volume_mount" "$port_mapping" "$restart_policy" "$user_name" "$user_gid"; then
+        log.error "Failed to run container: ${RED}$name${RESET_COLOR}."
+        return 1
+    fi
+
+    log.done "Container '${BOLD_GREEN}$name${RESET_COLOR}' started successfully."
+    return 0
 }
 
 setup_init() {
     local project_path="$1"
-    [[ -z "$project_path" ]] && log.hint "setup init <project-path>" && return 1
+    
+    if [[ -z "$project_path" ]]; then
+        log.hint "Usage: ${BOLD_YELLOW}dockero setup init <project-path>${RESET_COLOR}"
+        return 1
+    fi
 
     [[ "$project_path" != /* ]] && project_path="$PWD/$project_path"
-    CONF_FILE="$project_path/.dockero"
+    local CONF_FILE="$project_path/.dockero"
 
-    if ! [[ -d "$project_path" ]]; then
-        log.warn "Project path does not exist: ${project_path}"
+    if [[ ! -d "$project_path" ]]; then
+        log.error "Project path does not exist: ${RED}$project_path${RESET_COLOR}."
         return 1
     fi
 
     if [[ -f "$CONF_FILE" ]]; then
-        log.warn ".dockero file already exists at: $CONF_FILE"
-        log.info "Use 'dockero setup update <project-path>' to modify existing configuration"
+        log.warn ".dockero file already exists at: ${BOLD_YELLOW}$CONF_FILE${RESET_COLOR}."
+        log.info "Use '${BOLD_YELLOW}dockero setup update \"$project_path\"${RESET_COLOR}' to modify existing configuration."
         return 1
     fi
 
-    log.setline "Setup Configuration Wizard"
-    log.info "Creating new .dockero configuration for: $project_path"
+    log.setline "${BOLD_CYAN}✨ Setup Configuration Wizard${RESET_COLOR}"
+    log.info "Creating new .dockero configuration for: ${BOLD_GREEN}$project_path${RESET_COLOR}."
 
-    # Interactive setup
-    echo -e "${YELLOW}Container Name${RESET_COLOR} [default: ${project_path##*/}]: \c"
-    read -r container_name
-    container_name=${container_name:-${project_path##*/}}
+    # Interactive setup using read -rp for portability and coloring
+    local container_name_default="${project_path##*/}"
+    read -rp "${YELLOW}Container Name${RESET_COLOR} [default: ${container_name_default}]: " container_name
+    container_name=${container_name:-$container_name_default}
 
-    echo -e "${YELLOW}Docker Image${RESET_COLOR} [default: ubuntu:latest]: \c"
-    read -r docker_image
+    read -rp "${YELLOW}Docker Image${RESET_COLOR} [default: ubuntu:latest]: " docker_image
     docker_image=${docker_image:-ubuntu:latest}
 
-    echo -e "${YELLOW}Port Mapping${RESET_COLOR} [format: host:container, default: 8080:80]: \c"
-    read -r port_mapping
+    read -rp "${YELLOW}Port Mapping${RESET_COLOR} [format: host:container, default: 8080:80]: " port_mapping
     port_mapping=${port_mapping:-8080:80}
 
-    echo -e "${YELLOW}Volume Mount${RESET_COLOR} [format: host:container, default: $project_path:/workspace]: \c"
-    read -r volume_mount
+    read -rp "${YELLOW}Volume Mount${RESET_COLOR} [format: host:container, default: $project_path:/workspace]: " volume_mount
     volume_mount=${volume_mount:-$project_path:/workspace}
 
-    echo -e "${YELLOW}Custom Command${RESET_COLOR} [optional, default: bash]: \c"
-    read -r custom_command
+    read -rp "${YELLOW}Custom Command${RESET_COLOR} [optional, default: bash]: " custom_command
     custom_command=${custom_command:-bash}
 
-    echo -e "${YELLOW}Restart Policy${RESET_COLOR} [no,always,on-failure,unless-stopped, default: no]: \c"
-    read -r restart_policy
+    read -rp "${YELLOW}Restart Policy${RESET_COLOR} [no,always,on-failure,unless-stopped, default: no]: " restart_policy
     restart_policy=${restart_policy:-no}
 
     # Create the .dockero file
@@ -204,28 +203,32 @@ port = $port_mapping
 name = root
 EOF
 
-    log.done "Configuration saved to: $CONF_FILE"
-    log.info "Use 'dockero setup run $project_path' to start your container"
+    log.done "Configuration saved to: ${BOLD_GREEN}$CONF_FILE${RESET_COLOR}."
+    log.info "Use '${BOLD_YELLOW}dockero setup run \"$project_path\"${RESET_COLOR}' to start your container."
 }
 
 setup_update() {
     local project_path="$1"
-    [[ -z "$project_path" ]] && log.hint "setup update <project-path>" && return 1
-
-    [[ "$project_path" != /* ]] && project_path="$PWD/$project_path"
-    CONF_FILE="$project_path/.dockero"
-
-    if ! [[ -d "$project_path" ]]; then
-        log.warn "Project not found: ${project_path}"
-        return 1
-    elif ! [[ -f "$CONF_FILE" ]]; then
-        log.warn ".dockero file not found in project path."
-        log.hint "Use 'dockero setup init <project-path>' to create a new configuration"
+    
+    if [[ -z "$project_path" ]]; then
+        log.hint "Usage: ${BOLD_YELLOW}dockero setup update <project-path>${RESET_COLOR}"
         return 1
     fi
 
-    log.setline "Update Configuration"
-    log.info "Updating .dockero configuration for: $project_path"
+    [[ "$project_path" != /* ]] && project_path="$PWD/$project_path"
+    local CONF_FILE="$project_path/.dockero"
+
+    if [[ ! -d "$project_path" ]]; then
+        log.error "Project not found: ${RED}$project_path${RESET_COLOR}."
+        return 1
+    elif [[ ! -f "$CONF_FILE" ]]; then
+        log.error ".dockero file not found in project path: ${RED}$CONF_FILE${RESET_COLOR}."
+        log.hint "Use '${BOLD_YELLOW}dockero setup init \"$project_path\"${RESET_COLOR}' to create a new configuration."
+        return 1
+    fi
+
+    log.setline "${BOLD_CYAN}📝 Update Configuration${RESET_COLOR}"
+    log.info "Updating .dockero configuration for: ${BOLD_GREEN}$project_path${RESET_COLOR}."
 
     # Read current values
     local current_name
@@ -241,29 +244,23 @@ setup_update() {
     current_command=$(inipars.get "default" "command" "$CONF_FILE")
     current_restart=$(inipars.get "default" "restart_policy" "$CONF_FILE")
 
-    # Interactive update
-    echo -e "${YELLOW}Container Name${RESET_COLOR} [current: $current_name]: \c"
-    read -r container_name
+    # Interactive update using read -rp for portability and coloring
+    read -rp "${YELLOW}Container Name${RESET_COLOR} [current: ${current_name}]: " container_name
     container_name=${container_name:-$current_name}
 
-    echo -e "${YELLOW}Docker Image${RESET_COLOR} [current: $current_image]: \c"
-    read -r docker_image
+    read -rp "${YELLOW}Docker Image${RESET_COLOR} [current: ${current_image}]: " docker_image
     docker_image=${docker_image:-$current_image}
 
-    echo -e "${YELLOW}Port Mapping${RESET_COLOR} [current: $current_port]: \c"
-    read -r port_mapping
+    read -rp "${YELLOW}Port Mapping${RESET_COLOR} [current: ${current_port}]: " port_mapping
     port_mapping=${port_mapping:-$current_port}
 
-    echo -e "${YELLOW}Volume Mount${RESET_COLOR} [current: $current_env]: \c"
-    read -r volume_mount
+    read -rp "${YELLOW}Volume Mount${RESET_COLOR} [current: ${current_env}]: " volume_mount
     volume_mount=${volume_mount:-$current_env}
 
-    echo -e "${YELLOW}Custom Command${RESET_COLOR} [current: $current_command]: \c"
-    read -r custom_command
+    read -rp "${YELLOW}Custom Command${RESET_COLOR} [current: ${current_command}]: " custom_command
     custom_command=${custom_command:-$current_command}
 
-    echo -e "${YELLOW}Restart Policy${RESET_COLOR} [current: $current_restart]: \c"
-    read -r restart_policy
+    read -rp "${YELLOW}Restart Policy${RESET_COLOR} [current: ${current_restart}]: " restart_policy
     restart_policy=${restart_policy:-$current_restart}
 
     # Update the .dockero file (need to pass the CONF_FILE explicitly)
@@ -274,22 +271,26 @@ setup_update() {
     inipars.set "default" "command" "$custom_command" "$CONF_FILE"
     inipars.set "default" "restart_policy" "$restart_policy" "$CONF_FILE"
 
-    log.done "Configuration updated in: $CONF_FILE"
-    log.hint "Use 'dockero setup run $project_path' to apply changes"
+    log.done "Configuration updated in: ${BOLD_GREEN}$CONF_FILE${RESET_COLOR}."
+    log.hint "Use '${BOLD_YELLOW}dockero setup run \"$project_path\"${RESET_COLOR}' to apply changes."
 }
 
 setup_teardown() {
     local project_path="$1"
-    [[ -z "$project_path" ]] && log.hint "setup teardown <project-path>" && return 1
+    
+    if [[ -z "$project_path" ]]; then
+        log.hint "Usage: ${BOLD_YELLOW}dockero setup teardown <project-path>${RESET_COLOR}"
+        return 1
+    fi
 
     [[ "$project_path" != /* ]] && project_path="$PWD/$project_path"
-    CONF_FILE="$project_path/.dockero"
+    local CONF_FILE="$project_path/.dockero"
 
-    if ! [[ -d "$project_path" ]]; then
-        log.warn "Project not found: ${project_path}"
+    if [[ ! -d "$project_path" ]]; then
+        log.error "Project not found: ${RED}$project_path${RESET_COLOR}."
         return 1
-    elif ! [[ -f "$CONF_FILE" ]]; then
-        log.warn ".dockero file not found in project path."
+    elif [[ ! -f "$CONF_FILE" ]]; then
+        log.error ".dockero file not found in project path: ${RED}$CONF_FILE${RESET_COLOR}."
         return 1
     fi
 
@@ -298,151 +299,38 @@ setup_teardown() {
     name=$(inipars.get "default" "name" "$CONF_FILE")
 
     if [[ -z "$name" ]]; then
-        log.error "Container name not found in $CONF_FILE"
+        log.error "Container name not found in ${RED}$CONF_FILE${RESET_COLOR}."
         return 1
     fi
 
-    log.setline "Teardown"
-    log.info "Stopping and removing container: $name"
+    log.setline "${BOLD_CYAN}🗑️ Teardown Project: ${RED}$name${RESET_COLOR}"
+    log.info "Stopping and removing container: ${BOLD_YELLOW}$name${RESET_COLOR}."
 
     # Stop container if running
     if docker ps --format '{{.Names}}' | grep -q "^$name$"; then
-        log.info "Stopping container: $name"
+        log.info "Stopping container: ${BOLD_YELLOW}$name${RESET_COLOR}."
         if docker stop "$name" > /dev/null 2>&1; then
-            log.done "Container stopped"
+            log.done "Container '${BOLD_GREEN}$name${RESET_COLOR}' stopped."
         else
-            log.error "Failed to stop container: $name"
+            log.error "Failed to stop container: ${RED}$name${RESET_COLOR}."
         fi
     else
-        log.warn "Container $name was not running"
+        log.warn "Container ${BOLD_YELLOW}$name${RESET_COLOR} was not running."
     fi
 
     # Remove container
     if docker ps -a --format '{{.Names}}' | grep -q "^$name$"; then
-        log.info "Removing container: $name"
+        log.info "Removing container: ${BOLD_YELLOW}$name${RESET_COLOR}."
         if docker rm "$name" > /dev/null 2>&1; then
-            log.done "Container removed"
+            log.done "Container '${BOLD_GREEN}$name${RESET_COLOR}' removed."
         else
-            log.error "Failed to remove container: $name"
+            log.error "Failed to remove container: ${RED}$name${RESET_COLOR}."
             return 1
         fi
     else
-        log.warn "Container $name does not exist"
+        log.warn "Container ${BOLD_YELLOW}$name${RESET_COLOR} does not exist."
     fi
 
-    log.info "Teardown completed for container: $name"
-}
-
-setup_run_with_dryrun() {
-    local project_path="$1"
-
-    [[ -z "$project_path" ]] && log.hint "setup run <project-path> --dry-run" && return 1
-
-    [[ "$project_path" != /* ]] && project_path="$PWD/$project_path"
-    CONF_FILE="$project_path/.dockero"
-
-    if ! [[ -d "$project_path" ]]; then
-        log.warn "Project not found: ${project_path}"
-        return 1
-    elif ! [[ -f "$CONF_FILE" ]]; then
-        log.warn ".dockero file not found in project path."
-        log.hint "Use 'dockero setup init <project-path>' to create a new configuration"
-        return 1
-    fi
-
-    # Parse .dockero configuration
-    local name
-    local image
-    local command
-    local env
-    local port
-    local restart_policy
-    name=$(inipars.get "default" "name" "$CONF_FILE")
-    image=$(inipars.get "default" "image" "$CONF_FILE")
-    command=$(inipars.get "default" "command" "$CONF_FILE")
-    env=$(inipars.get "volumes" "env" "$CONF_FILE")
-    port=$(inipars.get "volumes" "port" "$CONF_FILE")
-    restart_policy=$(inipars.get "default" "restart_policy" "$CONF_FILE")
-
-    # Read user info (if present)
-    local user_name
-    local user_gid
-    user_name=$(inipars.get "user" "name" "$CONF_FILE")
-    user_gid=$(inipars.get "user" "gid" "$CONF_FILE")
-
-    # Validate required fields
-    if [[ -z "$name" || -z "$image" ]]; then
-        log.error "Missing required fields in $CONF_FILE: 'name' or 'image'"
-        return 1
-    fi
-
-    log.setline "$name"
-
-    log.info "DRY RUN MODE - Would launch container: $name"
-    log.sub "Image: $image"
-    log.sub "Command: $command"
-    log.sub "Volume Mount: ${env:-$project_path:/workspace}"
-    log.sub "Port Mapping: ${port:-80}"
-    log.sub "Restart Policy: $restart_policy"
-    log.sub "User: $user_name:$user_gid"
-    log.info "DRY RUN MODE - No changes made"
+    log.info "Teardown completed for container: ${BOLD_GREEN}$name${RESET_COLOR}."
     return 0
-}
-
-docker_run() {
-    local user_name="$1"
-    local user_gid="$2"
-
-    # Build docker arguments array
-    local docker_args=()
-    docker_args+=(-it)
-
-    # Conditionally add sound device
-    if [ -e /dev/snd ]; then
-        docker_args+=(--device /dev/snd)
-    fi
-
-    # Conditionally add X11 display
-    if [ -n "$DISPLAY" ]; then
-        docker_args+=(-e "DISPLAY=$DISPLAY" -v "/tmp/.X11-unix:/tmp/.X11-unix")
-    fi
-
-    # Conditionally add Wayland display
-    if [ -n "$WAYLAND_DISPLAY" ]; then
-        docker_args+=(-e "WAYLAND_DISPLAY=$WAYLAND_DISPLAY" -v "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:/tmp/xdg/$WAYLAND_DISPLAY" -e "XDG_RUNTIME_DIR=/tmp/xdg")
-    fi
-
-    # Conditionally add pulse audio
-    if [ -d "/run/user/$(id -u)/pulse" ]; then
-        docker_args+=(-v "/run/user/$(id -u)/pulse:/run/user/$(id -u)/pulse" -e "PULSE_SERVER=unix:/run/user/$(id -u)/pulse/native")
-    fi
-
-    # Conditionally add NVIDIA GPU
-    if command -v nvidia-smi >/dev/null 2>&1; then
-        docker_args+=(--gpus all)
-    fi
-
-    # Always add bus access
-    docker_args+=(-v "/run/user/$(id -u)/bus:/run/user/$(id -u)/bus")
-
-    # Add volume mount and port mapping
-    docker_args+=(-v "$volume_mount" -p "$port_mapping" --name "${name}")
-
-    # Conditionally add restart policy
-    if [[ -n "$restart_policy" ]]; then
-        docker_args+=(--restart "$restart_policy")
-    fi
-
-    # Conditionally add user
-    if [[ -n "$user_name" ]]; then
-        docker_args+=(--user "$user_name:$user_gid")
-    fi
-
-    # Add image and command
-    docker_args+=("$image")
-    if [[ -n "$command" ]]; then
-        docker_args+=(sh -c "$command")
-    fi
-
-    docker run "${docker_args[@]}"
 }

@@ -15,7 +15,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --*) # Dynamic Named
       key="${1##--}"
-      [[ -z $2 ]] && log.error "You must set value of --$key" && exit 1
+      [[ -z $2 ]] && echo "Error: You must set value of --${key}" >&2 && return 1
       params["$key"]="$2"
       shift 2
       ;;

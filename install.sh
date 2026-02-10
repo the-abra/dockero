@@ -116,6 +116,13 @@ install_docker() {
     log_info "Docker installed and enabled"
 }
 
+# Install jq
+install_jq() {
+    log_info "Installing jq..."
+    install_packages jq
+    log_info "jq installed"
+}
+
 # Install Python dependencies
 install_python_deps() {
     log_info "Installing Python dependencies..."
@@ -160,6 +167,7 @@ main() {
     check_root
     detect_package_manager
     install_docker
+    install_jq
     install_python_deps
     create_symlink
     

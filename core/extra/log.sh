@@ -16,8 +16,17 @@ if command -v tput &> /dev/null; then
     COLOR_DATE=$(tput setaf 13)    # Pink for date
     COLOR_INFO=$(tput setaf 4)     # Blue
     COLOR_WARN=$(tput setaf 3)     # Yellow
-    COLOR_ERROR=$(tput setaf 1)$(tput blink)    # Red with blink
+    COLOR_ERROR=$(tput setaf 1)    # Red
     COLOR_DONE=$(tput setaf 2)     # Green
+
+    # Determine if terminal supports colors
+    if (( $(tput colors 2>/dev/null || echo 0) >= 8 )); then
+        _DOCKERO_HAS_COLORS="true"
+    else
+        _DOCKERO_HAS_COLORS="false"
+    fi
+else
+    _DOCKERO_HAS_COLORS="false"
 fi
 
 
@@ -30,20 +39,20 @@ function log() {
     local color="$2"
     local message="$3"
 
-    echo -e "${color}$level - ${RESET_COLOR} $message"
+    echo -e "${color}$level - ${RESET_COLOR} ${message}"
 }
 
 # Log levels
 function log.info() {
-    log "💠 INFO " "$COLOR_INFO" "$1" 
+    log "💠 INFO " "$COLOR_INFO" "$1"
 }
 
 function log.warn() {
-    log "⚠️  WARN " "$COLOR_WARN" "$1" 
+    log "⚠️  WARN " "$COLOR_WARN" "$1"
 }
 
 function log.error() {
-    log "❌ ERROR" "$COLOR_ERROR" "$1" 
+    log "❌ ERROR" "$COLOR_ERROR" "$1"
 }
 
 function log.done() {
@@ -51,7 +60,6 @@ function log.done() {
 }
 
 function log.sub() {
-    #echo -e " ${RESET_COLOR}${COLOR_GENERIC}o \e[0;37m$1${RESET_COLOR}"
     echo -e "  ${RESET_COLOR}🔹 \e[0;37m$1${RESET_COLOR}"
 }
 
@@ -60,26 +68,32 @@ log.hint() {
 }
 
 function log.setline() {
-    # Get the size of the terminal
     local half=""
     local info=""
-    [[ -n $1 ]] && info="/${COLOR_GENERIC}$1${RESET_COLOR}\\ ⚜️  "
-    for ((i=1; i<=$(( columns - ${#info} )); i++)); do
-        half+="-"
-    done
+    local effective_columns="${columns:-80}" # Default to 80 if columns is not set or 0
 
+    [[ -n "$1" ]] && info="/${COLOR_GENERIC}$1${RESET_COLOR}\\ ⚜️  "
+
+    if (( effective_columns > 0 && effective_columns > ${#info} )); then
+        for ((i=1; i<=$(( effective_columns - ${#info} )); i++)); do
+            half+="-"
+        done
+    fi
     echo -e "$info$half"
 }
 
 function log.endline() {
-    # Get the size of the terminal
     local half=""
     local info=""
-    [[ -n $1 ]] && info="\\\\${COLOR_GENERIC}$1${RESET_COLOR}/ ⚜️  "
-    for ((i=1; i<=$(( columns - ${#info} )); i++)); do
-        half+="-"
-    done
+    local effective_columns="${columns:-80}" # Default to 80 if columns is not set or 0
 
+    [[ -n "$1" ]] && info="\\\\${COLOR_GENERIC}$1${RESET_COLOR}/ ⚜️  "
+
+    if (( effective_columns > 0 && effective_columns > ${#info} )); then
+        for ((i=1; i<=$(( effective_columns - ${#info} )); i++)); do
+            half+="-"
+        done
+    fi
     echo -e "$info$half"
 }
 

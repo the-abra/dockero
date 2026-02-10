@@ -11,9 +11,10 @@ mkdir -p "$DOCKERO_CACHE_DIR" 2>/dev/null
 _dockero_get_cache() {
   local cache_file="$DOCKERO_CACHE_DIR/$1"
   local ttl="${2:-$DOCKERO_CACHE_TTL}"
+  local age
   
   if [[ -f "$cache_file" ]]; then
-    local age=$(( $(date +%s) - $(stat -c %Y "$cache_file" 2>/dev/null || stat -f %m "$cache_file" 2>/dev/null) ))
+    age=$(( $(date +%s) - $(stat -c %Y "$cache_file" 2>/dev/null || stat -f %m "$cache_file" 2>/dev/null) ))
     if (( age < ttl )); then
       cat "$cache_file"
       return 0
@@ -27,12 +28,13 @@ _dockero_update_cache() {
   local cache_file="$DOCKERO_CACHE_DIR/$1"
   shift
   (
-    "$@" > "$cache_file.tmp" 2>/dev/null && mv "$cache_file.tmp" "$cache_file"
+    "$@" > "${cache_file}.tmp" 2>/dev/null && mv "${cache_file}.tmp" "$cache_file"
   ) &
 }
 
 # Get all containers (cached)
 _dockero_get_containers() {
+  local containers
   if ! _dockero_get_cache "containers"; then
     _dockero_update_cache "containers" docker ps -a --format "{{.Names}}"
   fi
@@ -40,6 +42,7 @@ _dockero_get_containers() {
 
 # Get running containers only (cached)
 _dockero_get_running() {
+  local running
   if ! _dockero_get_cache "running"; then
     _dockero_update_cache "running" docker ps --filter "status=running" --format "{{.Names}}"
   fi
@@ -47,9 +50,18 @@ _dockero_get_running() {
 
 # Get tar files (cached with longer TTL since files change less)
 _dockero_get_tars() {
+  local tars
   if ! _dockero_get_cache "tars" 5; then
     # Use printf instead of find for better performance
     _dockero_update_cache "tars" bash -c 'printf "%s\n" *.tar 2>/dev/null | grep -v "^\*\.tar$"'
+  fi
+}
+
+# Get all networks (cached)
+_dockero_get_networks() {
+  local networks
+  if ! _dockero_get_cache "networks"; then
+    _dockero_update_cache "networks" docker network ls --format "{{.Name}}"
   fi
 }
 
@@ -98,7 +110,7 @@ _dockero_autocomplete() {
       ;;
     net)
       # shellcheck disable=SC2207
-      COMPREPLY=($(compgen -W "new delete add remove rename list" -- "${cur}"))
+      COMPREPLY=($(compgen -W "new create delete add connect remove disconnect rename prune list inspect" -- "${cur}"))
       ;;
     sync)
       # shellcheck disable=SC2207
@@ -121,9 +133,9 @@ _dockero_autocomplete() {
       COMPREPLY=($(compgen -W "start basic intermediate advanced docker concepts examples" -- "${cur}"))
       ;;
     explain)
-      # Complete with common dockero commands
+      # Complete with common dockero commands (all top-level commands are explainable)
       # shellcheck disable=SC2207
-      COMPREPLY=($(compgen -W "run setup compose start stop list env sync" -- "${cur}"))
+      COMPREPLY=($(compgen -W "$(echo "$base_opts" | sed 's/--help//g' | sed 's/--version//g')" -- "${cur}"))
       ;;
     show)
       # shellcheck disable=SC2207
@@ -152,20 +164,34 @@ _dockero_autocomplete() {
     esac
     ;;
   *)
-    # Additional arguments for net subcommand
-    if [[ "${COMP_WORDS[1]}" == "net" ]]; then
-      case "${COMP_WORDS[2]}" in
-      add|remove|rename)
-        local containers
-        containers=$(_dockero_get_containers)
-        # shellcheck disable=SC2207
-        COMPREPLY=($(compgen -W "${containers}" -- "${cur}"))
-        ;;
-      delete)
-        # Could add network list here if needed
-        ;;
-      esac
-    fi
+    # Additional arguments for subcommands
+    case "${COMP_WORDS[1]}" in
+    net)
+      local subcmd="${COMP_WORDS[2]}"
+      local containers
+      local networks
+
+      if [[ "$COMP_CWORD" -eq 3 ]]; then
+        case "$subcmd" in
+        add | remove | connect | disconnect)
+          containers=$(_dockero_get_containers)
+          COMPREPLY=($(compgen -W "${containers}" -- "${cur}"))
+          ;;
+        delete | inspect | rename)
+          networks=$(_dockero_get_networks)
+          COMPREPLY=($(compgen -W "${networks}" -- "${cur}"))
+          ;;
+        esac
+      elif [[ "$COMP_CWORD" -eq 4 ]]; then
+        case "$subcmd" in
+        add | remove | connect | disconnect | rename)
+          networks=$(_dockero_get_networks)
+          COMPREPLY=($(compgen -W "${networks}" -- "${cur}"))
+          ;;
+        esac
+      fi
+      ;;
+    esac
     ;;
   esac
 }

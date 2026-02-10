@@ -19,3 +19,6 @@
 
 # Default timeout for docker operations
 : "${DOCKERO_TIMEOUT:=300}"
+
+# Enable/Disable automatic GPU detection
+: "${DOCKERO_AUTO_GPU_ENABLED:=true}"

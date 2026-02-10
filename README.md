@@ -55,13 +55,6 @@ chmod +x core/dockero.sh
 sudo ln -s "$PWD/core/dockero.sh" /usr/local/bin/dockero
 ```
 
-#### Option 3: Container Install (Docker required)
-```bash
-# Build Dockero container
-docker build -t dockero .
-docker run -it --rm --name dockero -v /var/run/docker.sock:/var/run/docker.sock dockero
-```
-
 ### Setup Autocompletion
 
 ```bash

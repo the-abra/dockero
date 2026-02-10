@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail # Exit on error, unset variables, and pipe failures
+
 # === Project Root Detection ===
 if [ -L "$0" ] ; then
     CORE_DIR=$(dirname "$(readlink -f "$0")") ;
@@ -27,15 +29,13 @@ fi
 # === sources ===
 # shellcheck disable=SC1091
 source "${CORE_DIR}/extra/log.sh"
-# shellcheck disable=SC1091
 source "${CORE_DIR}/extra/colors.sh"
-# shellcheck disable=SC1091
 source "${CORE_DIR}/extra/inipars.sh"
-# shellcheck disable=SC1091
+source "${CORE_DIR}/extra/docker-helpers.sh" # New line
 source "${CORE_DIR}/parameter-indexing.sh"
 
 # === Parameter Indexing ===
-parameter-indexing "$@"
+parameter-indexing "$@" || exit 1 # Exit if parameter-indexing fails
 
 # Initialize args array if not already done (defensive programming)
 if [[ ${#args[@]} -eq 0 ]]; then
@@ -55,7 +55,7 @@ validate_container_name() {
     local name="$1"
     # Docker container names must match this regex: [a-zA-Z0-9][a-zA-Z0-9_.-]+
     if [[ ! "$name" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]]; then
-        log.error "Invalid container name: $name"
+        log.error "Invalid container name: ${RED}$name${RESET_COLOR}"
         log.hint "Container names must start with alphanumeric and contain only [a-zA-Z0-9_.-]"
         return 1
     fi
@@ -65,7 +65,7 @@ validate_image_name() {
     local name="$1"
     # Basic validation for image names
     if [[ ! "$name" =~ ^[a-zA-Z0-9._-]+(/[a-zA-Z0-9._-]+)*(:[a-zA-Z0-9._-]+)?$ ]]; then
-        log.error "Invalid image name: $name"
+        log.error "Invalid image name: ${RED}$name${RESET_COLOR}"
         log.hint "Image names should follow format: [registry/]name[:tag]"
         return 1
     fi
@@ -73,20 +73,42 @@ validate_image_name() {
 
 # === Dynamic Command Loader ===
 load_command() {
-  local cmd_file="${COMMANDS_DIR}/${1}.sh"
+  # cmd_name is the actual command (e.g., "explain", "run")
+  # Its value comes from args[0] in the main script.
+  local cmd_name_from_global_args="${args[0]}" # Use global args[0] explicitly
+
+  # Validate cmd_name for path traversal and invalid characters
+  if [[ ! "$cmd_name_from_global_args" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+    log.error "Invalid command name: '${BOLD_RED}$cmd_name_from_global_args${RESET_COLOR}'. Command names can only contain alphanumeric characters, underscores, and hyphens."
+    log.hint "Run '${BOLD_YELLOW}$0 -h${RESET_COLOR}' for usage."
+    exit 1
+  fi
+
+  local cmd_file="${COMMANDS_DIR}/${cmd_name_from_global_args}.sh"
+  
   if [[ -f "$cmd_file" ]]; then
     # shellcheck disable=SC1090
     source "$cmd_file"
-    # Validate the command function exists
-    if declare -f "$1" >/dev/null 2>&1; then
-        "${1}" "${@:2}"
+    
+    # Resolve the actual function name
+    local func_name="$cmd_name_from_global_args" # Use global args[0] explicitly
+    if [[ "$cmd_name_from_global_args" == "export" ]]; then
+        func_name="dockero_export"
+    elif [[ "$cmd_name_from_global_args" == "import" ]]; then
+        func_name="dockero_import"
+    fi
+
+    # Validate the command function exists and call it
+    if declare -f "$func_name" >/dev/null 2>&1; then
+        # The arguments for the command function start from global args[1]
+        "$func_name" "${args[@]:1}" # Pass arguments starting from args[1] of the GLOBAL args array
     else
-        log.error "Command function '$1' is not defined in $cmd_file"
+        log.error "Command function '${BOLD_RED}$func_name${RESET_COLOR}' is not defined in ${BOLD_YELLOW}$cmd_file${RESET_COLOR}."
         exit 1
     fi
   else
-    log.error "Unknown command '$1'"
-    log.hint "Run '$0 -h' for usage."
+    log.error "Unknown command '${BOLD_RED}$cmd_name_from_global_args${RESET_COLOR}'."
+    log.hint "Run '${BOLD_YELLOW}$0 -h${RESET_COLOR}' for usage."
     exit 1
   fi
 }
@@ -102,11 +124,41 @@ show_version() {
 
 # === Entrypoint ===
 
+# Handle global flags first (--version, --help)
+if [[ -n "${params[v]+set}" || -n "${params[version]+set}" ]]; then
+  show_version
+  exit 0
+elif [[ -n "${params[h]+set}"  || -n "${params[help]+set}" ]]; then
+   # For 'dockero CMD -h', the command to explain is args[0].
+   # For 'dockero -h', it's empty, so general help.
+   
+   # Source explain directly to display help for args[0]
+   # shellcheck disable=SC1091
+   source "${COMMANDS_DIR}/explain.sh"
+   explain "${args[0]:-}" "${args[@]:1}" # Explain args[0] and pass any further args
+   exit 0
+fi
+
+# Handle 'version' as a subcommand
+if [[ "${args[0]:-}" == 'version' ]]; then
+  show_version
+  exit 0
+fi
+
+# If no positional command is given after processing flags (e.g., just `dockero`)
+if [[ -z "${args[0]:-}" ]]; then
+    # Show general help
+    # shellcheck disable=SC1091
+    source "${COMMANDS_DIR}/help.sh"
+    _show_general_help # Call the general help function directly
+    exit 0
+fi
+
 # Check if first argument is for Python-enhanced commands
-if [[ "${args[0]}" == "tui" || "${args[0]}" == "dashboard" ]]; then
+if [[ "${args[0]:-}" == "tui" || "${args[0]:-}" == "dashboard" ]]; then
   # Try to run the Python TUI if Python is available
   if command -v python3 >/dev/null 2>&1; then
-    "${CORE_DIR}/extra/run-python-ux.sh" "${args[0]}"  # Pass the actual command ('tui' or 'dashboard')
+    "${CORE_DIR}/extra/run-python-ux.sh" "${args[0]:-}"  # Pass the actual command ('tui' or 'dashboard')
   else
     log.warn "Python3 not found. Running basic dashboard instead."
     # shellcheck disable=SC1091
@@ -114,15 +166,6 @@ if [[ "${args[0]}" == "tui" || "${args[0]}" == "dashboard" ]]; then
     show_dashboard
   fi
   exit 0
-elif [[ -n "${params[v]+set}" || -n "${params[version]+set}" || "${args[0]}" == 'version' ]]; then
-  show_version
-elif [[ -n "${params[h]+set}"  || -n "${params[help]+set}" || -z "${args[0]}" ]]; then
-   # shellcheck disable=SC1091
-   source "${COMMANDS_DIR}/help.sh"
-   help-"${args[0]}"
-   log.setline
-   exit 0
 fi
 
 load_command "${args[0]}"
-
