@@ -2,9 +2,11 @@
 
 start() {
   local container_name="${args[1]:-}"
+  # shellcheck disable=SC2154
   local custom_command_flag="${params[c]+set}" # Check if -c flag is present
   local custom_command_args=("${args[@]:2}") # The command and its arguments
 
+  # shellcheck disable=SC2154
   if [[ "${full_arr[1]}" =~ ^"-" ]]; then
     log.warn "You cannot set parameter flags before the container name."
     log.hint "Usage: ${BOLD_YELLOW}dockero start <container> [-c <command>]${RESET_COLOR}"

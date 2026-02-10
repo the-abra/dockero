@@ -175,10 +175,12 @@ _dockero_autocomplete() {
         case "$subcmd" in
         add | remove | connect | disconnect)
           containers=$(_dockero_get_containers)
+          # shellcheck disable=SC2207
           COMPREPLY=($(compgen -W "${containers}" -- "${cur}"))
           ;;
         delete | inspect | rename)
           networks=$(_dockero_get_networks)
+          # shellcheck disable=SC2207
           COMPREPLY=($(compgen -W "${networks}" -- "${cur}"))
           ;;
         esac
@@ -186,6 +188,7 @@ _dockero_autocomplete() {
         case "$subcmd" in
         add | remove | connect | disconnect | rename)
           networks=$(_dockero_get_networks)
+          # shellcheck disable=SC2207
           COMPREPLY=($(compgen -W "${networks}" -- "${cur}"))
           ;;
         esac

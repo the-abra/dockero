@@ -289,7 +289,7 @@ wizard_setup_assistant() {
     while IFS= read -r -d '' file; do
         local dir
         dir=$(dirname "$file")
-        if [[ ! " ${project_dirs[*]} " =~ " ${dir} " ]]; then
+        if [[ ! " ${project_dirs[*]} " =~ ${dir} ]]; then
             project_dirs+=("$dir")
         fi
     done < <(find . -maxdepth 3 \( -name "package.json" -o -name "Dockerfile" -o -name "*.csproj" -o -name "requirements.txt" -o -name "Gemfile" \) -print0 2>/dev/null)
@@ -349,7 +349,7 @@ wizard_setup_project() {
         echo ""
         if [[ ! "$response" =~ ^[Yy]$ ]]; then
             log.info "Operation cancelled."
-            popd >/dev/null # Go back to original directory
+            popd >/dev/null || return 1 # Go back to original directory
             return 0
         fi
     fi
@@ -383,7 +383,7 @@ wizard_setup_project() {
     # Validate image_to_use
     if ! validate_image_name "$image_to_use"; then
         log.error "Invalid image name: ${RED}$image_to_use${RESET_COLOR}."
-        popd >/dev/null # Go back to original directory
+        popd >/dev/null || return 1 # Go back to original directory
         return 1
     fi
 
@@ -398,7 +398,7 @@ wizard_setup_project() {
 
     if ! validate_container_name "$sanitized_generated_name"; then
         log.error "Generated container name '${RED}$sanitized_generated_name${RESET_COLOR}' is invalid. Cannot write .dockero file."
-        popd >/dev/null
+        popd >/dev/null || return 1
         return 1
     fi
     
@@ -428,5 +428,5 @@ EOF
     log.sub "To start your project: ${BOLD_YELLOW}dockero setup run .${RESET_COLOR}"
     log.sub "To learn more: ${BOLD_YELLOW}dockero explain setup${RESET_COLOR}"
 
-    popd >/dev/null # Go back to original directory
+    popd >/dev/null || return 1 # Go back to original directory
 }

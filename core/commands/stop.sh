@@ -4,6 +4,7 @@ stop() {
   local container_name="${args[1]:-}"
   local timeout="${params[timeout]:-1}" # Default timeout to 1 second
   
+  # shellcheck disable=SC2154
   if [[ "${full_arr[1]}" =~ ^"-" ]]; then
     log.warn "You cannot set parameter flags before the container name."
     log.hint "Usage: ${BOLD_YELLOW}dockero stop <container> [--timeout <seconds>]${RESET_COLOR}"
@@ -34,7 +35,7 @@ stop() {
     # Use mktemp for secure temporary log file and add trap for cleanup
     local stop_log
     stop_log=$(mktemp "/tmp/dockero_stop_${container_name}_XXXXXX.log")
-    trap "rm -f \"$stop_log\"" EXIT
+    trap 'rm -f "$stop_log"' EXIT
 
     if docker stop --time="$timeout" "$container_name" > "$stop_log" 2>&1; then # $container_name is validated
         log.done "Container '${BOLD_GREEN}$container_name${RESET_COLOR}' stopped successfully."

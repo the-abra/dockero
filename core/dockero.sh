@@ -29,9 +29,13 @@ fi
 # === sources ===
 # shellcheck disable=SC1091
 source "${CORE_DIR}/extra/log.sh"
+# shellcheck disable=SC1091
 source "${CORE_DIR}/extra/colors.sh"
+# shellcheck disable=SC1091
 source "${CORE_DIR}/extra/inipars.sh"
+# shellcheck disable=SC1091
 source "${CORE_DIR}/extra/docker-helpers.sh" # New line
+# shellcheck disable=SC1091
 source "${CORE_DIR}/parameter-indexing.sh"
 
 # === Parameter Indexing ===

@@ -25,7 +25,7 @@ fi
 
 local commit_log="/tmp/export.${container_name}.log"
 # Clean up log file on exit
-trap "rm -f \"$commit_log\"" EXIT
+trap 'rm -f "$commit_log"' EXIT
 
 log.info "Initiating container export."
 

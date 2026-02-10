@@ -6,6 +6,7 @@ list() {
     log.setline "Container List"
     # Use color variables from log.sh for header, ensure alignment
     printf "${COLOR_SUB}${BOLD}%-20s %-30s %-25s %-15s %-20s${RESET_COLOR}\n" "NAME" "IMAGE" "STATUS" "PORTS" "IP"
+    # shellcheck disable=SC2059
     printf "${COLOR_SUB}-------------------- ------------------------------ ------------------------- --------------- --------------------${RESET_COLOR}\n" # Separator
 
     while IFS= read -r container_id; do

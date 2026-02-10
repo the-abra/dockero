@@ -106,7 +106,7 @@ compose_up() {
     # Parse services from compose file using helper
     local services_str
     services_str=$(_compose_get_services "$compose_file")
-    local -a services=($services_str) # Re-read into array
+    IFS=' ' read -r -a services <<< "$services_str" # Re-read into array
     
     if [[ ${#services[@]} -eq 0 ]]; then
         log.warn "No services found in compose file: ${BOLD_YELLOW}$compose_file${RESET_COLOR}."
@@ -193,7 +193,8 @@ compose_up() {
             local -a deps=()
             IFS=', ' read -ra deps <<< "$depends_on"
             for dep_service in "${deps[@]}"; do
-                local escaped_dep_service=$(_inipars_escape_regex "$dep_service") # Escape for regex
+                local escaped_dep_service
+                escaped_dep_service=$(_inipars_escape_regex "$dep_service") # Escape for regex
                 log.sub "Waiting for dependency ${BOLD_YELLOW}$dep_service${RESET_COLOR} to be ready..."
                 local max_wait=30
                 local count=0
@@ -229,6 +230,7 @@ compose_up() {
             log.sub "Creating and starting container: ${BOLD_YELLOW}$container_name${RESET_COLOR}."
             
             # Use the global docker_run helper
+            # shellcheck disable=SC2154
             if ! docker_run "$container_name" "$image" "true" "$command_str" "$volume_mount" "$ports" "$restart_policy" "" ""; then
                 log.error "Failed to create container: ${RED}$container_name${RESET_COLOR}."
                 return 1
@@ -255,7 +257,7 @@ compose_down() {
     # Parse services from compose file using helper
     local services_str
     services_str=$(_compose_get_services "$compose_file")
-    local -a services=($services_str) # Re-read into array
+    IFS=' ' read -r -a services <<< "$services_str" # Re-read into array
     
     # Stop and remove each service in reverse order
     for (( idx=${#services[@]}-1 ; idx>=0 ; idx-- )) ; do
@@ -306,7 +308,7 @@ compose_start() {
     # Parse services from compose file using helper
     local services_str
     services_str=$(_compose_get_services "$compose_file")
-    local -a services=($services_str) # Re-read into array
+    IFS=' ' read -r -a services <<< "$services_str" # Re-read into array
 
     for service in "${services[@]}"; do
         local container_name
@@ -348,7 +350,7 @@ compose_stop() {
     # Parse services from compose file using helper
     local services_str
     services_str=$(_compose_get_services "$compose_file")
-    local -a services=($services_str) # Re-read into array
+    IFS=' ' read -r -a services <<< "$services_str" # Re-read into array
 
     for service in "${services[@]}"; do
         local container_name
@@ -388,7 +390,7 @@ compose_ps() {
     # Parse services from compose file using helper
     local services_str
     services_str=$(_compose_get_services "$compose_file")
-    local -a services=($services_str) # Re-read into array
+    IFS=' ' read -r -a services <<< "$services_str" # Re-read into array
 
     for service in "${services[@]}"; do
         local container_name
@@ -440,7 +442,7 @@ compose_logs() {
         log.info "Showing logs for all services in: ${BOLD_YELLOW}$compose_file${RESET_COLOR}"
         local services_str
         services_str=$(_compose_get_services "$compose_file")
-        local -a services=($services_str) # Re-read into array
+        IFS=' ' read -r -a services <<< "$services_str" # Re-read into array
         
         for svc in "${services[@]}"; do
             local container_name

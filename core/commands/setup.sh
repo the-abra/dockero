@@ -4,6 +4,7 @@
 # (assuming docker-helpers.sh is sourced by dockero.sh globally now)
 
 setup() {
+    # shellcheck disable=SC2154
     local subcommand="${args[1]}"
     local has_dry_run=0 # Default to no dry-run
 

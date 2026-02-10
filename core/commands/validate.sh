@@ -254,11 +254,15 @@ validate_compose_config() {
     local config_file="${1:-}"
     local errors=0
     local services_found=0
+    local -a config_lines=()
     
     # config_file is already validated by validate_single_config
     
+    # Read the entire config file into an array once to avoid SC2094 issues
+    mapfile -t config_lines < "$config_file"
+    
     # Parse the file to find service sections
-    while IFS= read -r line; do
+    for line in "${config_lines[@]}"; do
         # Skip comments and empty lines
         [[ "$line" =~ ^[[:space:]]*# ]] && continue
         [[ "$line" =~ ^[[:space:]]*$ ]] && continue
@@ -306,7 +310,7 @@ validate_compose_config() {
                 fi
             fi
         fi
-    done < "$config_file"
+    done
     
     if [[ "$services_found" -eq 0 ]]; then
         log.warn "No services found in compose file: ${BOLD_YELLOW}$config_file${RESET_COLOR}."

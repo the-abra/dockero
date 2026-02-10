@@ -164,8 +164,10 @@ net() {
       echo -e "    ${YELLOW}No containers connected.${RESET_COLOR}"
     else
       echo "$containers" | while IFS= read -r line; do
-        local container_name=$(echo "$line" | awk '{print $1}')
-        local container_ip=$(echo "$line" | awk '{print $2}')
+        local container_name
+        container_name=$(echo "$line" | awk '{print $1}')
+        local container_ip
+        container_ip=$(echo "$line" | awk '{print $2}')
         # Validate container_name here if needed, but it comes from Docker inspect which is reliable
         echo -e "    - ${YELLOW}$container_name${RESET_COLOR} (${MAGENTA}$container_ip${RESET_COLOR})"
       done

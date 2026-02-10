@@ -3,6 +3,7 @@
 # core/learn/main.sh - The main entry point for the interactive learning system.
 
 # shellcheck disable=SC1090
+# shellcheck disable=SC1091
 source "${CORE_DIR}/learn/helpers.sh"
 
 
@@ -59,7 +60,8 @@ _learn_show_topics() {
     local topic_files=("${CORE_DIR}/learn/topics/${level_dir}"/*.sh)
     for i in "${!topic_files[@]}"; do
         local topic_file="${topic_files[$i]}"
-        local topic_title=$(_learn_get_topic_title "$topic_file")
+        local topic_title
+        topic_title=$(_learn_get_topic_title "$topic_file")
         log.sub "${BOLD_GREEN}dockero learn $level_name $((i+1))${RESET_COLOR} - $topic_title"
     done
     echo ""

@@ -90,7 +90,7 @@ env_list() {
         if [[ -f "$file" ]]; then
             local env_name
             env_name=$(_env_extract_name "$(basename "$file")")
-            if [[ -n "$env_name" ]] && _env_validate_name "$env_name" && ! [[ " ${envs[*]} " =~ " $env_name " ]]; then
+            if [[ -n "$env_name" ]] && _env_validate_name "$env_name" && ! [[ " ${envs[*]} " =~ $env_name ]]; then
                 envs+=("$env_name")
             fi
         fi
@@ -101,7 +101,7 @@ env_list() {
         if [[ -f "$file" || -d "$file" ]]; then
             local env_name
             env_name=$(_env_extract_name "$(basename "$file")")
-            if [[ -n "$env_name" ]] && _env_validate_name "$env_name" && ! [[ " ${envs[*]} " =~ " $env_name " ]]; then
+            if [[ -n "$env_name" ]] && _env_validate_name "$env_name" && ! [[ " ${envs[*]} " =~ $env_name ]]; then
                 envs+=("$env_name")
             fi
         fi

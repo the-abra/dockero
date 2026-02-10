@@ -2,6 +2,7 @@
 
 # Extra function to get container metrics
 monitor() {
+    # shellcheck disable=SC2154
     local subcommand="${args[1]}"
     
     if [[ -z "$subcommand" ]]; then
@@ -80,8 +81,10 @@ monitor_health() {
         log.info "Health status for all containers:"
         log.setline "❤️  Container Health Status"
         docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Image}}" | tail -n +2 | while IFS= read -r line; do
-            local name=$(echo "$line" | awk '{print $1}')
-            local status=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}N/A{{end}}' "$name" 2>/dev/null || echo "N/A")
+            local name
+            name=$(echo "$line" | awk '{print $1}')
+            local status
+            status=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}N/A{{end}}' "$name" 2>/dev/null || echo "N/A")
             local health_color="${RESET_COLOR}"
             if [[ "$status" == "healthy" ]]; then
                 health_color="${COLOR_DONE}"
@@ -109,7 +112,7 @@ monitor_health() {
     local health_json
     health_json=$(docker inspect --format='{{json .State.Health}}' "$container_name" 2>/dev/null)
 
-    if [[ $? -eq 0 ]] && [[ -n "$health_json" ]] && [[ "$health_json" != "null" ]]; then
+    if [[ -n "$health_json" ]] && [[ "$health_json" != "null" ]]; then
         # Parse with jq
         local status
         status=$(echo "$health_json" | jq -r '.Status')

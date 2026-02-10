@@ -65,7 +65,7 @@ show_commands() {
         local cat_commands="${category_entry#*:}"
         
         # Use escaped_filter in the regex comparison
-        if [[ -n "$escaped_filter" ]] && ! [[ "$cat_name" =~ "$escaped_filter" ]]; then
+        if [[ -n "$escaped_filter" ]] && ! [[ "$cat_name" =~ $escaped_filter ]]; then
             continue
         fi
         
@@ -321,8 +321,10 @@ show_status_visual() {
     
     # Check Docker daemon
     if command -v docker &> /dev/null && docker ps -q &> /dev/null; then # Faster check
+        # shellcheck disable=SC2059
         printf "${GREEN}✓ Docker daemon:${RESET_COLOR} ${BOLD_GREEN}Running${RESET_COLOR}\n"
     else
+        # shellcheck disable=SC2059
         printf "${RED}✗ Docker daemon:${RESET_COLOR} ${BOLD_RED}Not running${RESET_COLOR}\n"
     fi
     
@@ -332,18 +334,21 @@ show_status_visual() {
     local running_containers
     running_containers=$(docker ps -q | wc -l 2>/dev/null || echo 0)
     
+    # shellcheck disable=SC2059
     printf "${BOLD_WHITE}📦 Containers:${RESET_COLOR} ${BOLD_GREEN}${total_containers:-0}${RESET_COLOR} total (${BOLD_YELLOW}${running_containers:-0}${RESET_COLOR} running)\n"
     
     # Count images  
     local total_images
     total_images=$(docker images -q | wc -l 2>/dev/null || echo 0)
+    # shellcheck disable=SC2059
     printf "${BOLD_WHITE}📚 Images:${RESET_COLOR} ${BOLD_GREEN}${total_images:-0}${RESET_COLOR} available\n"
     
     # Disk usage if available
     if command -v docker &> /dev/null; then
         local disk_usage
         disk_usage=$(docker system df -q 2>/dev/null | grep "Local Images" | awk '{print $3}' 2>/dev/null || echo "N/A")
-        printf "${BOLD_WHITE}💾 Disk usage:${RESET_COLOR} ${BOLD_YELLOW}$disk_usage${RESET_COLOR}\n"
+        # shellcheck disable=SC2059
+    printf "${BOLD_WHITE}💾 Disk usage:${RESET_COLOR} ${BOLD_YELLOW}$disk_usage${RESET_COLOR}\n"
     fi
     
     echo ""

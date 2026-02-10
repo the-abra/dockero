@@ -3,12 +3,7 @@
 # The explain command will be handled by the explain function in this file
 explain() {
     local command_to_explain="${1:-}" # Use function's first argument, safely
-    local -a explain_specific_args=() # Initialize as empty array
-    # Populate only if there are arguments beyond the first one
-    if [[ "$#" -gt 1 ]]; then
-        explain_specific_args=("${@:2}")
-    fi
-
+    
     local -a explainable_commands=(
         "run" "list" "rename" "export" "import" "start" "stop" "setup" "remove"
         "sync" "compose" "env" "validate" "system" "learn" "explain" "show"

@@ -8,6 +8,7 @@ learn() {
     if [[ -f "$learn_main_script" ]]; then
         # shellcheck disable=SC1090
         source "$learn_main_script"
+        # shellcheck disable=SC2154
         _learn_main "${args[@]:1}"
     else
         log.error "Learn system not found. Please reinstall dockero."

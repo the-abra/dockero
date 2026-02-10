@@ -7,10 +7,11 @@
 #   $CONF_FILE if setted, you dont need to set [file] again
 
 # Helper function to escape regex metacharacters for sed/awk
-_inipars_escape_regex() {
-  echo "$1" | sed -e 's/[^^$.*+?|()\[{]/\\&/g'
-}
+# _inipars_escape_regex() {
+#   echo "$1" | sed -e 's/[^^$.*+?|()\[{]/\\&/g'
+# }
 # Helper function to escape regex metacharacters for sed/awk
+# shellcheck disable=SC2001
 _inipars_escape_regex() {
   echo "$1" | sed -e 's/[^^$.*+?|()\[{]/\\&/g'
 }
@@ -39,13 +40,15 @@ _inipars_get_section_bounds() {
   local __start_line_ref="$3" # Variable to store start line
   local __end_line_ref="$4"   # Variable to store end line (next section or EOF)
 
-  local section_start_line=$(grep -n "^\[$escaped_section\]$" "$file" | cut -d: -f1)
+  local section_start_line
+  section_start_line=$(grep -n "^\[$escaped_section\]$" "$file" | cut -d: -f1)
   if [[ -z "$section_start_line" ]]; then
     return 1 # Section not found
   fi
 
   # Find the line number of the next section, or EOF if this is the last section
-  local next_section_line=$(grep -n "^\[.*\]$" "$file" | awk -v start_line="$section_start_line" '$1 > start_line {print $1; exit}')
+  local next_section_line
+  next_section_line=$(grep -n "^\[.*\]$" "$file" | awk -v start_line="$section_start_line" '$1 > start_line {print $1; exit}')
 
   eval "$__start_line_ref='$section_start_line'"
   eval "$__end_line_ref='${next_section_line:-$(wc -l < "$file")}'" # Default to EOF if no next section
@@ -111,7 +114,7 @@ _inipars_add_key_to_section_in_file() {
     sed -i.bak -E "/^\[$escaped_section\]$/a\\$key = $value" "$file"
   else
     # Insert before the specified line (which is the start of the next section)
-    sed -i.bak -E "$(($insert_before_line - 1))a\\$key = $value" "$file"
+    sed -i.bak -E "$((insert_before_line - 1))a\\$key = $value" "$file"
   fi
   rm -f "$file.bak"
   return 0
@@ -136,8 +139,10 @@ inipars.get() {
   local key="$2"
   local file="${3:-$CONF_FILE}"
 
-  local escaped_key=$(_inipars_escape_regex "$key")
-  local escaped_section=$(_inipars_escape_regex "$section")
+  local escaped_key
+  escaped_key=$(_inipars_escape_regex "$key")
+  local escaped_section
+  escaped_section=$(_inipars_escape_regex "$section")
 
   awk -F '=' -v section_name="$escaped_section" -v key_name="$escaped_key" '
     /^\[.*\]$/ {
@@ -155,7 +160,8 @@ inipars.section() {
   local section="$1"
   local file="${2:-$CONF_FILE}"
 
-  local escaped_section=$(_inipars_escape_regex "$section")
+  local escaped_section
+  escaped_section=$(_inipars_escape_regex "$section")
 
   awk -F '=' -v section_name="$escaped_section" '
     /^\[.*\]$/ {
@@ -177,8 +183,10 @@ inipars.set() {
   local file="${4:-$CONF_FILE}"
 
   # Escape section and key for regex use
-  local escaped_section=$(_inipars_escape_regex "$section")
-  local escaped_key=$(_inipars_escape_regex "$key")
+  local escaped_section
+  escaped_section=$(_inipars_escape_regex "$section")
+  local escaped_key
+  escaped_key=$(_inipars_escape_regex "$key")
 
   # 1. Ensure the file exists, creating it with initial content if necessary
   if _inipars_ensure_file_exists "$file" "$section" "$key" "$value"; then

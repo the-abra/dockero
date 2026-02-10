@@ -3,6 +3,7 @@
 # Self-healing automation system for Dockero
 
 heal() {
+    # shellcheck disable=SC2154
     local subcommand="${args[1]}"
     
     if [[ -z "$subcommand" ]]; then
@@ -21,7 +22,7 @@ heal() {
             heal_auto
             ;;
         "monitor")
-            heal_monitor
+            heal_monitor "${args[@]:2}"
             ;;
         "diagnose")
             heal_diagnose "${args[2]}"
@@ -140,15 +141,20 @@ heal_check() {
 
             if [[ $running_containers_count -gt 0 ]]; then
                 log.info "Checking running container health..."
-                docker ps --format "table {{.Names}}\t{{.Status}}" | tail -n +2 | while read -r name status; do
+                local problematic_containers_output
+                problematic_containers_output=$(docker ps --format "table {{.Names}}\t{{.Status}}" | tail -n +2 | while read -r name status; do
                     if [[ "$status" =~ (Restarting|Paused|Dead) ]]; then
                         log.warn "Container ${BOLD_YELLOW}$name${RESET_COLOR} in problematic state: ${RED}$status${RESET_COLOR}"
-                        ((issues_found++))
-                        ((fixes_available++))
+                        echo "ISSUE" # Indicate an issue found
                     else
                         log.sub "✓ ${GREEN}$name${RESET_COLOR}: ${status}"
                     fi
-                done
+                done)
+
+                local current_issues
+                current_issues=$(echo "$problematic_containers_output" | grep -c "ISSUE")
+                issues_found=$((issues_found + current_issues))
+                fixes_available=$((fixes_available + current_issues)) # Assuming each issue implies a fix
             fi
             ;;
         "networks")
@@ -235,7 +241,8 @@ heal_fix() {
                 # Fix all containers with issues
                 local stopped_containers
                 stopped_containers=$(docker ps -a --filter "status=exited" -q)
-                local stopped_count=$(echo "$stopped_containers" | wc -l)
+                local stopped_count
+            stopped_count=$(echo "$stopped_containers" | wc -l)
                 if [[ "$stopped_count" -gt 0 ]]; then
                     log.info "Starting ${stopped_count} stopped containers..."
                     echo "$stopped_containers" | xargs -r docker start > /dev/null 2>&1
@@ -318,7 +325,7 @@ heal_auto() {
 
         if [[ "$stopped_containers_count" -gt 0 ]]; then
             log.sub "Starting ${stopped_containers_count} stopped containers..."
-            docker start $(docker ps -a --filter "status=exited" --format "{{.ID}}" | xargs -r) 2>/dev/null || true # Using xargs -r
+            docker ps -a --filter "status=exited" --format "{{.ID}}" | xargs -r docker start > /dev/null 2>&1 || true # Using xargs -r
             log.done "Attempted to start stopped containers."
         fi
 
@@ -526,7 +533,7 @@ heal_cleanup() {
                         current_size=$(stat -c%s "$log_file")
                         if [[ $current_size -gt 52428800 ]]; then  # 50MB
                             log.sub "Truncating large log for ${BOLD_YELLOW}$container${RESET_COLOR} (${BOLD_YELLOW}$((current_size / 1024 / 1024))MB${RESET_COLOR})"
-                            > "$log_file"  # truncate the file
+                            true > "$log_file"  # truncate the file
                         fi
                     fi
                 done
@@ -565,7 +572,7 @@ heal_restore() {
                 project_dirs+=("$(dirname "$file")")
             done < <(find . -name ".dockero" -not -path "*/\.*" -print0 2>/dev/null)
             
-            local restored_count=0
+
             for project_dir in "${project_dirs[@]}"; do
                 ( # Subshell to avoid cd affecting main script
                 cd "$project_dir" || { log.warn "Could not change to directory: $project_dir"; continue; }
@@ -629,18 +636,17 @@ heal_restore() {
             local all_containers_names
             all_containers_names=$(docker ps -a --format "{{.Names}}")
             
-            local containers_to_restore=0
-            echo "$all_containers_names" | while read -r container_name; do
+            local containers_to_restore_output
+            containers_to_restore_output=$(echo "$all_containers_names" | while read -r container_name; do
                 if docker ps --format "{{.Names}}" | grep -q "^$container_name$"; then
                     log.sub "✓ ${GREEN}$container_name${RESET_COLOR} running."
                 else
                     log.sub "~ ${YELLOW}$container_name${RESET_COLOR} stopped. Checking if it should be running..."
-                    # This logic would need to determine if the container should be auto-started
-                    # based on some .dockero config, which is complex.
-                    # For now, just identify.
-                    containers_to_restore=$((containers_to_restore + 1))
+                    echo "STOPPED" # Indicate a stopped container
                 fi
-            done
+            done)
+            local containers_to_restore
+            containers_to_restore=$(echo "$containers_to_restore_output" | grep -c "STOPPED")
             if [[ "$containers_to_restore" -gt 0 ]]; then
                 log.warn "${BOLD_YELLOW}$containers_to_restore${RESET_COLOR} stopped containers found that may need manual restart."
                 log.hint "Consider: ${BOLD_YELLOW}dockero start <container-name>${RESET_COLOR} or ${BOLD_YELLOW}dockero heal fix containers${RESET_COLOR}"

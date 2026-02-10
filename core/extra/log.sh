@@ -90,7 +90,8 @@ function log() {
     local message_color="$4"
     local indent="$5"
 
-    local prefix="$(_log_prefix "$level" "$prefix_color")"
+    local prefix
+    prefix="$(_log_prefix "$level" "$prefix_color")"
     if [[ "$_DOCKERO_HAS_COLORS" == "true" ]]; then
         echo -e "${indent}${prefix} ${message_color}${message}${RESET_COLOR}"
     else
