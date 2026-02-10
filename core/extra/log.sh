@@ -150,7 +150,7 @@ function log.setline() {
             line+="${line_char}"
         fi
     else
-        for ((i=0; i<total_length; i++)); do line+="${line_char}"; fi
+        for ((i=0; i<total_length; i++)); do line+="${line_char}"; done
     fi
     echo -e "${line}"
 }
