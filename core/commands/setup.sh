@@ -5,7 +5,7 @@
 
 setup() {
     # shellcheck disable=SC2154
-    local subcommand="${args[1]}"
+    local subcommand="${args[1]:-}"
     local has_dry_run=0 # Default to no dry-run
 
     # Check for --dry-run or -n flag first
@@ -16,20 +16,20 @@ setup() {
     # Default to 'run' subcommand if no explicit subcommand is provided
     if [[ -z "$subcommand" ]] || [[ "$subcommand" != "init" && "$subcommand" != "run" && "$subcommand" != "create" && "$subcommand" != "build" && "$subcommand" != "update" && "$subcommand" != "teardown" && "$subcommand" != "delete" ]]; then
         # If the first argument is a path and not a known subcommand, assume 'run'
-        setup_run "${args[1]}" "$has_dry_run"
+        setup_run "${args[1]:-}" "$has_dry_run"
     else
         case "$subcommand" in
             "init"|"create")
                 setup_init "${args[2]:-./}"
                 ;;
             "run"|"build")
-                setup_run "${args[2]}" "$has_dry_run"
+                setup_run "${args[2]:-}" "$has_dry_run"
                 ;;
             "update")
-                setup_update "${args[2]}"
+                setup_update "${args[2]:-}"
                 ;;
             "teardown"|"delete")
-                setup_teardown "${args[2]}"
+                setup_teardown "${args[2]:-}"
                 ;;
             *)
                 log.error "Unknown setup subcommand: ${BOLD_RED}$subcommand${RESET_COLOR}"

@@ -16,7 +16,7 @@ net() {
   local name2="${args[3]:-}" # Safely get name2
 
   # Ensure no unexpected params
-  [[ -z "${args[1]}" ]] && log.hint "net <command> [<args>]" && return 1
+  [[ -z "${args[1]:-}" ]] && log.hint "net <command> [<args>]" && return 1
   if [[ -n "${params[*]}" ]]; then
       log.warn "The net command does not accept additional parameters."
       return 1

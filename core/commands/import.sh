@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 import() {
-    if [[ -z "${args[1]}" ]]; then
+    if [[ -z "${args[1]:-}" ]]; then
         log.hint "Usage: ${BOLD_YELLOW}dockero import </path/to/archive.tar>${RESET_COLOR}"
         return 1
     fi

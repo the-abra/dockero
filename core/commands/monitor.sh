@@ -3,7 +3,7 @@
 # Extra function to get container metrics
 monitor() {
     # shellcheck disable=SC2154
-    local subcommand="${args[1]}"
+    local subcommand="${args[1]:-}"
     
     if [[ -z "$subcommand" ]]; then
         log.hint "Usage: dockero monitor <top|stats|health|logs|watch> [options]"

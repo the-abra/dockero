@@ -4,7 +4,7 @@
 
 heal() {
     # shellcheck disable=SC2154
-    local subcommand="${args[1]}"
+    local subcommand="${args[1]:-}"
     
     if [[ -z "$subcommand" ]]; then
         log.hint "Usage: heal <check|fix|auto|monitor|diagnose|cleanup|restore|watch|policy> [options]"
@@ -13,10 +13,10 @@ heal() {
     
     case "$subcommand" in
         "check")
-            heal_check "${args[2]}"
+            heal_check "${args[2]:-}"
             ;;
         "fix")
-            heal_fix "${args[2]}" "${args[3]}"
+            heal_fix "${args[2]:-}" "${args[3]:-}"
             ;;
         "auto")
             heal_auto
@@ -25,19 +25,19 @@ heal() {
             heal_monitor "${args[@]:2}"
             ;;
         "diagnose")
-            heal_diagnose "${args[2]}"
+            heal_diagnose "${args[2]:-}"
             ;;
         "cleanup")
-            heal_cleanup "${args[2]}"
+            heal_cleanup "${args[2]:-}"
             ;;
         "restore")
-            heal_restore "${args[2]}"
+            heal_restore "${args[2]:-}"
             ;;
         "watch")
-            heal_watch "${args[2]}"
+            heal_watch "${args[2]:-}"
             ;;
         "policy")
-            heal_policy "${args[2]}" "${args[3]}"
+            heal_policy "${args[2]:-}" "${args[3]:-}"
             ;;
         *)
             log.error "Unknown heal subcommand: ${BOLD_RED}$subcommand${RESET_COLOR}"

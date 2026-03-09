@@ -2,14 +2,14 @@
 
 export() {
 # === INPUT VALIDATION ===
-if [[ ! -n "${args[1]}" ]]; then
+if [[ -z "${args[1]:-}" ]]; then
   log.hint "Usage: dockero export <container-name> [--tag <image-tag>]"
   return 1
 fi
 
 # === PARAMETERS ===
 local container_name
-container_name="${args[1]}"
+container_name="${args[1]:-}"
 local image_tag="${params[tag]:-latest}" # Allow specifying tag, default to latest
 
 # Validate container name

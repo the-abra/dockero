@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 run() {
-  local container_name="${args[1]}"
+  local container_name="${args[1]:-}"
   local image_name # Declare image_name here
   if [[ ${args[2]+_} ]]; then # Check if args[2] is set
     image_name="${args[2]}"

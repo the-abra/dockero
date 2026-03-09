@@ -189,6 +189,24 @@ create_symlink() {
     log_info "Symlink created: /usr/local/bin/dockero -> $(pwd)/core/dockero"
 }
 
+# Install bash completion
+install_completion() {
+    log_info "Initiating Dockero bash completion installation..."
+    local completion_file="./core/autocompletion/dockero.bash-completion.sh"
+    local dest_dir="/etc/bash_completion.d"
+    
+    if [[ -f "$completion_file" ]]; then
+        if [[ -d "$dest_dir" ]]; then
+            run_command "installing bash completion" cp "$completion_file" "$dest_dir/dockero"
+            log_info "Bash completion installed to $dest_dir/dockero"
+        else
+            log_warn "Bash completion directory $dest_dir not found. Skipping completion installation."
+        fi
+    else
+        log_warn "Completion file $completion_file not found. Skipping completion installation."
+    fi
+}
+
 main() {
     log_info "Starting Dockero installation..."
     
@@ -198,6 +216,7 @@ main() {
     install_jq
     install_python_deps
     create_symlink
+    install_completion
     
     log_info "Dockero installation completed successfully!"
     log_info "You can now run 'dockero' from anywhere."
