@@ -181,12 +181,12 @@ create_symlink() {
     log_info "Initiating Dockero symlink creation..."
     
     # Make sure the script is executable
-    run_command "making dockero script executable" chmod +x "./core/dockero.sh"
+    run_command "making dockero script executable" chmod +x "./core/dockero"
     
     # Create symlink - using /usr/local/bin instead of /bin for user-installed software
-    run_command "creating symlink for dockero" ln -sf "$(pwd)/core/dockero.sh" /usr/local/bin/dockero
+    run_command "creating symlink for dockero" ln -sf "$(pwd)/core/dockero" /usr/local/bin/dockero
     
-    log_info "Symlink created: /usr/local/bin/dockero -> $(pwd)/core/dockero.sh"
+    log_info "Symlink created: /usr/local/bin/dockero -> $(pwd)/core/dockero"
 }
 
 main() {

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Source shared Docker helpers
-# (assuming docker-helpers.sh is sourced by dockero.sh globally now)
+# (assuming docker-helpers.sh is sourced by dockero globally now)
 
 setup() {
     # shellcheck disable=SC2154

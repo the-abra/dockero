@@ -7,7 +7,7 @@ explain() {
     local -a explainable_commands=(
         "run" "list" "rename" "export" "import" "start" "stop" "setup" "remove"
         "sync" "compose" "env" "validate" "system" "learn" "explain" "show"
-        "net" "heal" "registry" "secrets" "monitor" "wizard"
+        "net" "heal" "registry" "secrets" "monitor" "wizard" "dashboard" "help"
     )
 
     if [[ -z "$command_to_explain" ]]; then
@@ -24,6 +24,9 @@ explain() {
             cat << EOF
 ${BOLD_CYAN}🔹 dockero run ${GREEN}<name> [<image>]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Launch an existing container or create a new one.
+   ${BOLD_WHITE}• Parameters:${RESET_COLOR}
+     - ${GREEN}<name>${RESET_COLOR}: Name of the container to start or create.
+     - ${GREEN}[<image>]${RESET_COLOR}: Docker image to use if creating a new container (optional if <name> is an image).
    ${BOLD_WHITE}• What happens:${RESET_COLOR} 
      1. Checks if a container named '${YELLOW}<name>${RESET_COLOR}' exists.
      2. If exists: starts the container and attaches interactively.
@@ -38,6 +41,8 @@ EOF
             cat << EOF
 ${BOLD_CYAN}🔹 dockero list [-img]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} List all Docker containers or images.
+   ${BOLD_WHITE}• Parameters:${RESET_COLOR}
+     - ${GREEN}-img${RESET_COLOR}: List images instead of containers.
    ${BOLD_WHITE}• What happens:${RESET_COLOR} 
      • Without '-img': Displays running and stopped containers with their names, images, status, ports, and IP addresses.
      • With '-img': Displays all local Docker images.
@@ -51,6 +56,10 @@ EOF
             cat << EOF
 ${BOLD_CYAN}🔹 dockero rename ${GREEN}<old-name> <new-name> [-img]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Rename an existing container or retag an image.
+   ${BOLD_WHITE}• Parameters:${RESET_COLOR}
+     - ${GREEN}<old-name>${RESET_COLOR}: Current name of the container or image.
+     - ${GREEN}<new-name>${RESET_COLOR}: Target name/tag.
+     - ${GREEN}-img${RESET_COLOR}: Rename (tag) an image instead of a container.
    ${BOLD_WHITE}• What happens:${RESET_COLOR} 
      • Without '-img': Renames a Docker container from <old-name> to <new-name>.
      • With '-img': Retags a Docker image from <old-tag> to <new-tag>. The old tag will still exist.
@@ -64,6 +73,9 @@ EOF
             cat << EOF
 ${BOLD_CYAN}🔹 dockero export ${GREEN}<container-name> [--tag <image-tag>]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Export a Docker container's current state as a .tar archive.
+   ${BOLD_WHITE}• Parameters:${RESET_COLOR}
+     - ${GREEN}<container-name>${RESET_COLOR}: Name of the container to export.
+     - ${GREEN}--tag <image-tag>${RESET_COLOR}: Optional tag for the committed image before saving.
    ${BOLD_WHITE}• What happens:${RESET_COLOR} 
      1. Commits the specified container to a new image.
      2. Saves that image as a .tar file (e.g., '\$HOME/<container-name>.tar').
@@ -77,6 +89,8 @@ EOF
             cat << EOF
 ${BOLD_CYAN}🔹 dockero import ${GREEN}</path/to/archive.tar>${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Import a .tar archive as a Docker image.
+   ${BOLD_WHITE}• Parameters:${RESET_COLOR}
+     - ${GREEN}</path/to/archive.tar>${RESET_COLOR}: Local filesystem path to the archive file.
    ${BOLD_WHITE}• What happens:${RESET_COLOR} 
      • Loads one or more images from a .tar archive into the local Docker image store.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
@@ -88,6 +102,9 @@ EOF
             cat << EOF
 ${BOLD_CYAN}🔹 dockero start ${GREEN}<container-name> [-c <command>]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Start an existing, stopped container. Optionally execute a command inside it.
+   ${BOLD_WHITE}• Parameters:${RESET_COLOR}
+     - ${GREEN}<container-name>${RESET_COLOR}: Name of the stopped container to start.
+     - ${GREEN}-c <command>${RESET_COLOR}: Optional command to execute inside the container after starting.
    ${BOLD_WHITE}• What happens:${RESET_COLOR} 
      1. Starts the specified container.
      2. If '-c <command>' is provided, executes the command inside the running container.
@@ -101,6 +118,9 @@ EOF
             cat << EOF
 ${BOLD_CYAN}🔹 dockero stop ${GREEN}<container-name> [--timeout <seconds>]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Gracefully stop a running container.
+   ${BOLD_WHITE}• Parameters:${RESET_COLOR}
+     - ${GREEN}<container-name>${RESET_COLOR}: Name of the running container to stop.
+     - ${GREEN}--timeout <seconds>${RESET_COLOR}: Seconds to wait for stop before killing it (default: 10).
    ${BOLD_WHITE}• What happens:${RESET_COLOR} 
      • Sends a SIGTERM signal to the container, waits for a specified timeout, then sends SIGKILL if it hasn't stopped.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
@@ -319,6 +339,12 @@ EOF
             cat << EOF
 ${BOLD_CYAN}🔹 dockero monitor ${GREEN}<top|stats|health|logs|watch> [options]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Provides various monitoring functionalities for Docker containers.
+   ${BOLD_WHITE}• Parameters:${RESET_COLOR}
+     - ${YELLOW}top [container]:${RESET_COLOR} Show processes in a container.
+     - ${YELLOW}stats [container] [-f]:${RESET_COLOR} Resource usage stats. ${GREEN}-f${RESET_COLOR} for live stream.
+     - ${YELLOW}health [container]:${RESET_COLOR} Check container health status.
+     - ${YELLOW}logs <container> [-f] [-t <lines>]:${RESET_COLOR} View logs. ${GREEN}-f${RESET_COLOR} to follow, ${GREEN}-t${RESET_COLOR} for tail.
+     - ${YELLOW}watch [container] [--interval <s>] [--duration <s>]:${RESET_COLOR} Continuous monitoring.
    ${BOLD_WHITE}• What happens:${RESET_COLOR}
      • ${YELLOW}top [container]:${RESET_COLOR} Shows running processes in a container.
      • ${YELLOW}stats [container]:${RESET_COLOR} Displays resource usage statistics (CPU, memory, etc.).
@@ -340,6 +366,32 @@ ${BOLD_CYAN}🔹 dockero wizard ${GREEN}[start|setup|init|quickstart|beginner]${
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
      ${YELLOW}Manual setup and configuration of Docker environments${RESET_COLOR}.
    ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn start${RESET_COLOR}
+EOF
+            ;;
+        "dashboard")
+            cat << EOF
+${BOLD_CYAN}🔹 dockero dashboard${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Display a quick overview of Docker system status.
+   ${BOLD_WHITE}• What happens:${RESET_COLOR}
+     1. Checks if the Docker daemon is active.
+     2. Collects container statistics (running, total, images).
+     3. Lists currently running containers with their status.
+     4. Suggests quick actions and displays Dockero system information.
+   ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
+     ${YELLOW}docker ps -a${RESET_COLOR}, ${YELLOW}docker images${RESET_COLOR}, and ${YELLOW}docker info${RESET_COLOR} combined.
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero show dashboard${RESET_COLOR}
+EOF
+            ;;
+        "help")
+            cat << EOF
+${BOLD_CYAN}🔹 dockero help [command]${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Show usage information and a list of all available commands.
+   ${BOLD_WHITE}• What happens:${RESET_COLOR}
+     • If no command is provided, displays a general help menu with categorized command listings.
+     • If a command is provided, it calls 'explain' to provide a detailed explanation of that specific command.
+   ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
+     ${YELLOW}docker help${RESET_COLOR} or ${YELLOW}docker <command> --help${RESET_COLOR}.
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero explain help${RESET_COLOR}
 EOF
             ;;
         *)

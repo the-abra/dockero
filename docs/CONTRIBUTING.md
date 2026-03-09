@@ -32,7 +32,7 @@ Thank you for considering contributing to **Dockero**! This guide covers everyth
 
 Dockero follows a modular architecture:
 
-- `core/dockero.sh` - Main entry point and command loader
+- `core/dockero` - Main entry point and command loader
 - `core/commands/` - Individual command implementations
 - `core/extra/` - Utility libraries (logging, colors, etc.)
 - `core/autocompletion/` - Bash completion scripts
@@ -78,7 +78,7 @@ We follow the **GitHub Flow**:
 ### 🔍 Coding Standards
 
 - **Style Guide**: Follow [Google Shell Style Guide](https://google.github.io/styleguide/shellguide.html):
-  - `#!/usr/bin/env bash` at top of all scripts not sourced by dockero.sh.
+  - `#!/usr/bin/env bash` at top of all scripts not sourced by dockero.
   - Indent with **2 spaces**, not tabs.
   - Quote variables: `"$var"`.
   - Limit line length to 80 characters where possible.

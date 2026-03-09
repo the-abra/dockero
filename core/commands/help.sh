@@ -51,7 +51,7 @@ ${BOLD_GREEN}Learning & Help:${RESET_COLOR}
 
 help() {
   # This function is now only explicitly called as `dockero help <command>`
-  # The global -h flag is handled in dockero.sh directly calling explain.
+  # The global -h flag is handled in dockero directly calling explain.
 
   local target_command="${args[1]:-}" # Check for `dockero help <command>` format
 

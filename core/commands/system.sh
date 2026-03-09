@@ -409,7 +409,7 @@ system_install() {
     fi
     
     local target_path="$location/dockero"
-    local source_script="${BASH_SOURCE[0]%/*}/../dockero.sh" # Path to main dockero.sh script
+    local source_script="${BASH_SOURCE[0]%/*}/../dockero" # Path to main dockero script
     
     # Copy the main script
     log.info "Copying main script from ${YELLOW}$source_script${RESET_COLOR} to ${YELLOW}$target_path${RESET_COLOR}."

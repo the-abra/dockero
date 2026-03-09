@@ -206,6 +206,9 @@ heal_fix() {
     log.setline "${BOLD_CYAN}🔧 Auto-Fix System${RESET_COLOR}"
 
     case "$target" in
+        "permissions")
+            heal_fix_permissions
+            ;;
         "containers")
             log.info "Fixing container issues..."
             if [[ -n "$specific_item" ]]; then
@@ -308,10 +311,69 @@ heal_fix() {
     esac
 }
 
+heal_fix_permissions() {
+    log.info "Checking Docker socket permissions..."
+    
+    if [[ -w /var/run/docker.sock ]]; then
+        log.done "You already have write access to /var/run/docker.sock."
+        return 0
+    fi
+
+    log.warn "You do not have permission to access the Docker socket."
+    log.info "This can be fixed by adding your user (${BOLD_CYAN}$USER${RESET_COLOR}) to the ${BOLD_YELLOW}docker${RESET_COLOR} group."
+
+    # Check if docker group exists
+    if ! getent group docker > /dev/null; then
+        log.info "The ${BOLD_YELLOW}docker${RESET_COLOR} group does not exist. It will be created."
+        local create_cmd="sudo groupadd docker"
+        log.sub "Command to run: ${BOLD_YELLOW}$create_cmd${RESET_COLOR}"
+        read -rp "Do you want to run this command? [y/N]: " confirm
+        if [[ "$confirm" =~ ^[Yy]$ ]]; then
+            echo "+ $create_cmd"
+            if $create_cmd; then
+                log.done "Group 'docker' created."
+            else
+                log.error "Failed to create 'docker' group."
+                return 1
+            fi
+        else
+            log.warn "Command cancelled."
+            return 1
+        fi
+    fi
+
+    # Add user to group
+    local add_cmd="sudo usermod -aG docker $USER"
+    log.info "Adding user ${BOLD_CYAN}$USER${RESET_COLOR} to ${BOLD_YELLOW}docker${RESET_COLOR} group."
+    log.sub "Command to run: ${BOLD_YELLOW}$add_cmd${RESET_COLOR}"
+    read -rp "Do you want to run this command? [y/N]: " confirm
+    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+        echo "+ $add_cmd"
+        if $add_cmd; then
+            log.done "User ${BOLD_CYAN}$USER${RESET_COLOR} added to ${BOLD_YELLOW}docker${RESET_COLOR} group."
+            log.setline "${BOLD_CYAN}🔄 Action Required${RESET_COLOR}"
+            log.warn "You MUST log out and log back in (or restart your session) for the group changes to take effect."
+            log.info "Alternatively, run: ${BOLD_YELLOW}newgrp docker${RESET_COLOR} in your current terminal."
+        else
+            log.error "Failed to add user to 'docker' group."
+            return 1
+        fi
+    else
+        log.warn "Command cancelled."
+        return 1
+    fi
+}
+
 # Automatic healing system
 heal_auto() {
     log.setline "${BOLD_CYAN}🤖 Auto-Healing Mode${RESET_COLOR}"
     log.info "Running automated health check and fixes..."
+
+    # Check permissions first
+    if [[ ! -w /var/run/docker.sock ]]; then
+        log.warn "Permission issues detected for Docker socket."
+        heal_fix_permissions
+    fi
 
     # Perform health check
     local stopped_containers_count

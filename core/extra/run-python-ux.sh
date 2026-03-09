@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Direct Python execution script for Dockero enhanced features
-# This avoids terminal issues when calling Python from dockero.sh
+# This avoids terminal issues when calling Python from dockero
 
 set -e
 
