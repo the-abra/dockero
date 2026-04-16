@@ -76,7 +76,7 @@ show_commands() {
         for cmd in "${cmds[@]}"; do
             local desc=""
             case "$cmd" in
-                "run") desc="Create and start containers" ;;
+                "create") desc="Create containers" ;;
                 "list") desc="List containers and images" ;;
                 "start") desc="Start containers" ;;
                 "stop") desc="Stop containers" ;;
@@ -123,7 +123,7 @@ show_demo() {
 
     if [[ -z "$command_to_demo" ]]; then
         log.hint "Usage: ${BOLD_YELLOW}dockero show demo <command>${RESET_COLOR}"
-        local -a available_demos=("run" "setup" "sync")
+        local -a available_demos=("create" "setup" "sync")
         log.sub "Interactive demonstration of Dockero commands. Available demos: ${BOLD_GREEN}$(echo "${available_demos[@]}" | tr ' ' ',')${RESET_COLOR}"
         return 1
     fi
@@ -131,23 +131,20 @@ show_demo() {
     log.setline "${BOLD_CYAN}🎬 Command Demonstration: ${GREEN}$command_to_demo${RESET_COLOR}"
 
     case "$command_to_demo" in
-        "run")
+        "create")
             cat << EOF
-${BOLD_BLUE}DEMO: dockero run${RESET_COLOR}
-${YELLOW}Scenario:${RESET_COLOR} Starting a web server container.
+${BOLD_BLUE}DEMO: dockero create${RESET_COLOR}
+${YELLOW}Scenario:${RESET_COLOR} Creating a web server container.
 
-${BOLD_GREEN}dockero run web-server nginx:alpine${RESET_COLOR}
+${BOLD_GREEN}dockero create web-server nginx:alpine${RESET_COLOR}
 
 ${BOLD_YELLOW}What happens:${RESET_COLOR}
-  1. Checks if '${YELLOW}web-server${RESET_COLOR}' container exists.
-     -> If yes: starts it.
-     -> If no: creates from ${YELLOW}nginx:alpine${RESET_COLOR}.
-  2. Sets up standard volumes and ports.
-  3. Attaches to container for interaction.
-  4. Container starts running.
+  1. Pulls ${YELLOW}nginx:alpine${RESET_COLOR} if not available locally.
+  2. Creates host volume dir /opt/web-server.
+  3. Runs container with volume /opt/web-server:/workspace.
 
 ${BOLD_YELLOW}Alternative:${RESET_COLOR}
-${BOLD_GREEN}dockero run my-app node:16${RESET_COLOR} # Create new container.
+${BOLD_GREEN}dockero create my-app node:16 --no-volume${RESET_COLOR} # No volume.
 EOF
             ;;
         "setup")
@@ -201,7 +198,7 @@ EOF
             ;;
         *)
             log.warn "No demonstration available for: ${BOLD_YELLOW}$command_to_demo${RESET_COLOR}."
-            local -a available_demos=("run" "setup" "sync")
+            local -a available_demos=("create" "setup" "sync")
             log.sub "Available demos: ${BOLD_GREEN}$(echo "${available_demos[@]}" | tr ' ' ',')${RESET_COLOR}"
             ;;
     esac
@@ -294,7 +291,7 @@ ${BOLD_WHITE}[ Project Directory ]${RESET_COLOR} --> ${BOLD_WHITE}[ .dockero fil
                            ${YELLOW}env = .:/app${RESET_COLOR}
 
 ${BOLD_GREEN}Step 2: Container Creation${RESET_COLOR}
-${BOLD_WHITE}[ .dockero data ]${RESET_COLOR} --> ${BOLD_WHITE}[ Docker run ]${RESET_COLOR}
+${BOLD_WHITE}[ .dockero data ]${RESET_COLOR} --> ${BOLD_WHITE}[ Docker create ]${RESET_COLOR}
       ${GREEN}|${RESET_COLOR}                   ${GREEN}|${RESET_COLOR}
       ${GREEN}v${RESET_COLOR}                   ${GREEN}v${RESET_COLOR}
 ${BOLD_WHITE}[ Final Container: my-app, node:16, .:/app ]${RESET_COLOR}
@@ -312,7 +309,7 @@ show_containers_visual() {
         echo "$containers_output" | sed '1s/.*/\033[1;36m&\033[0m/' # Color header
     else
         log.info "No containers found."
-        log.sub "Create a container with: ${BOLD_YELLOW}dockero run <name> <image>${RESET_COLOR}"
+        log.sub "Create a container with: ${BOLD_YELLOW}dockero create <name> <image>${RESET_COLOR}"
     fi
 }
 
@@ -353,7 +350,7 @@ show_status_visual() {
     
     echo ""
     log.info "💡 Quick actions:"
-    log.sub "  ${BOLD_GREEN}dockero run <name> <image>${RESET_COLOR}    # Create container"
+    log.sub "  ${BOLD_GREEN}dockero create <name> <image>${RESET_COLOR} # Create container"
     log.sub "  ${BOLD_GREEN}dockero list${RESET_COLOR}                    # View containers" 
     log.sub "  ${BOLD_GREEN}dockero learn start${RESET_COLOR}           # Docker learning"
 }

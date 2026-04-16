@@ -1,163 +1,123 @@
 #!/bin/bash
 # shellcheck disable=SC2034
-# log.lib - A Bash library for logging better.
+# log.sh - Centralized logging for Dockero
 
-# Color definitions (using tput for portability if available, otherwise ANSI)
-RESET_COLOR=""
-BOLD=""
-COLOR_DATE=""
-COLOR_INFO=""
-COLOR_WARN=""
-COLOR_ERROR=""
-COLOR_DONE=""
-COLOR_SUB=""
-COLOR_HINT=""
-COLOR_GENERIC="" # For section headers
+# ── Color setup ───────────────────────────────────────────────────────────────
+RESET_COLOR="" BOLD="" DIM=""
+COLOR_DATE="" COLOR_INFO="" COLOR_WARN="" COLOR_ERROR=""
+COLOR_DONE="" COLOR_SUB="" COLOR_HINT="" COLOR_GENERIC=""
+# Message body colors (distinct from prefix)
+COLOR_MSG_INFO="" COLOR_MSG_WARN="" COLOR_MSG_ERROR=""
+COLOR_MSG_DONE="" COLOR_MSG_SUB="" COLOR_MSG_HINT=""
 
-if command -v tput &> /dev/null; then
-    if (( $(tput colors 2>/dev/null || echo 0) >= 8 )); then
-        _DOCKERO_HAS_COLORS="true"
-        RESET_COLOR=$(tput sgr0)
-        BOLD=$(tput bold)
-        COLOR_DATE=$(tput setaf 8)      # Gray
-        COLOR_INFO=$(tput setaf 4)      # Blue
-        COLOR_WARN=$(tput setaf 3)      # Yellow
-        COLOR_ERROR=$(tput setaf 1)     # Red
-        COLOR_DONE=$(tput setaf 2)      # Green
-        COLOR_SUB=$(tput setaf 7)       # White/Light Gray
-        COLOR_HINT=$(tput setaf 5)      # Magenta
-        COLOR_GENERIC=$(tput setaf 6)   # Cyan
-    else
-        _DOCKERO_HAS_COLORS="false"
-    fi
+if [[ "$TERM" != "dumb" ]] && command -v tput &>/dev/null && (( $(tput colors 2>/dev/null || echo 0) >= 8 )); then
+    _DOCKERO_HAS_COLORS="true"
+    RESET_COLOR=$(tput sgr0)
+    BOLD=$(tput bold)
+    DIM=$(tput dim 2>/dev/null || printf '\e[2m')
+
+    # Prefix bracket colors (256-color where available, fallback to 8-color)
+    COLOR_DATE=$(    printf '\e[38;5;240m')   # dark gray
+    COLOR_INFO=$(    printf '\e[38;5;75m' )   # sky blue
+    COLOR_WARN=$(    printf '\e[38;5;214m')   # orange
+    COLOR_ERROR=$(   printf '\e[38;5;196m')   # bright red
+    COLOR_DONE=$(    printf '\e[38;5;82m' )   # bright green
+    COLOR_SUB=$(     printf '\e[38;5;245m')   # medium gray
+    COLOR_HINT=$(    printf '\e[38;5;177m')   # soft purple
+    COLOR_GENERIC=$( printf '\e[38;5;87m' )   # bright cyan
+
+    # Message body colors
+    COLOR_MSG_INFO=$( printf '\e[0;97m'    )  # bright white
+    COLOR_MSG_WARN=$( printf '\e[38;5;229m')  # light yellow
+    COLOR_MSG_ERROR=$(printf '\e[38;5;203m')  # salmon red
+    COLOR_MSG_DONE=$( printf '\e[38;5;157m')  # light green
+    COLOR_MSG_SUB=$(  printf '\e[38;5;250m')  # light gray
+    COLOR_MSG_HINT=$( printf '\e[38;5;219m')  # light pink/purple
 else
-    # Fallback to ANSI if tput is not available or no colors
-    _DOCKERO_HAS_COLORS="true" # Assume ANSI is supported, but no tput control
-    RESET_COLOR="\033[0m"
-    BOLD="\033[1m"
-    COLOR_DATE="\033[38;5;240m" # Darker gray
-    COLOR_INFO="\033[34m"   # Blue
-    COLOR_WARN="\033[33m"   # Yellow
-    COLOR_ERROR="\033[31m"  # Red
-    COLOR_DONE="\033[32m"   # Green
-    COLOR_SUB="\033[37m"    # White
-    COLOR_HINT="\033[35m"   # Magenta
-    COLOR_GENERIC="\033[36m" # Cyan
-    if [[ "$TERM" == "dumb" ]]; then # If terminal is dumb, disable colors
-        _DOCKERO_HAS_COLORS="false"
-        RESET_COLOR=""
-        BOLD=""
-        COLOR_DATE=""
-        COLOR_INFO=""
-        COLOR_WARN=""
-        COLOR_ERROR=""
-        COLOR_DONE=""
-        COLOR_SUB=""
-        COLOR_HINT=""
-        COLOR_GENERIC=""
-    fi
+    _DOCKERO_HAS_COLORS="false"
 fi
 
-# Try multiple methods to get terminal width
-columns=$(tput cols 2>/dev/null || echo "$COLUMNS" || resize 2>/dev/null | awk '{print $3}' || echo 0)
-# Default to 80 if not detectable
-[[ "$columns" -eq 0 ]] && columns=80
+# ── Terminal width ────────────────────────────────────────────────────────────
+columns=$(tput cols 2>/dev/null || echo "${COLUMNS:-80}")
+[[ "$columns" -le 0 ]] && columns=80
 
+# ── Internal prefix builder ───────────────────────────────────────────────────
 _log_prefix() {
     local level_text="$1"
     local level_color="$2"
-    local show_timestamp="${DOCKERO_LOG_TIMESTAMPS:-true}" # Default to true
     local timestamp_str=""
 
+    if [[ "${DOCKERO_LOG_TIMESTAMPS:-true}" == "true" ]]; then
+        timestamp_str="${DIM}${COLOR_DATE}$(date +%H:%M:%S)${RESET_COLOR} "
+    fi
+
     if [[ "$_DOCKERO_HAS_COLORS" == "true" ]]; then
-        if [[ "$show_timestamp" == "true" ]]; then
-            timestamp_str="${COLOR_DATE}$(date +%H:%M:%S)${RESET_COLOR} "
-        fi
-        echo -e "${timestamp_str}${level_color}${BOLD}[${level_text}]${RESET_COLOR}"
+        printf '%s%s%s%s%s%s' \
+            "$timestamp_str" \
+            "${DIM}${COLOR_SUB}[${RESET_COLOR}" \
+            "${BOLD}${level_color}${level_text}${RESET_COLOR}" \
+            "${DIM}${COLOR_SUB}]${RESET_COLOR}"
     else
-        if [[ "$show_timestamp" == "true" ]]; then
-            timestamp_str="$(date +%H:%M:%S) "
-        fi
-        echo -e "${timestamp_str}[${level_text}]"
+        printf '%s[%s]' "$timestamp_str" "$level_text"
     fi
 }
 
-# Main logging function
+# ── Core log function ─────────────────────────────────────────────────────────
 function log() {
-    local level="$1"
-    local message="$2"
-    local prefix_color="$3"
-    local message_color="$4"
-    local indent="$5"
-
+    local level="$1" message="$2" prefix_color="$3" msg_color="$4" indent="$5"
     local prefix
     prefix="$(_log_prefix "$level" "$prefix_color")"
     if [[ "$_DOCKERO_HAS_COLORS" == "true" ]]; then
-        echo -e "${indent}${prefix} ${message_color}${message}${RESET_COLOR}"
+        echo -e "${indent}${prefix} ${msg_color}${message}${RESET_COLOR}"
     else
         echo -e "${indent}${prefix} ${message}"
     fi
 }
 
-# Log levels
-function log.info() {
-    log "INFO " "$1" "$COLOR_INFO" "$RESET_COLOR" ""
-}
-
-function log.warn() {
-    log "WARN " "$1" "$COLOR_WARN" "$COLOR_WARN" ""
-}
-
-function log.error() {
-    log "ERROR" "$1" "$COLOR_ERROR" "$COLOR_ERROR" ""
-    return 1 # Error logs should indicate a failure
-}
-
-function log.done() {
-    log "DONE " "$1" "$COLOR_DONE" "$RESET_COLOR" ""
-}
-
+# ── Log levels ────────────────────────────────────────────────────────────────
+function log.info()  { log "INFO " "$1" "$COLOR_INFO"  "$COLOR_MSG_INFO"  "";    }
+function log.warn()  { log "WARN " "$1" "$COLOR_WARN"  "$COLOR_MSG_WARN"  "";    }
+function log.error() { log "ERROR" "$1" "$COLOR_ERROR" "$COLOR_MSG_ERROR" ""; return 1; }
+function log.done()  { log "DONE " "$1" "$COLOR_DONE"  "$COLOR_MSG_DONE"  "";    }
 function log.sub() {
-    log "SUB  " "$1" "$COLOR_SUB" "$COLOR_SUB" "  " # Indented
+    if [[ "$_DOCKERO_HAS_COLORS" == "true" ]]; then
+        echo -e "              ${COLOR_SUB}›${RESET_COLOR} ${COLOR_MSG_SUB}${1}${RESET_COLOR}"
+    else
+        echo -e "               › ${1}"
+    fi
 }
+function log.hint()  { log " HINT" "$1" "$COLOR_HINT"  "$COLOR_MSG_HINT"  "  "; }
 
-function log.hint() {
-    log "HINT " "$1" "$COLOR_HINT" "$COLOR_HINT" "  " # Indented
-}
-
+# ── Section line ──────────────────────────────────────────────────────────────
 function log.setline() {
     local title="$1"
-    local line_char="-"
-    local padding_char=" "
-    local total_length="${columns}"
+    local line_char="─"
+    local total=$columns
     local line=""
 
-    if [[ "$_DOCKERO_HAS_COLORS" == "true" ]]; then
-        title="${COLOR_GENERIC}${BOLD}${title}${RESET_COLOR}"
-    fi
-
     if [[ -n "$title" ]]; then
-        # Calculate available space for the line characters
-        local text_length=$(( $(echo "$title" | sed 's/\x1b\[[0-9;]*m//g' | wc -c) - 1 + 2 * ${#padding_char} )) # strip ANSI codes for length
-        local line_length=$(( (total_length - text_length) / 2 ))
-        
-        # Build the line
-        for ((i=0; i<line_length; i++)); do line+="${line_char}"; done
-        line="${line}${padding_char}${title}${padding_char}"
-        for ((i=0; i<line_length; i++)); do line+="${line_char}"; done
+        local colored_title="${BOLD}${COLOR_GENERIC} ${title} ${RESET_COLOR}"
+        local plain_len=$(( ${#title} + 2 ))  # +2 for spaces
+        local side=$(( (total - plain_len) / 2 ))
+        [[ $side -lt 1 ]] && side=1
 
-        # If length is odd and terminal is even, add one more char
-        if (( ${#line} < total_length )); then
-            line+="${line_char}"
+        local left="" right=""
+        for ((i=0; i<side; i++));       do left+="$line_char";  done
+        for ((i=0; i<side; i++));       do right+="$line_char"; done
+        # pad right by 1 if total is odd
+        (( (side * 2 + plain_len) < total )) && right+="$line_char"
+
+        if [[ "$_DOCKERO_HAS_COLORS" == "true" ]]; then
+            line="${DIM}${COLOR_GENERIC}${left}${RESET_COLOR}${colored_title}${DIM}${COLOR_GENERIC}${right}${RESET_COLOR}"
+        else
+            line="${left} ${title} ${right}"
         fi
     else
-        for ((i=0; i<total_length; i++)); do line+="${line_char}"; done
+        for ((i=0; i<total; i++)); do line+="$line_char"; done
+        [[ "$_DOCKERO_HAS_COLORS" == "true" ]] && line="${DIM}${COLOR_GENERIC}${line}${RESET_COLOR}"
     fi
-    echo -e "${line}"
+
+    echo -e "$line"
 }
 
-function log.endline() {
-    # For now, endline will just print an empty line for visual separation
-    # Or could be identical to setline without a title
-    echo ""
-}
+function log.endline() { echo ""; }

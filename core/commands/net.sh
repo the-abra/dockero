@@ -30,9 +30,9 @@ net() {
       log.warn "Network '${BOLD_YELLOW}$name1${RESET_COLOR}' already exists."
       return 1
     fi
-    echo -e "${BOLD_CYAN}✨ Creating network: ${GREEN}$name1${RESET_COLOR}"
+    log.info "✨ Creating network: ${BOLD}$name1${RESET_COLOR}"
     docker network create "$name1" || log.error "Failed to create network '${RED}$name1${RESET_COLOR}'." && return 1
-    echo -e "${GREEN}Network '${BOLD_GREEN}$name1${RESET_COLOR}' created successfully.${RESET_COLOR}"
+    log.done "Network '${BOLD}$name1${RESET_COLOR}' created successfully."
     ;;
 
   create) # Alias for 'new'
@@ -42,10 +42,10 @@ net() {
   delete)
     [[ -z "$name1" ]] && log.hint "net delete <network_name>" && return 1
     if ! _net_validate_name "$name1"; then return 1; fi # Validate network name
-    echo -e "${BOLD_CYAN}🗑️  Deleting network: ${RED}$name1${RESET_COLOR}"
+    log.info "🗑️  Deleting network: ${BOLD}$name1${RESET_COLOR}"
     if docker network inspect "$name1" &>/dev/null; then
         docker network rm "$name1" || log.error "Failed to delete network '${RED}$name1${RESET_COLOR}'." && return 1
-        echo -e "${GREEN}Network '${BOLD_GREEN}$name1${RESET_COLOR}' deleted successfully.${RESET_COLOR}"
+        log.done "Network '${BOLD}$name1${RESET_COLOR}' deleted successfully."
     else
         log.warn "Network '${BOLD_YELLOW}$name1${RESET_COLOR}' does not exist. Nothing to delete."
         return 1
@@ -77,7 +77,7 @@ net() {
 
     log.info "Connecting container '${BOLD_YELLOW}$name1${RESET_COLOR}' to network '${BOLD_YELLOW}$name2${RESET_COLOR}'"
     docker network connect "$name2" "$name1" || log.error "Failed to connect container '${RED}$name1${RESET_COLOR}' to network '${RED}$name2${RESET_COLOR}'." && return 1
-    echo -e "${GREEN}Container '${BOLD_GREEN}$name1${RESET_COLOR}' connected to network '${BOLD_GREEN}$name2${RESET_COLOR}' successfully.${RESET_COLOR}"
+    log.done "Container '${BOLD}$name1${RESET_COLOR}' connected to network '${BOLD}$name2${RESET_COLOR}' successfully."
     ;;
 
   connect) # Alias for 'add'
@@ -89,9 +89,9 @@ net() {
     if ! validate_container_name "$name1"; then return 1; fi # Validate container name
     if ! _net_validate_name "$name2"; then return 1; fi # Validate network name
 
-    echo -e "${BOLD_CYAN}❌ Disconnecting container '${RED}$name1${RESET_COLOR}' from network '${RED}$name2${RESET_COLOR}'"
+    log.info "❌ Disconnecting container '${BOLD}$name1${RESET_COLOR}' from network '${BOLD}$name2${RESET_COLOR}'"
     docker network disconnect "$name2" "$name1" || log.error "Failed to disconnect container '${RED}$name1${RESET_COLOR}' from network '${RED}$name2${RESET_COLOR}'." && return 1
-    echo -e "${GREEN}Container '${BOLD_GREEN}$name1${RESET_COLOR}' disconnected from network '${BOLD_GREEN}$name2${RESET_COLOR}' successfully.${RESET_COLOR}"
+    log.done "Container '${BOLD}$name1${RESET_COLOR}' disconnected from network '${BOLD}$name2${RESET_COLOR}' successfully."
     ;;
 
   disconnect) # Alias for 'remove'
@@ -113,21 +113,21 @@ net() {
     fi
     log.info "Renaming network '${BOLD_YELLOW}$name1${RESET_COLOR}' to '${BOLD_YELLOW}$name2${RESET_COLOR}'"
     docker network create "$name2" || log.error "Failed to create new network '${RED}$name2${RESET_COLOR}' for renaming." && return 1
-    echo -e "${BOLD_CYAN}🔄 Reconnecting containers to new network '${GREEN}$name2${RESET_COLOR}'...${RESET_COLOR}"
+    log.info "🔄 Reconnecting containers to new network '${BOLD}$name2${RESET_COLOR}'..."
     for container in $(docker network inspect -f '{{range .Containers}}{{.Name}} {{end}}' "$name1"); do
       # Validate container name before use (from docker inspect output)
       if ! validate_container_name "$container"; then log.warn "Skipping invalid container name '${BOLD_YELLOW}$container${RESET_COLOR}' during rename."; continue; fi
-      echo -e "  ${BOLD_CYAN}🔗 Connecting container: ${YELLOW}$container${RESET_COLOR}"
+      log.sub "🔗 Connecting container: ${BOLD}$container${RESET_COLOR}"
       docker network connect "$name2" "$container" || log.warn "Failed to connect container '${YELLOW}$container${RESET_COLOR}' to new network '${YELLOW}$name2${RESET_COLOR}'."
     done
     docker network rm "$name1" || log.error "Failed to remove old network '${RED}$name1${RESET_COLOR}'." && return 1
-    echo -e "${GREEN}Network '${BOLD_GREEN}$name1${RESET_COLOR}' successfully renamed to '${BOLD_GREEN}$name2${RESET_COLOR}'.${RESET_COLOR}"
+    log.done "Network '${BOLD}$name1${RESET_COLOR}' successfully renamed to '${BOLD}$name2${RESET_COLOR}'."
     ;;
 
   prune)
-    echo -e "${BOLD_CYAN}🧹 Pruning unused networks...${RESET_COLOR}"
+    log.info "🧹 Pruning unused networks..."
     docker network prune --force
-    echo -e "${GREEN}Unused networks pruned successfully.${RESET_COLOR}"
+    log.done "Unused networks pruned successfully."
     ;;
 
   inspect)
@@ -138,7 +138,7 @@ net() {
       return 1
     fi
 
-    echo -e "${BOLD_CYAN}✨ Inspecting Network: ${GREEN}$name1${RESET_COLOR}\n"
+    log.info "✨ Inspecting Network: ${BOLD}$name1${RESET_COLOR}"
     # Get network details in JSON format
     network_info=$(docker network inspect "$name1" --format '{{json .}}')
 
@@ -149,19 +149,19 @@ net() {
     network_subnet=$(echo "$network_info" | jq -r '.IPAM.Config[0].Subnet')
     network_gateway=$(echo "$network_info" | jq -r '.IPAM.Config[0].IPAM.Config[0].Gateway') # Corrected path
     
-    echo -e "  ${BOLD_CYAN}Network Details:${RESET_COLOR}"
-    echo -e "    ${BOLD_WHITE}ID:${RESET_COLOR} ${GREEN}$network_id${RESET_COLOR}"
-    echo -e "    ${BOLD_WHITE}Driver:${RESET_COLOR} ${GREEN}$network_driver${RESET_COLOR}"
-    echo -e "    ${BOLD_WHITE}Scope:${RESET_COLOR} ${GREEN}$network_scope${RESET_COLOR}"
-    echo -e "    ${BOLD_WHITE}Subnet:${RESET_COLOR} ${YELLOW}${network_subnet:-N/A}${RESET_COLOR}"
-    echo -e "    ${BOLD_WHITE}Gateway:${RESET_COLOR} ${YELLOW}${network_gateway:-N/A}${RESET_COLOR}\n"
+    log.info "Network Details:"
+    log.sub "ID:      ${BOLD}$network_id${RESET_COLOR}"
+    log.sub "Driver:  ${BOLD}$network_driver${RESET_COLOR}"
+    log.sub "Scope:   ${BOLD}$network_scope${RESET_COLOR}"
+    log.sub "Subnet:  ${network_subnet:-N/A}"
+    log.sub "Gateway: ${network_gateway:-N/A}"
 
-    echo -e "  ${BOLD_CYAN}Connected Containers:${RESET_COLOR}"
+    log.info "Connected Containers:"
     # Extract connected containers and their IPs
     containers=$(echo "$network_info" | jq -r '.Containers | to_entries[] | .value.Name + " " + .value.IPv4Address')
 
     if [[ -z "$containers" ]]; then
-      echo -e "    ${YELLOW}No containers connected.${RESET_COLOR}"
+      log.sub "No containers connected."
     else
       echo "$containers" | while IFS= read -r line; do
         local container_name
@@ -169,13 +169,13 @@ net() {
         local container_ip
         container_ip=$(echo "$line" | awk '{print $2}')
         # Validate container_name here if needed, but it comes from Docker inspect which is reliable
-        echo -e "    - ${YELLOW}$container_name${RESET_COLOR} (${MAGENTA}$container_ip${RESET_COLOR})"
+        log.sub "- ${BOLD}$container_name${RESET_COLOR} ($container_ip)"
       done
     fi
     ;;
 
   list)
-    echo -e "${BOLD_CYAN}🌐 Listing Networks with Connected Containers:${RESET_COLOR}\n"
+    log.info "🌐 Listing Networks with Connected Containers:"
     # Print header
     printf "${BOLD_WHITE}%-25s %s${RESET_COLOR}\n" "NETWORK NAME" "CONNECTED CONTAINERS"
     printf "${BOLD_WHITE}%-25s %s${RESET_COLOR}\n" "------------" "--------------------"

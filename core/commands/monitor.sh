@@ -130,13 +130,13 @@ monitor_health() {
             status_color="${COLOR_WARN}"
         fi
 
-        echo -e "  ${BOLD}${COLOR_SUB}Status:${RESET_COLOR} ${status_color}$status${RESET_COLOR}"
-        echo -e "  ${BOLD}${COLOR_SUB}Failing Streak:${RESET_COLOR} ${COLOR_WARN}$failing_streak${RESET_COLOR}"
+        log.sub "Status: $status"
+        log.sub "Failing Streak: $failing_streak"
 
         if [[ -n "$log_entries" ]]; then
-            echo -e "  ${BOLD}${COLOR_SUB}Recent logs:${RESET_COLOR}"
+            log.sub "Recent logs:"
             echo "$log_entries" | while IFS= read -r log_line; do
-                echo -e "    ${COLOR_HINT}$log_line${RESET_COLOR}"
+                log.sub "  $log_line"
             done
         fi
     else

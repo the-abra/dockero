@@ -151,30 +151,6 @@ install_jq() {
     log_info "jq installation complete."
 }
 
-# Install Python dependencies
-install_python_deps() {
-    log_info "Initiating Python dependencies installation..."
-
-    case $PM in
-        pacman)
-            install_packages "Python dependencies" python python-textual python-docker
-            ;;
-        apt)
-            install_packages "Python dependencies" python3 python3-textual python3-docker
-            ;;
-        yum|dnf)
-            install_packages "Python dependencies" python3 python3-textual python3-docker
-            ;;
-        zypper)
-            install_packages "Python dependencies" python3 python3-textual python3-docker
-            ;;
-        apk)
-            install_packages "Python dependencies" python3 py3-textual py3-docker
-            ;;
-    esac
-
-    log_info "Python dependencies installation complete."
-}
 
 # Create symlink for dockero
 create_symlink() {
@@ -214,7 +190,6 @@ main() {
     detect_package_manager
     install_docker
     install_jq
-    install_python_deps
     create_symlink
     install_completion
     

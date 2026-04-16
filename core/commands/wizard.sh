@@ -23,8 +23,8 @@ wizard_interactive() {
     log.setline "${BOLD_CYAN}🎯 Dockero Interactive Setup Wizard${RESET_COLOR}"
     
     echo ""
-    echo -e "${BOLD_BLUE}Welcome to Dockero!${RESET_COLOR}"
-    echo "This wizard will help you get started with Docker containers."
+    log.info "Welcome to Dockero!"
+    log.sub "This wizard will help you get started with Docker containers."
     echo ""
     
     # Check if Docker is available
@@ -45,11 +45,11 @@ wizard_interactive() {
     echo ""
     
     # Ask what they want to do
-    echo -e "${BOLD_YELLOW}What would you like to do?${RESET_COLOR}"
-    echo -e "  ${GREEN}1. Run a simple web server${RESET_COLOR}"
-    echo -e "  ${GREEN}2. Try a development environment${RESET_COLOR}" 
-    echo -e "  ${GREEN}3. Run a database container${RESET_COLOR}"
-    echo -e "  ${GREEN}4. Just explore what's possible${RESET_COLOR}"
+    log.info "What would you like to do?"
+    log.sub "1. Run a simple web server"
+    log.sub "2. Try a development environment"
+    log.sub "3. Run a database container"
+    log.sub "4. Just explore what's possible"
     echo ""
     
     local choice
@@ -79,10 +79,10 @@ wizard_interactive() {
 wizard_run_simple_server() {
     log.setline "${BOLD_CYAN}🌐 Simple Web Server Setup${RESET_COLOR}"
     log.info "Setting up a simple web server..."
-    echo -e "${BOLD_YELLOW}This will:${RESET_COLOR}"
-    echo "  • Pull the ${YELLOW}nginx:alpine${RESET_COLOR} image."
-    echo "  • Run it as a container named '${YELLOW}my-web-server${RESET_COLOR}'."
-    echo "  • Map port ${YELLOW}8080${RESET_COLOR} on your host to port ${YELLOW}80${RESET_COLOR} in the container."
+    log.info "This will:"
+    log.sub "Pull the nginx:alpine image."
+    log.sub "Run it as a container named 'my-web-server'."
+    log.sub "Map port 8080 on your host to port 80 in the container."
     echo ""
     
     local response
@@ -93,7 +93,7 @@ wizard_run_simple_server() {
         log.info "Pulling ${BOLD_YELLOW}nginx:alpine${RESET_COLOR} image..."
         if image_pulling "nginx:alpine"; then
             log.info "Running web server on port ${BOLD_YELLOW}8080${RESET_COLOR}..."
-            echo -e "${BOLD_MAGENTA}Access your server at: http://localhost:8080${RESET_COLOR}"
+            log.done "Access your server at: http://localhost:8080"
             
             # Run in detached mode with port mapping using shared docker_run helper
             if docker_run "my-web-server" "nginx:alpine" "true" "" "" "8080:80" "no" "" ""; then
@@ -122,10 +122,10 @@ wizard_run_simple_server() {
 wizard_run_dev_env() {
     log.setline "${BOLD_CYAN}💻 Development Environment Setup${RESET_COLOR}"
     log.info "Setting up a development environment..."
-    echo -e "${BOLD_YELLOW}This will:${RESET_COLOR}"
-    echo "  • Pull the ${YELLOW}node:16-alpine${RESET_COLOR} image."
-    echo "  • Create a container with your current directory mapped to ${YELLOW}/workspace${RESET_COLOR}."
-    echo "  • Start an interactive shell in the container."
+    log.info "This will:"
+    log.sub "Pull the node:16-alpine image."
+    log.sub "Create a container with your current directory mapped to /workspace."
+    log.sub "Start an interactive shell in the container."
     echo ""
     
     local response
@@ -178,10 +178,10 @@ wizard_run_dev_env() {
 wizard_run_database() {
     log.setline "${BOLD_CYAN}🗄️ Database Container Setup${RESET_COLOR}"
     log.info "Setting up a database container..."
-    echo -e "${BOLD_YELLOW}We'll set up a PostgreSQL database:${RESET_COLOR}"
-    echo "  • Pull the ${YELLOW}postgres:13-alpine${RESET_COLOR} image."
-    echo "  • Run in detached mode."
-    echo "  • Set up default credentials."
+    log.info "We'll set up a PostgreSQL database:"
+    log.sub "Pull the postgres:13-alpine image."
+    log.sub "Run in detached mode."
+    log.sub "Set up default credentials."
     echo ""
     
     local response
@@ -242,24 +242,24 @@ wizard_explore_options() {
     log.setline "${BOLD_CYAN}🗺️ Explore Dockero Options${RESET_COLOR}"
     log.info "Here are some things you can do with Dockero:"
     echo ""
-    echo -e "${BOLD_YELLOW}Container Management:${RESET_COLOR}"
-    echo -e "  • ${BOLD_GREEN}dockero run <name> <image>${RESET_COLOR}    # Create/start containers."
+    log.info "Container Management:"
+    echo -e "  • ${BOLD_GREEN}dockero create <name> <image>${RESET_COLOR} # Create containers."
     echo -e "  • ${BOLD_GREEN}dockero list${RESET_COLOR}                  # View all containers."
     echo -e "  • ${BOLD_GREEN}dockero stop <container>${RESET_COLOR}      # Stop a container."
     echo -e "  • ${BOLD_GREEN}dockero remove <container>${RESET_COLOR}    # Remove a container."
     echo ""
-    echo -e "${BOLD_YELLOW}Project Setup:${RESET_COLOR}"
+    log.info "Project Setup:"
     echo -e "  • ${BOLD_GREEN}dockero setup init .${RESET_COLOR}          # Create project config."
     echo -e "  • ${BOLD_GREEN}dockero setup run .${RESET_COLOR}           # Run project setup."
     echo ""
-    echo -e "${BOLD_YELLOW}Multi-Container Apps:${RESET_COLOR}"
+    log.info "Multi-Container Apps:"
     echo -e "  • ${BOLD_GREEN}dockero compose up${RESET_COLOR}            # Start multi-container apps."
     echo -e "  • ${BOLD_GREEN}dockero compose down${RESET_COLOR}          # Stop multi-container apps."
     echo ""
-    echo -e "${BOLD_YELLOW}Learning:${RESET_COLOR}"
+    log.info "Learning:"
     echo -e "  • ${BOLD_GREEN}dockero learn basic${RESET_COLOR}           # Start Docker learning."
     echo -e "  • ${BOLD_GREEN}dockero explain <command>${RESET_COLOR}     # Get command explanations."
-    echo -e "  • ${BOLD_GREEN}dockero show dashboard${RESET_COLOR}        # Visual overview."
+    echo -e "  • ${BOLD_GREEN}dockero show dashboard${RESET_COLOR}         # Visual overview."
     echo ""
     log.info "Try running: ${BOLD_YELLOW}dockero show dashboard${RESET_COLOR}"
 }
@@ -296,9 +296,9 @@ wizard_setup_assistant() {
     shopt -u nullglob # Disable nullglob
     
     if [[ ${#project_dirs[@]} -gt 0 ]]; then
-        echo -e "${BOLD_YELLOW}Detected potential project directories:${RESET_COLOR}"
+        log.info "Detected potential project directories:"
         for i in "${!project_dirs[@]}"; do
-            echo -e "  ${GREEN}$((i+1)). ${project_dirs[$i]}${RESET_COLOR}"
+            log.sub "$((i+1)). ${project_dirs[$i]}"
         done
         echo ""
         local choice
@@ -318,9 +318,9 @@ wizard_setup_assistant() {
         fi
     else
         log.info "No project files detected in current directory."
-        echo -e "${BOLD_YELLOW}You can:${RESET_COLOR}"
-        echo "  • Run in a project directory with Dockerfile/package.json."
-        echo "  • Or run '${BOLD_YELLOW}dockero setup init .${RESET_COLOR}' to create a new config."
+        log.info "You can:"
+        log.sub "Run in a project directory with Dockerfile/package.json."
+        log.hint "Or run 'dockero setup init .' to create a new config."
         return 0
     fi
 }
@@ -369,7 +369,7 @@ wizard_setup_project() {
         base_image="${dockerfile_from:-ubuntu:latest}"
     fi
     
-    echo -e "${BOLD_YELLOW}Detected project type, suggesting base image: ${GREEN}$base_image${RESET_COLOR}."
+    log.info "Detected project type, suggesting base image: ${BOLD}$base_image${RESET_COLOR}."
     local image_response
     read -rp "${BOLD_WHITE}Use this image? (Y/n): ${RESET_COLOR}" image_response
     echo ""
@@ -421,9 +421,9 @@ EOF
     log.done ".dockero configuration created: ${BOLD_GREEN}$CONF_FILE${RESET_COLOR}."
     echo ""
     log.info "Configuration created with:"
-    echo -e "  • ${BOLD_WHITE}Container name:${RESET_COLOR} ${YELLOW}$sanitized_generated_name${RESET_COLOR}"
-    echo -e "  • ${BOLD_WHITE}Base image:${RESET_COLOR} ${YELLOW}$image_to_use${RESET_COLOR}"
-    echo -e "  • ${BOLD_WHITE}Volume mapping:${RESET_COLOR} ${YELLOW}./:/workspace${RESET_COLOR}"
+    log.sub "Container name: ${BOLD}$sanitized_generated_name${RESET_COLOR}"
+    log.sub "Base image:     ${BOLD}$image_to_use${RESET_COLOR}"
+    log.sub "Volume mapping: ./:/workspace"
     echo ""
     log.sub "To start your project: ${BOLD_YELLOW}dockero setup run .${RESET_COLOR}"
     log.sub "To learn more: ${BOLD_YELLOW}dockero explain setup${RESET_COLOR}"

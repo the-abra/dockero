@@ -72,7 +72,7 @@ fi
 # Test validation functions with invalid input
 echo "Testing validation functions..."
 # This should fail with validation error
-if ! ./core/dockero run "invalid name with spaces" 2>/dev/null; then
+if ! ./core/dockero create "invalid name with spaces" 2>/dev/null; then
     echo "✅ Validation functions work"
 else
     echo "⚠️  Validation may not be fully working"

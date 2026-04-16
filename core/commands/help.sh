@@ -2,17 +2,15 @@
 
 # === TITLE ===
 log.setline "Dockero - V$DOCKERO_VERSION"
-echo -e "${BOLD_YELLOW}Dockero - Simplified Docker CLI${RESET_COLOR}"
+log.info "Dockero - Simplified Docker CLI"
 
 _show_general_help() { # Renamed to a private helper
   echo -e "
 ${BOLD_CYAN}Usage 🪬 :${RESET_COLOR}
 
-${BOLD_GREEN}Enhanced UX Commands:${RESET_COLOR}
-  dockero tui             Launch interactive TUI dashboard.
-
 ${BOLD_GREEN}Container Management:${RESET_COLOR}
-  dockero run <name> [<image>]
+  dockero create <name> [<image>] [-d] [--volume <host:container>] [--no-volume] [-p <port>]
+  dockero volume <list|create|remove|inspect|prune>
   dockero start <container> [-c <command>]
   dockero stop <container> [--timeout <seconds>]
   dockero list [-img]

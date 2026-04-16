@@ -214,7 +214,7 @@ system_config() {
                 local result
                 result=$(inipars.get "default" "$key" "$config_file") # Using inipars.get
                 if [[ -n "$result" ]]; then
-                    echo -e "${BOLD_GREEN}$key${RESET_COLOR}=${BOLD_YELLOW}$result${RESET_COLOR}"
+                    log.sub "$key=$result"
                 else
                     log.warn "Configuration key '${BOLD_YELLOW}$key${RESET_COLOR}' not found in ${BOLD_YELLOW}$config_file${RESET_COLOR}."
                     return 1
@@ -248,7 +248,7 @@ system_config() {
                     echo "$config_entries" | while IFS= read -r line; do
                         local entry_key="${line%%=*}"
                         local entry_value="${line#*=}"
-                        echo -e "  ${BOLD_GREEN}$entry_key${RESET_COLOR}=${BOLD_YELLOW}$entry_value${RESET_COLOR}"
+                        log.sub "  $entry_key=$entry_value"
                     done
                 else
                     log.info "No entries in [default] section of ${BOLD_YELLOW}$config_file${RESET_COLOR}."

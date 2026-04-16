@@ -329,7 +329,7 @@ heal_fix_permissions() {
         log.sub "Command to run: ${BOLD_YELLOW}$create_cmd${RESET_COLOR}"
         read -rp "Do you want to run this command? [y/N]: " confirm
         if [[ "$confirm" =~ ^[Yy]$ ]]; then
-            echo "+ $create_cmd"
+            log.sub "+ $create_cmd"
             if $create_cmd; then
                 log.done "Group 'docker' created."
             else
@@ -348,7 +348,7 @@ heal_fix_permissions() {
     log.sub "Command to run: ${BOLD_YELLOW}$add_cmd${RESET_COLOR}"
     read -rp "Do you want to run this command? [y/N]: " confirm
     if [[ "$confirm" =~ ^[Yy]$ ]]; then
-        echo "+ $add_cmd"
+        log.sub "+ $add_cmd"
         if $add_cmd; then
             log.done "User ${BOLD_CYAN}$USER${RESET_COLOR} added to ${BOLD_YELLOW}docker${RESET_COLOR} group."
             log.setline "${BOLD_CYAN}🔄 Action Required${RESET_COLOR}"

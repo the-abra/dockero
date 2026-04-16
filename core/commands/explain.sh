@@ -5,9 +5,9 @@ explain() {
     local command_to_explain="${1:-}" # Use function's first argument, safely
     
     local -a explainable_commands=(
-        "run" "list" "rename" "export" "import" "start" "stop" "setup" "remove"
+        "create" "volume" "list" "rename" "export" "import" "start" "stop" "setup" "remove"
         "sync" "compose" "env" "validate" "system" "learn" "explain" "show"
-        "net" "heal" "registry" "secrets" "monitor" "wizard" "dashboard" "help"
+        "net" "heal" "registry" "secrets" "monitor" "wizard" "help"
     )
 
     if [[ -z "$command_to_explain" ]]; then
@@ -20,21 +20,40 @@ explain() {
     log.setline "${BOLD_CYAN}Command Explanation: ${YELLOW}$command_to_explain${RESET_COLOR}"
     
     case "$command_to_explain" in
-        "run")
+        "create")
             cat << EOF
-${BOLD_CYAN}🔹 dockero run ${GREEN}<name> [<image>]${RESET_COLOR}
-   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Launch an existing container or create a new one.
+${BOLD_CYAN}🔹 dockero create ${GREEN}<name> [<image>] [-d] [--volume <host:container>] [--no-volume] [-p <port>]${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Create and start a new container, or start/attach an existing one.
    ${BOLD_WHITE}• Parameters:${RESET_COLOR}
-     - ${GREEN}<name>${RESET_COLOR}: Name of the container to start or create.
-     - ${GREEN}[<image>]${RESET_COLOR}: Docker image to use if creating a new container (optional if <name> is an image).
-   ${BOLD_WHITE}• What happens:${RESET_COLOR} 
-     1. Checks if a container named '${YELLOW}<name>${RESET_COLOR}' exists.
-     2. If exists: starts the container and attaches interactively.
-     3. If not exists: creates a new container from <image> (or <name> if image is omitted) and runs it.
-   ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR} 
-     ${YELLOW}docker start -ai <name>${RESET_COLOR}  (if container exists)
-     ${YELLOW}docker run -it [default volumes/ports] --name <name> <image>${RESET_COLOR}
+     - ${GREEN}<name>${RESET_COLOR}: Name of the container.
+     - ${GREEN}[<image>]${RESET_COLOR}: Docker image to use (defaults to <name> if omitted).
+     - ${GREEN}-d, --detach${RESET_COLOR}: Run in detached (background) mode.
+     - ${GREEN}--volume <host:container>${RESET_COLOR}: Override the default volume mount.
+     - ${GREEN}--no-volume${RESET_COLOR}: Disable volume mounting entirely.
+     - ${GREEN}-p <port>${RESET_COLOR}: Port mapping (host:container or single port).
+   ${BOLD_WHITE}• Default volume:${RESET_COLOR} /opt/<name>:/workspace (host dir auto-created)
+   ${BOLD_WHITE}• What happens:${RESET_COLOR}
+     1. If container exists: warns and hints to use 'dockero start'.
+     2. If not: pulls image if needed, creates host volume dir, then runs the container.
+   ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
+     ${YELLOW}docker run -it -v /opt/<name>:/workspace --name <name> <image>${RESET_COLOR}
    ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn basics 1${RESET_COLOR}
+EOF
+            ;;
+        "volume")
+            cat << EOF
+${BOLD_CYAN}🔹 dockero volume ${GREEN}<subcommand> [args]${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Manage Docker volumes.
+   ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
+     - ${GREEN}list / ls${RESET_COLOR}          List all volumes.
+     - ${GREEN}create <name>${RESET_COLOR}      Create a named volume.
+     - ${GREEN}remove / rm <name>${RESET_COLOR} Remove a volume.
+     - ${GREEN}inspect <name>${RESET_COLOR}     Show detailed volume info.
+     - ${GREEN}attach <container> <host:container>${RESET_COLOR}  Advises how to add a volume (requires recreation).
+     - ${GREEN}prune${RESET_COLOR}              Remove all unused volumes.
+   ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
+     ${YELLOW}docker volume ls / create / rm / inspect / prune${RESET_COLOR}
+   ${BOLD_WHITE}• Learn more:${RESET_COLOR} ${MAGENTA}dockero learn basics 2${RESET_COLOR}
 EOF
             ;;
         "list")

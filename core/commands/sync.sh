@@ -281,8 +281,8 @@ sync_status() {
     local started
     started=$(docker inspect -f '{{.State.StartedAt}}' "$container_name" 2>/dev/null || echo "N/A") # $container_name validated
     
-    echo -e "  ${BOLD_WHITE}🔹 Container Status:${RESET_COLOR} ${YELLOW}$status${RESET_COLOR}"
-    echo -e "  ${BOLD_WHITE}🔹 Started At:${RESET_COLOR} ${MAGENTA}$started${RESET_COLOR}"
+    log.sub "🔹 Container Status: $status"
+    log.sub "🔹 Started At: $started"
     
     # Get all bind mounts
     local -a volume_info=()
@@ -293,12 +293,12 @@ sync_status() {
     done < <(docker inspect -f '{{range .Mounts}}{{if eq .Type "bind"}}{{.Source}}:{{.Destination}}{{printf "\n"}}{{end}}{{end}}' "$container_name" 2>/dev/null) # $container_name validated
 
     if [[ ${#volume_info[@]} -gt 0 ]]; then
-        echo -e "  ${BOLD_WHITE}🔹 Volumes:${RESET_COLOR}"
+        log.sub "🔹 Volumes:"
         for vol in "${volume_info[@]}"; do
-            echo -e "    - ${YELLOW}$vol${RESET_COLOR}"
+            log.sub "  - $vol"
         done
     else
-        echo -e "  ${BOLD_WHITE}🔹 Volumes:${RESET_COLOR} (none found or not bind-mounted)"
+        log.sub "🔹 Volumes: (none found or not bind-mounted)"
     fi
     
     # Check if container is running to do deeper analysis
@@ -306,9 +306,9 @@ sync_status() {
         # Try to get file count from container workspace
         local file_count
         file_count=$(docker exec "$container_name" find /workspace -type f 2>/dev/null | wc -l | tr -d ' ') # $container_name validated
-        echo -e "  ${BOLD_WHITE}🔹 Files in /workspace:${RESET_COLOR} ${GREEN}${file_count:-0}${RESET_COLOR}"
+        log.sub "🔹 Files in /workspace: ${file_count:-0}"
     else
-        echo -e "  ${BOLD_WHITE}🔹 Files in /workspace:${RESET_COLOR} (container not running)"
+        log.sub "🔹 Files in /workspace: (container not running)"
     fi
 }
 

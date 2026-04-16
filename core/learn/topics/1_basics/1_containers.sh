@@ -16,7 +16,7 @@ run_lesson() {
     _press_enter_to_continue
 
     _subheading "Let's run your first container!"
-    _present_command "dockero run my-first-container hello-world" "This will download the 'hello-world' image and run it as a container named 'my-first-container'."
+    _present_command "dockero create my-first-container hello-world" "This will download the 'hello-world' image and create a container named 'my-first-container'."
 
     # This is a bit of a trick, we are not actually running the command here, just showing it.
     # A more advanced version could actually execute it.
@@ -34,7 +34,7 @@ run_lesson() {
     log.sub "CREATE -> START -> STOP -> DELETE"
     echo ""
     echo "You can manage this with these dockero commands:"
-    _present_code "dockero run <name> <image>  # Create and start"
+    _present_code "dockero create <name> <image> # Create and start"
     _present_code "dockero start <name>       # Start a stopped container"
     _present_code "dockero stop <name>        # Stop a running container"
     _present_code "dockero remove <name>      # Delete a container"

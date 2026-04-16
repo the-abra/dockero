@@ -118,9 +118,9 @@ env_list() {
 
     for env_entry in "${unique_envs[@]}"; do
         if [[ "$env_entry" == "$current_active_env" ]]; then
-            echo -e "  ✅ ${BOLD_GREEN}$env_entry${RESET_COLOR} (active)"
+            log.done "  ✅ ${BOLD}$env_entry${RESET_COLOR} (active)"
         else
-            echo -e "  $env_entry"
+            log.sub "  $env_entry"
         fi
     done
     
@@ -152,7 +152,7 @@ env_show() {
     if [[ ${#config_files[@]} -gt 0 ]]; then
         log.sub "Associated configuration files:"
         for file in "${config_files[@]}"; do
-            echo -e "  - ${YELLOW}$file${RESET_COLOR}"
+            log.sub "- $file"
         done
     else
         log.sub "No environment-specific configuration files found."
@@ -310,7 +310,7 @@ env_delete() {
     log.setline "Delete Environment"
     log.info "Files to be deleted for environment '${BOLD_YELLOW}$env_name${RESET_COLOR}':"
     for file in "${files_to_delete[@]}"; do
-        echo -e "  - ${RED}$file${RESET_COLOR}"
+        log.sub "- $file"
     done
     
     local response

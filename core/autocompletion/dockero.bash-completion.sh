@@ -72,7 +72,7 @@ _dockero_autocomplete() {
   prev="${COMP_WORDS[COMP_CWORD - 1]}"
 
   # Static options - no need to compute
-  local base_opts="run list stop start export import rename setup remove net sync compose env validate system learn explain show heal registry secrets monitor wizard --help --version"
+  local base_opts="create volume list stop start export import rename setup remove net sync compose env validate system learn explain show heal registry secrets monitor wizard --help --version"
 
   case $COMP_CWORD in
   1)
@@ -83,7 +83,7 @@ _dockero_autocomplete() {
   2)
     # Second argument - context-specific completions
     case "$prev" in
-    run|rename|start|export|remove)
+    create|rename|start|export|remove)
       # Use cached container list
       local containers
       containers=$(_dockero_get_containers)
@@ -160,6 +160,10 @@ _dockero_autocomplete() {
     wizard)
       # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "start setup init quickstart beginner" -- "${cur}"))
+      ;;
+    volume)
+      # shellcheck disable=SC2207
+      COMPREPLY=($(compgen -W "list ls create remove rm inspect attach prune" -- "${cur}"))
       ;;
     esac
     ;;

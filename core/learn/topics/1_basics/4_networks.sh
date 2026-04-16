@@ -27,7 +27,7 @@ run_lesson() {
     echo "Containers on a custom bridge network can resolve each other by their container names."
     _present_command "dockero net new my-app-network" "Creates a new custom network named 'my-app-network'."
     echo ""
-    _present_command "dockero run my-web-app nginx" "Runs 'my-web-app' (nginx). To connect it to a network, use 'dockero net add my-web-app my-app-network'."
+    _present_command "dockero create my-web-app nginx" "Runs 'my-web-app' (nginx). To connect it to a network, use 'dockero net add my-web-app my-app-network'."
     echo ""
 
     _press_enter_to_continue
