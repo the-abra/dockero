@@ -9,6 +9,7 @@ EOF
 }
 
 
+wizard() {
     local subcommand="${args[1]:-""}"
     
     if [[ -z "$subcommand" ]]; then

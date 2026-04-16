@@ -18,6 +18,7 @@ EOF
 }
 
 
+_sync_validate_container_path() {
     local path="${1:-}"
     if [[ -z "$path" ]]; then
         log.error "Container path cannot be empty."

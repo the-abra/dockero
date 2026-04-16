@@ -11,6 +11,7 @@ ${BOLD_CYAN}🔹 dockero rename ${GREEN}<old-name> <new-name> [-img]${RESET_COLO
 EOF
 }
 
+rename() {
 
     local current_name="${args[1]:-}"
     local new_name="${args[2]:-}"

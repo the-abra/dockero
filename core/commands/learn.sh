@@ -10,7 +10,7 @@ ${BOLD_CYAN}🔹 dockero learn ${GREEN}<start|basic|intermediate|advanced|docker
 EOF
 }
 
-
+learn() {
     local learn_main_script="${CORE_DIR}/learn/main.sh"
 
     if [[ -f "$learn_main_script" ]]; then

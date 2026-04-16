@@ -12,6 +12,7 @@ EOF
 }
 
 
+compose() {
     local compose_file="$1"
     local -a services=()
     while IFS= read -r line; do

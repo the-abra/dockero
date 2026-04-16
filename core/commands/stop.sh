@@ -11,7 +11,7 @@ ${BOLD_CYAN}🔹 dockero stop ${GREEN}<container-name> [--timeout <seconds>]${RE
 EOF
 }
 
-
+stop() {
   local container_name="${args[1]:-}"
   local timeout="${params[timeout]:-1}" # Default timeout to 1 second
   

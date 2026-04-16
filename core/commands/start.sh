@@ -12,6 +12,7 @@ EOF
 }
 
 
+start() {
   local container_name="${args[1]:-}"
   # shellcheck disable=SC2154
   local custom_command_flag="${params[c]+set}" # Check if -c flag is present

@@ -9,7 +9,7 @@ ${BOLD_CYAN}🔹 dockero export ${GREEN}<container-name> [--tag <image-tag>]${RE
 EOF
 }
 
-
+export() {
 # === INPUT VALIDATION ===
 if [[ -z "${args[1]:-}" ]]; then
   log.hint "Usage: dockero export <container-name> [--tag <image-tag>]"

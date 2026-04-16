@@ -9,7 +9,7 @@ ${BOLD_CYAN}🔹 dockero remove ${GREEN}<container|image[:tag]>${RESET_COLOR}
 EOF
 }
 
-
+remove() {
   local input="${args[1]:-}"
 
   if [[ -z "$input" ]]; then

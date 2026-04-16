@@ -9,7 +9,7 @@ ${BOLD_CYAN}🔹 dockero dashboard${RESET_COLOR}
 EOF
 }
 
-
+dashboard() {
   log.setline "Dockero Dashboard"
   
   log.setline "Docker Dashboard"

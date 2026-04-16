@@ -11,6 +11,7 @@ EOF
 }
 
 
+validate() {
     local path="${1:-}"
     if [[ -z "$path" ]]; then
         log.error "Path cannot be empty."
