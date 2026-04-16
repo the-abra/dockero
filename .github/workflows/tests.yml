@@ -14,8 +14,8 @@ jobs:
 
     - name: Install jq
       run: |
-        sudo apt-get update -qq
-        sudo apt-get install -y jq
+        apt-get update -qq && apt-get install -y jq || \
+        sudo apt-get update -qq && sudo apt-get install -y jq
 
     - name: Run improvement tests
       run: |
