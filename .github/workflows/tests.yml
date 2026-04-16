@@ -15,7 +15,10 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y jq
+        sudo apt-get install -y jq docker.io
+
+    - name: Start Docker daemon
+      run: sudo systemctl start docker
 
     - name: Run improvement tests
       run: |

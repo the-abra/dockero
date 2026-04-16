@@ -29,19 +29,13 @@ fi
 # === Dependency Check ===
 _check_dependencies() {
     local runtime="${DOCKERO_RUNTIME:-docker}"
-    local missing=()
 
     if ! command -v "$runtime" &>/dev/null; then
-        missing+=("$runtime")
+        echo "[ERROR] '$runtime' not found. Install Docker or set DOCKERO_RUNTIME." >&2
+        exit 1
     fi
     if ! command -v jq &>/dev/null; then
         echo "[WARNING] jq not found. Some features (monitor health, etc.) will be limited." >&2
-    fi
-
-    if [[ ${#missing[@]} -gt 0 ]]; then
-        echo "[ERROR] Missing required dependencies: ${missing[*]}" >&2
-        echo "        Run 'sudo dockero system install' or install them manually." >&2
-        exit 1
     fi
 }
 _check_dependencies
