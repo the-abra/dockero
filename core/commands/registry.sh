@@ -19,7 +19,7 @@ EOF
 }
 
 
-registry() {
+_registry_validate_url() {
     local url="$1"
     # Basic validation: alphanumeric, dots, hyphens, and optional port. No slashes or spaces.
     if [[ ! "$url" =~ ^[a-zA-Z0-9.-]+(:[0-9]+)?$ ]]; then

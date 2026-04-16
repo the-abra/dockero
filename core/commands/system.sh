@@ -18,7 +18,7 @@ EOF
 }
 
 
-system() {
+_system_validate_service_name() {
     local name="$1"
     # systemd service names generally allow alphanumeric, hyphens, and dots.
     if [[ ! "$name" =~ ^[a-zA-Z0-9.-]+$ ]]; then

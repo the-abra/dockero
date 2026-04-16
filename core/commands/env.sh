@@ -16,7 +16,7 @@ EOF
 }
 
 
-env() {
+_env_extract_name() {
     local filename="$1"
     echo "$filename" | sed 's/^\.dockero[-.]//' | sed 's/^\.env\.//' | sed 's/^\.environment\.//' | sed 's/\.yaml$//' | sed 's/\.yml$//'
 }

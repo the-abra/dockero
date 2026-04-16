@@ -17,7 +17,7 @@ EOF
 }
 
 
-secrets() {
+_secrets_validate_name() {
     local name="$1"
     # Docker secret names typically allow alphanumeric, hyphens, underscores, and dots.
     if [[ ! "$name" =~ ^[a-zA-Z0-9_.-]+$ ]]; then

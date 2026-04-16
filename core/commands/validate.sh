@@ -11,7 +11,7 @@ EOF
 }
 
 
-validate() {
+_validate_file_path_basic() {
     local path="${1:-}"
     if [[ -z "$path" ]]; then
         log.error "Path cannot be empty."
