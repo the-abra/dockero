@@ -26,7 +26,25 @@ if [[ -f "$USER_CONFIG" ]]; then
     source "$USER_CONFIG"
 fi
 
-# === sources ===
+# === Dependency Check ===
+_check_dependencies() {
+    local runtime="${DOCKERO_RUNTIME:-docker}"
+    local missing=()
+
+    if ! command -v "$runtime" &>/dev/null; then
+        missing+=("$runtime")
+    fi
+    if ! command -v jq &>/dev/null; then
+        echo "[WARNING] jq not found. Some features (monitor health, etc.) will be limited." >&2
+    fi
+
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        echo "[ERROR] Missing required dependencies: ${missing[*]}" >&2
+        echo "        Run 'sudo dockero system install' or install them manually." >&2
+        exit 1
+    fi
+}
+_check_dependencies
 # shellcheck disable=SC1091
 source "${CORE_DIR}/extra/log.sh"
 # shellcheck disable=SC1091
@@ -98,6 +116,11 @@ load_command() {
   fi
 
   local cmd_file="${COMMANDS_DIR}/${cmd_name_from_global_args}.sh"
+  # Check user plugin directory first (~/.dockero/commands/)
+  local user_cmd_file="${HOME}/.dockero/commands/${cmd_name_from_global_args}.sh"
+  if [[ -f "$user_cmd_file" ]]; then
+      cmd_file="$user_cmd_file"
+  fi
   
   if [[ -f "$cmd_file" ]]; then
     # shellcheck disable=SC1090

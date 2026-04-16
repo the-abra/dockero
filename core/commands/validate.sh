@@ -1,7 +1,16 @@
 #!/usr/bin/env bash
 
 # Helper function to validate file paths for safe use
-_validate_file_path_basic() {
+
+validate_help() {
+cat << EOF
+${BOLD_CYAN}🔹 dockero validate ${GREEN}[path] [config-file]${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Validate .dockero and .dockero-compose config files.
+   ${BOLD_WHITE}• What it checks:${RESET_COLOR} INI structure, required fields, container names, images, ports, paths.
+EOF
+}
+
+
     local path="${1:-}"
     if [[ -z "$path" ]]; then
         log.error "Path cannot be empty."

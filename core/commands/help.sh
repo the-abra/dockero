@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+help_help() {
+cat << EOF
+${BOLD_CYAN}🔹 dockero help ${GREEN}[command]${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Show usage information and command list.
+   ${BOLD_WHITE}• Usage:${RESET_COLOR} dockero help [command] - shows general help or specific command help
+EOF
+}
+
 # === TITLE ===
 log.setline "Dockero - V$DOCKERO_VERSION"
 log.info "Dockero - Simplified Docker CLI"

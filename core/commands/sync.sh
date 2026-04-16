@@ -1,7 +1,23 @@
 #!/usr/bin/env bash
 
 # Helper function to validate container paths for safe use inside containers
-_sync_validate_container_path() {
+
+sync_help() {
+cat << EOF
+${BOLD_CYAN}🔹 dockero sync ${GREEN}<push|pull|watch|status|init> [options]${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Synchronize files between host and container.
+   ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
+     - ${GREEN}push${RESET_COLOR}    Copy files from host to container.
+     - ${GREEN}pull${RESET_COLOR}    Copy files from container to host.
+     - ${GREEN}watch${RESET_COLOR}   Auto-sync on host file changes (requires inotify-tools).
+     - ${GREEN}status${RESET_COLOR}  Show sync status for a container.
+     - ${GREEN}init${RESET_COLOR}    Create a .dockero-sync config file.
+   ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
+     ${YELLOW}docker cp${RESET_COLOR} / ${YELLOW}docker exec${RESET_COLOR}
+EOF
+}
+
+
     local path="${1:-}"
     if [[ -z "$path" ]]; then
         log.error "Container path cannot be empty."
@@ -98,10 +114,10 @@ sync_push() {
     
     # Check if container is running, start if not (for sync)
     local was_running=true
-    if ! docker ps --format '{{.Names}}' | grep -q "^$container_name$"; then # $container_name is validated
+    if ! ${DOCKERO_RUNTIME:-docker} ps --format '{{.Names}}' | grep -q "^$container_name$"; then # $container_name is validated
         was_running=false
         log.info "Starting container '${BOLD_YELLOW}$container_name${RESET_COLOR}' temporarily for sync..."
-        docker start "$container_name" > /dev/null || { # $container_name is validated
+        ${DOCKERO_RUNTIME:-docker} start "$container_name" > /dev/null || { # $container_name is validated
             log.error "Failed to start container '${RED}$container_name${RESET_COLOR}' for sync."
             return 1
         }
@@ -110,13 +126,13 @@ sync_push() {
     # Create a temporary tar of the host directory and copy to container
     log.sub "Transferring files..."
     # Ensure tar is robustly handling paths. -C "$host_path" is safe.
-    # docker exec needs validated container_name and container_path.
-    if tar -cf - -C "$host_path" . | docker exec -i "$container_name" tar -xf - -C "$container_path"; then # Paths validated
+    # ${DOCKERO_RUNTIME:-docker} exec needs validated container_name and container_path.
+    if tar -cf - -C "$host_path" . | ${DOCKERO_RUNTIME:-docker} exec -i "$container_name" tar -xf - -C "$container_path"; then # Paths validated
         log.done "Files synced successfully."
     else
         log.error "Sync push operation failed."
         if [[ "$was_running" == "false" ]]; then
-            docker stop "$container_name" > /dev/null
+            ${DOCKERO_RUNTIME:-docker} stop "$container_name" > /dev/null
         fi
         return 1
     fi
@@ -124,7 +140,7 @@ sync_push() {
     # Stop container if we started it just for sync
     if [[ "$was_running" == "false" ]]; then
         log.info "Stopping container '${BOLD_YELLOW}$container_name${RESET_COLOR}' after sync..."
-        docker stop "$container_name" > /dev/null
+        ${DOCKERO_RUNTIME:-docker} stop "$container_name" > /dev/null
         log.sub "Container '${BOLD_GREEN}$container_name${RESET_COLOR}' stopped."
     fi
     
@@ -155,10 +171,10 @@ sync_pull() {
     
     # Check if container is running, start if not (for sync)
     local was_running=true
-    if ! docker ps --format '{{.Names}}' | grep -q "^$container_name$"; then # $container_name is validated
+    if ! ${DOCKERO_RUNTIME:-docker} ps --format '{{.Names}}' | grep -q "^$container_name$"; then # $container_name is validated
         was_running=false
         log.info "Starting container '${BOLD_YELLOW}$container_name${RESET_COLOR}' temporarily for sync..."
-        docker start "$container_name" > /dev/null || { # $container_name is validated
+        ${DOCKERO_RUNTIME:-docker} start "$container_name" > /dev/null || { # $container_name is validated
             log.error "Failed to start container '${RED}$container_name${RESET_COLOR}' for sync."
             return 1
         }
@@ -166,13 +182,13 @@ sync_pull() {
     
     # Create a temporary tar from container directory and extract to host
     log.sub "Transferring files..."
-    # docker exec needs validated container_name and container_path. -C "$host_path" is safe.
-    if docker exec -i "$container_name" tar -cf - -C "$container_path" . | tar -xf - -C "$host_path"; then # Paths validated
+    # ${DOCKERO_RUNTIME:-docker} exec needs validated container_name and container_path. -C "$host_path" is safe.
+    if ${DOCKERO_RUNTIME:-docker} exec -i "$container_name" tar -cf - -C "$container_path" . | tar -xf - -C "$host_path"; then # Paths validated
         log.done "Files synced successfully."
     else
         log.error "Sync pull operation failed."
         if [[ "$was_running" == "false" ]]; then
-            docker stop "$container_name" > /dev/null
+            ${DOCKERO_RUNTIME:-docker} stop "$container_name" > /dev/null
         fi
         return 1
     fi
@@ -180,7 +196,7 @@ sync_pull() {
     # Stop container if we started it just for sync
     if [[ "$was_running" == "false" ]]; then
         log.info "Stopping container '${BOLD_YELLOW}$container_name${RESET_COLOR}' after sync..."
-        docker stop "$container_name" > /dev/null
+        ${DOCKERO_RUNTIME:-docker} stop "$container_name" > /dev/null
         log.sub "Container '${BOLD_GREEN}$container_name${RESET_COLOR}' stopped."
     fi
     
@@ -215,7 +231,7 @@ sync_watch() {
     fi
     
     # Check if container exists
-    if ! docker ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then # $container_name is validated
+    if ! ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then # $container_name is validated
         log.error "Container '${RED}$container_name${RESET_COLOR}' does not exist."
         return 1
     fi
@@ -247,7 +263,7 @@ sync_watch() {
             # Using basename "$file_path_and_name" to ensure only the file name is passed to tar
             # and -C "$host_path" to ensure it operates within the designated directory.
             if tar -cf - -C "$host_path" "$file_name" 2>/dev/null | \
-               docker exec -i "$container_name" tar -xf - -C "$container_path" 2>/dev/null; then # Paths validated
+               ${DOCKERO_RUNTIME:-docker} exec -i "$container_name" tar -xf - -C "$container_path" 2>/dev/null; then # Paths validated
                 log.sub "Synced: ${GREEN}$file_path_and_name${RESET_COLOR}"
             else
                 log.warn "Failed to sync: ${RED}$file_path_and_name${RESET_COLOR}."
@@ -277,9 +293,9 @@ sync_status() {
     
     # Get container details
     local status
-    status=$(docker inspect -f '{{.State.Status}}' "$container_name" 2>/dev/null || echo "missing") # $container_name validated
+    status=$(${DOCKERO_RUNTIME:-docker} inspect -f '{{.State.Status}}' "$container_name" 2>/dev/null || echo "missing") # $container_name validated
     local started
-    started=$(docker inspect -f '{{.State.StartedAt}}' "$container_name" 2>/dev/null || echo "N/A") # $container_name validated
+    started=$(${DOCKERO_RUNTIME:-docker} inspect -f '{{.State.StartedAt}}' "$container_name" 2>/dev/null || echo "N/A") # $container_name validated
     
     log.sub "🔹 Container Status: $status"
     log.sub "🔹 Started At: $started"
@@ -290,7 +306,7 @@ sync_status() {
         if [[ -n "$mount" ]]; then
             volume_info+=("$mount")
         fi
-    done < <(docker inspect -f '{{range .Mounts}}{{if eq .Type "bind"}}{{.Source}}:{{.Destination}}{{printf "\n"}}{{end}}{{end}}' "$container_name" 2>/dev/null) # $container_name validated
+    done < <(${DOCKERO_RUNTIME:-docker} inspect -f '{{range .Mounts}}{{if eq .Type "bind"}}{{.Source}}:{{.Destination}}{{printf "\n"}}{{end}}{{end}}' "$container_name" 2>/dev/null) # $container_name validated
 
     if [[ ${#volume_info[@]} -gt 0 ]]; then
         log.sub "🔹 Volumes:"
@@ -302,10 +318,10 @@ sync_status() {
     fi
     
     # Check if container is running to do deeper analysis
-    if docker ps --format '{{.Names}}' | grep -q "^$container_name$"; then # $container_name validated
+    if ${DOCKERO_RUNTIME:-docker} ps --format '{{.Names}}' | grep -q "^$container_name$"; then # $container_name validated
         # Try to get file count from container workspace
         local file_count
-        file_count=$(docker exec "$container_name" find /workspace -type f 2>/dev/null | wc -l | tr -d ' ') # $container_name validated
+        file_count=$(${DOCKERO_RUNTIME:-docker} exec "$container_name" find /workspace -type f 2>/dev/null | wc -l | tr -d ' ') # $container_name validated
         log.sub "🔹 Files in /workspace: ${file_count:-0}"
     else
         log.sub "🔹 Files in /workspace: (container not running)"

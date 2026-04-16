@@ -8,21 +8,32 @@ full_arr=("$@")
 parameter-indexing() {
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --version|--help) # Boolen TRUE sign
+    --version|--help) # Boolean TRUE flags
       key="${1##--}"
       params["$key"]="true"
       shift
       ;;
-    --*) # Dynamic Named
+    --*) # Long named params: --key value
       key="${1##--}"
-      [[ -z $2 ]] && echo "Error: You must set value of --${key}" >&2 && return 1
-      params["$key"]="$2"
-      shift 2
+      if [[ -n "${2:-}" && "${2}" != -* ]]; then
+        params["$key"]="$2"
+        shift 2
+      else
+        # Treat as boolean if no value follows
+        params["$key"]="true"
+        shift
+      fi
       ;;
-    -*) # Dynamic Named
+    -*) # Short flags: -f value or -f (boolean)
       key="${1##-}"
-      params["$key"]="true"
-      shift
+      if [[ ${#key} -eq 1 && -n "${2:-}" && "${2}" != -* ]]; then
+        # Single-char flag followed by a non-flag value → treat as key=value
+        params["$key"]="$2"
+        shift 2
+      else
+        params["$key"]="true"
+        shift
+      fi
       ;;
     *)   # Positional argument
       args+=("$1")

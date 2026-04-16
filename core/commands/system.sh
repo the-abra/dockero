@@ -1,7 +1,23 @@
 #!/usr/bin/env bash
 
 # Helper function to validate service names for safe use
-_system_validate_service_name() {
+
+system_help() {
+cat << EOF
+${BOLD_CYAN}🔹 dockero system ${GREEN}<service|config|info|cleanup|install> [options]${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} System integration and management.
+   ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
+     - ${GREEN}service${RESET_COLOR}   Manage containers as systemd services.
+     - ${GREEN}config${RESET_COLOR}    Manage Dockero configuration (get/set/list/reset).
+     - ${GREEN}info${RESET_COLOR}      Display system and Dockero environment info.
+     - ${GREEN}cleanup${RESET_COLOR}   Clean up Docker resources.
+     - ${GREEN}install${RESET_COLOR}   Install Dockero to a system location.
+   ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
+     ${YELLOW}docker system prune${RESET_COLOR} / ${YELLOW}docker info${RESET_COLOR}
+EOF
+}
+
+
     local name="$1"
     # systemd service names generally allow alphanumeric, hyphens, and dots.
     if [[ ! "$name" =~ ^[a-zA-Z0-9.-]+$ ]]; then
@@ -157,7 +173,7 @@ system_create_service_file() {
     log.info "Creating systemd service file for container: ${BOLD_YELLOW}$container_name${RESET_COLOR} at ${BOLD_YELLOW}$service_file${RESET_COLOR}."
     
     # Check if the container exists
-    if ! docker ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then # $container_name is validated
+    if ! ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then # $container_name is validated
         log.error "Container '${RED}$container_name${RESET_COLOR}' does not exist. Cannot create service file."
         return 1
     fi
@@ -171,10 +187,10 @@ Requires=docker.service
 
 [Service]
 Restart=always
-ExecStartPre=-/usr/bin/docker stop $container_name
-ExecStartPre=-/usr/bin/docker rm $container_name
-ExecStart=/usr/bin/docker start -a $container_name
-ExecStop=/usr/bin/docker stop $container_name
+ExecStartPre=-/usr/bin/${DOCKERO_RUNTIME:-docker} stop $container_name
+ExecStartPre=-/usr/bin/${DOCKERO_RUNTIME:-docker} rm $container_name
+ExecStart=/usr/bin/${DOCKERO_RUNTIME:-docker} start -a $container_name
+ExecStop=/usr/bin/${DOCKERO_RUNTIME:-docker} stop $container_name
 TimeoutStartSec=0
 
 [Install]
@@ -280,12 +296,12 @@ system_info() {
     if command -v docker &> /dev/null; then
         log.info "Docker: ${BOLD_GREEN}$(docker --version | head -n 1)${RESET_COLOR}"
         local docker_daemon_status
-        if docker ps -q &> /dev/null; then # Faster check
+        if ${DOCKERO_RUNTIME:-docker} ps -q &> /dev/null; then # Faster check
             docker_daemon_status="${BOLD_GREEN}Running${RESET_COLOR}"
         else
             docker_daemon_status="${RED}Not running${RESET_COLOR}"
         fi
-        log.sub "Docker daemon: $docker_daemon_status (Version: $(docker info --format '{{.ServerVersion}}' 2>/dev/null || echo 'N/A'))"
+        log.sub "Docker daemon: $docker_daemon_status (Version: $(${DOCKERO_RUNTIME:-docker} info --format '{{.ServerVersion}}' 2>/dev/null || echo 'N/A'))"
     else
         log.warn "Docker: ${RED}Not installed${RESET_COLOR}"
         # Check for Podman as alternative
@@ -303,7 +319,7 @@ system_info() {
     
     # Check file system type for Docker
     local docker_root_dir
-    docker_root_dir=$(docker info --format '{{.DockerRootDir}}' 2>/dev/null || echo "/var/lib/docker")
+    docker_root_dir=$(${DOCKERO_RUNTIME:-docker} info --format '{{.DockerRootDir}}' 2>/dev/null || echo "/var/lib/docker")
     if [[ -d "$docker_root_dir" ]]; then
         local fs_type
         fs_type=$(df -T "$docker_root_dir" | tail -1 | awk '{print $2}')
@@ -352,7 +368,7 @@ system_cleanup() {
             ;;
         "volumes")
             log.info "Removing unused volumes..."
-            docker volume prune -f > /dev/null && log.done "Unused volumes removed." || log.error "Failed to remove unused volumes."
+            ${DOCKERO_RUNTIME:-docker} volume prune -f > /dev/null && log.done "Unused volumes removed." || log.error "Failed to remove unused volumes."
             ;;
         "networks")
             log.info "Removing unused networks using ${BOLD_YELLOW}dockero net prune${RESET_COLOR}..."
@@ -366,7 +382,7 @@ system_cleanup() {
             ;;
         "all")
             log.info "Removing all unused resources (containers, images, volumes, networks)..."
-            docker system prune -f --volumes > /dev/null && log.done "All unused resources removed." || log.error "Failed to remove all unused resources."
+            ${DOCKERO_RUNTIME:-docker} system prune -f --volumes > /dev/null && log.done "All unused resources removed." || log.error "Failed to remove all unused resources."
             ;;
         "temp")
             log.info "Cleaning up temporary files..."

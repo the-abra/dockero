@@ -1,7 +1,22 @@
 #!/usr/bin/env bash
 
 # Helper function to validate secret names for safe use
-_secrets_validate_name() {
+
+secrets_help() {
+cat << EOF
+${BOLD_CYAN}🔹 dockero secrets ${GREEN}<create|list|show|remove> <name> [source]${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Manage Docker secrets (passwords, API keys).
+   ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
+     - ${GREEN}create <name> [source]${RESET_COLOR}  Create from file or stdin.
+     - ${GREEN}list${RESET_COLOR}                    List all secrets.
+     - ${GREEN}show <name>${RESET_COLOR}              Show secret metadata.
+     - ${GREEN}remove <name>${RESET_COLOR}            Remove a secret.
+   ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
+     ${YELLOW}docker secret create/ls/inspect/rm${RESET_COLOR}
+EOF
+}
+
+
     local name="$1"
     # Docker secret names typically allow alphanumeric, hyphens, underscores, and dots.
     if [[ ! "$name" =~ ^[a-zA-Z0-9_.-]+$ ]]; then
@@ -61,7 +76,7 @@ secrets_create() {
     read -rs -p "${BOLD_WHITE}Secret value:${RESET_COLOR} " secret_value
     echo  # New line after hidden input
     # Create secret from stdin
-    if echo -n "$secret_value" | docker secret create "$secret_name" -; then
+    if echo -n "$secret_value" | ${DOCKERO_RUNTIME:-docker} secret create "$secret_name" -; then
       log.done "Secret '${BOLD_GREEN}$secret_name${RESET_COLOR}' created successfully."
     else
       log.error "Failed to create secret '${RED}$secret_name${RESET_COLOR}'."
@@ -80,7 +95,7 @@ secrets_create() {
     fi
 
     log.info "Creating secret '${BOLD_YELLOW}$secret_name${RESET_COLOR}' from file: ${YELLOW}$source_path${RESET_COLOR}."
-    if docker secret create "$secret_name" "$source_path"; then # $secret_name and $source_path are validated
+    if ${DOCKERO_RUNTIME:-docker} secret create "$secret_name" "$source_path"; then # $secret_name and $source_path are validated
       log.done "Secret '${BOLD_GREEN}$secret_name${RESET_COLOR}' created successfully."
     else
       log.error "Failed to create secret '${RED}$secret_name${RESET_COLOR}' from ${RED}$source_path${RESET_COLOR}."
@@ -92,7 +107,7 @@ secrets_create() {
 secrets_list() {
   log.setline "${BOLD_CYAN}🔑 Listing Secrets${RESET_COLOR}"
   log.info "Displaying all Docker secrets:"
-  docker secret ls --format "table {{.ID}}\t{{.Name}}\t{{.CreatedAt}}\t{{.UpdatedAt}}" | sed '1s/.*/\033[1;36m&\033[0m/' # Color header
+  ${DOCKERO_RUNTIME:-docker} secret ls --format "table {{.ID}}\t{{.Name}}\t{{.CreatedAt}}\t{{.UpdatedAt}}" | sed '1s/.*/\033[1;36m&\033[0m/' # Color header
 }
 
 secrets_remove() {
@@ -113,7 +128,7 @@ secrets_remove() {
   echo # New line after hidden input
   if [[ "$response" =~ ^[Yy]$ ]]; then
     log.info "Attempting to remove secret: ${BOLD_YELLOW}$secret_name${RESET_COLOR}."
-    if docker secret rm "$secret_name"; then # $secret_name is validated
+    if ${DOCKERO_RUNTIME:-docker} secret rm "$secret_name"; then # $secret_name is validated
       log.done "Secret '${BOLD_GREEN}$secret_name${RESET_COLOR}' removed successfully."
     else
       log.error "Failed to remove secret '${RED}$secret_name${RESET_COLOR}'."
@@ -140,10 +155,10 @@ secrets_show() {
   log.info "Showing details for secret: ${BOLD_YELLOW}$secret_name${RESET_COLOR}."
   # Check if jq is available for pretty printing
   if command -v jq &> /dev/null; then
-    docker secret inspect "$secret_name" | jq .
+    ${DOCKERO_RUNTIME:-docker} secret inspect "$secret_name" | jq .
   else
     log.warn "jq not found. Showing raw JSON output."
-    docker secret inspect "$secret_name"
+    ${DOCKERO_RUNTIME:-docker} secret inspect "$secret_name"
   fi
   return 0
 }

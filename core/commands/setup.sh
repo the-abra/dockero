@@ -3,6 +3,20 @@
 # Source shared Docker helpers
 # (assuming docker-helpers.sh is sourced by dockero globally now)
 
+setup_help() {
+cat << EOF
+${BOLD_CYAN}🔹 dockero setup ${GREEN}[init|run|update|teardown] [path] [--dry-run]${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Set up a containerized project from a .dockero config file.
+   ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
+     - ${GREEN}init [path]${RESET_COLOR}      Create a new .dockero config file.
+     - ${GREEN}run [path]${RESET_COLOR}       Run the project defined in .dockero (default).
+     - ${GREEN}update [path]${RESET_COLOR}    Update a running project's container.
+     - ${GREEN}teardown [path]${RESET_COLOR}  Stop and remove the project's container.
+   ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
+     ${YELLOW}docker run [config from .dockero file]${RESET_COLOR}
+EOF
+}
+
 setup() {
     # shellcheck disable=SC2154
     local subcommand="${args[1]:-}"
@@ -95,7 +109,7 @@ setup_run() {
 
     # Check if container name is available only if not dry-run
     if [[ "$dry_run" -eq 0 ]]; then
-        if docker ps -a --format '{{.Names}}' | grep -q "^$name$"; then
+        if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$name$"; then
             log.error "The container name ${RED}$name${RESET_COLOR} is already in use. Please choose a different name or remove the existing container."
             return 1
         fi
@@ -121,7 +135,7 @@ setup_run() {
         search_image="$image:latest"
     fi
 
-    if ! docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^$search_image$"; then
+    if ! ${DOCKERO_RUNTIME:-docker} images --format '{{.Repository}}:{{.Tag}}' | grep -q "^$search_image$"; then
         log.warn "Image '${BOLD_YELLOW}$image${RESET_COLOR}' not found locally. Pulling..."
         if ! image_pulling "$image"; then
             log.error "Failed to pull image: ${RED}$image${RESET_COLOR}."
@@ -308,9 +322,9 @@ setup_teardown() {
     log.info "Stopping and removing container: ${BOLD_YELLOW}$name${RESET_COLOR}."
 
     # Stop container if running
-    if docker ps --format '{{.Names}}' | grep -q "^$name$"; then
+    if ${DOCKERO_RUNTIME:-docker} ps --format '{{.Names}}' | grep -q "^$name$"; then
         log.info "Stopping container: ${BOLD_YELLOW}$name${RESET_COLOR}."
-        if docker stop "$name" > /dev/null 2>&1; then
+        if ${DOCKERO_RUNTIME:-docker} stop "$name" > /dev/null 2>&1; then
             log.done "Container '${BOLD_GREEN}$name${RESET_COLOR}' stopped."
         else
             log.error "Failed to stop container: ${RED}$name${RESET_COLOR}."
@@ -320,9 +334,9 @@ setup_teardown() {
     fi
 
     # Remove container
-    if docker ps -a --format '{{.Names}}' | grep -q "^$name$"; then
+    if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$name$"; then
         log.info "Removing container: ${BOLD_YELLOW}$name${RESET_COLOR}."
-        if docker rm "$name" > /dev/null 2>&1; then
+        if ${DOCKERO_RUNTIME:-docker} rm "$name" > /dev/null 2>&1; then
             log.done "Container '${BOLD_GREEN}$name${RESET_COLOR}' removed."
         else
             log.error "Failed to remove container: ${RED}$name${RESET_COLOR}."

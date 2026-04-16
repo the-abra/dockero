@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
 
 # Helper function to get services from compose file
-_compose_get_services() {
+
+compose_help() {
+cat << EOF
+${BOLD_CYAN}🔹 dockero compose ${GREEN}<up|down|start|stop|restart|ps|logs>${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Manage multi-container apps from .dockero-compose files.
+   ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
+     ${YELLOW}docker-compose up/down/start/stop/restart/ps/logs${RESET_COLOR}
+EOF
+}
+
+
     local compose_file="$1"
     local -a services=()
     while IFS= read -r line; do
@@ -199,7 +209,7 @@ compose_up() {
                 local max_wait=30
                 local count=0
                 while [[ $count -lt $max_wait ]]; do
-                    if docker ps --format '{{.Names}}' | grep -q "^$escaped_dep_service$"; then
+                    if ${DOCKERO_RUNTIME:-docker} ps --format '{{.Names}}' | grep -q "^$escaped_dep_service$"; then
                         log.sub "Dependency ${BOLD_GREEN}$dep_service${RESET_COLOR} is ready."
                         break
                     fi
@@ -214,13 +224,13 @@ compose_up() {
         fi
         
         # Check if container exists
-        if docker ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
+        if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
             # Container exists, start it if not running
-            if docker ps --format '{{.Names}}' | grep -q "^$container_name$"; then
+            if ${DOCKERO_RUNTIME:-docker} ps --format '{{.Names}}' | grep -q "^$container_name$"; then
                 log.sub "Service ${BOLD_GREEN}$service${RESET_COLOR} already running as ${BOLD_YELLOW}$container_name${RESET_COLOR}."
             else
                 log.sub "Starting existing container: ${BOLD_YELLOW}$container_name${RESET_COLOR}."
-                docker start "$container_name" > /dev/null || {
+                ${DOCKERO_RUNTIME:-docker} start "$container_name" > /dev/null || {
                     log.error "Failed to start container: ${RED}$container_name${RESET_COLOR}."
                     return 1
                 }
@@ -268,9 +278,9 @@ compose_down() {
         # Validate container_name before use
         if ! validate_container_name "$container_name"; then log.error "Invalid container_name '${RED}$container_name${RESET_COLOR}' for service ${RED}$service${RESET_COLOR}."; return 1; fi
 
-        if docker ps --format '{{.Names}}' | grep -q "^$container_name$"; then
+        if ${DOCKERO_RUNTIME:-docker} ps --format '{{.Names}}' | grep -q "^$container_name$"; then
             log.info "Stopping service: ${BOLD_YELLOW}$service${RESET_COLOR} (${BOLD_YELLOW}$container_name${RESET_COLOR})."
-            if docker stop "$container_name" > /dev/null 2>&1; then
+            if ${DOCKERO_RUNTIME:-docker} stop "$container_name" > /dev/null 2>&1; then
                 log.sub "Container ${BOLD_GREEN}$container_name${RESET_COLOR} stopped."
             else
                 log.warn "Failed to stop container: ${RED}$container_name${RESET_COLOR}."
@@ -279,9 +289,9 @@ compose_down() {
             log.sub "Service ${BOLD_YELLOW}$service${RESET_COLOR} (${BOLD_YELLOW}$container_name${RESET_COLOR}) not running."
         fi
         
-        if docker ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
+        if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
             log.info "Removing container: ${BOLD_YELLOW}$container_name${RESET_COLOR}."
-            if docker rm "$container_name" > /dev/null 2>&1; then
+            if ${DOCKERO_RUNTIME:-docker} rm "$container_name" > /dev/null 2>&1; then
                 log.sub "Container ${BOLD_GREEN}$container_name${RESET_COLOR} removed."
             else
                 log.warn "Failed to remove container: ${RED}$container_name${RESET_COLOR}."
@@ -317,12 +327,12 @@ compose_start() {
         # Validate container_name before use
         if ! validate_container_name "$container_name"; then log.error "Invalid container_name '${RED}$container_name${RESET_COLOR}' for service ${RED}$service${RESET_COLOR}."; return 1; fi
 
-        if docker ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
-            if docker ps --format '{{.Names}}' | grep -q "^$container_name$"; then
+        if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
+            if ${DOCKERO_RUNTIME:-docker} ps --format '{{.Names}}' | grep -q "^$container_name$"; then
                 log.sub "Service ${BOLD_YELLOW}$service${RESET_COLOR} already running."
             else
                 log.info "Starting service: ${BOLD_YELLOW}$service${RESET_COLOR}."
-                docker start "$container_name" > /dev/null 2>&1 && \
+                ${DOCKERO_RUNTIME:-docker} start "$container_name" > /dev/null 2>&1 && \
                     log.sub "Service ${BOLD_GREEN}$service${RESET_COLOR} started." || \
                     log.error "Failed to start service: ${RED}$service${RESET_COLOR}."
             fi
@@ -359,9 +369,9 @@ compose_stop() {
         # Validate container_name before use
         if ! validate_container_name "$container_name"; then log.error "Invalid container_name '${RED}$container_name${RESET_COLOR}' for service ${RED}$service${RESET_COLOR}."; return 1; fi
 
-        if docker ps --format '{{.Names}}' | grep -q "^$container_name$"; then
+        if ${DOCKERO_RUNTIME:-docker} ps --format '{{.Names}}' | grep -q "^$container_name$"; then
             log.info "Stopping service: ${BOLD_YELLOW}$service${RESET_COLOR}."
-            docker stop "$container_name" > /dev/null 2>&1 && \
+            ${DOCKERO_RUNTIME:-docker} stop "$container_name" > /dev/null 2>&1 && \
                 log.sub "Service ${BOLD_GREEN}$service${RESET_COLOR} stopped." || \
                 log.error "Failed to stop service: ${RED}$service${RESET_COLOR}."
         else
@@ -402,9 +412,9 @@ compose_ps() {
         local status="${BOLD_YELLOW}(not created)${RESET_COLOR}"
         local ports="${BOLD_YELLOW}(none)${RESET_COLOR}"
         
-        if docker ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
+        if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
             local raw_status
-            raw_status=$(docker inspect -f '{{.State.Status}}' "$container_name" 2>/dev/null)
+            raw_status=$(${DOCKERO_RUNTIME:-docker} inspect -f '{{.State.Status}}' "$container_name" 2>/dev/null)
             
             local status_color="${RESET_COLOR}"
             if [[ "$raw_status" == "running" ]]; then status_color="${GREEN}";
@@ -451,9 +461,9 @@ compose_logs() {
             # Validate container_name before use
             if ! validate_container_name "$container_name"; then log.error "Invalid container_name '${RED}$container_name${RESET_COLOR}' for service ${RED}$svc${RESET_COLOR}."; return 1; fi
 
-            if docker ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
+            if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
                 log.setline "${BOLD_CYAN}Logs for service: ${GREEN}$svc${RESET_COLOR}"
-                docker logs "$container_name" --tail 50
+                ${DOCKERO_RUNTIME:-docker} logs "$container_name" --tail 50
             fi
         done
     else
@@ -469,9 +479,9 @@ compose_logs() {
         # Validate container_name before use
         if ! validate_container_name "$container_name"; then log.error "Invalid container_name '${RED}$container_name${RESET_COLOR}' for service ${RED}$service_name_arg${RESET_COLOR}."; return 1; fi
 
-        if docker ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
+        if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
             log.setline "${BOLD_CYAN}Logs for service: ${GREEN}$service_name_arg${RESET_COLOR}"
-            docker logs "$container_name" "${args[@]:3}" # Pass additional args like --tail
+            ${DOCKERO_RUNTIME:-docker} logs "$container_name" "${args[@]:3}" # Pass additional args like --tail
         else
             log.error "Container ${RED}$container_name${RESET_COLOR} for service ${RED}$service_name_arg${RESET_COLOR} is not running."
             return 1

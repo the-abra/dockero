@@ -1,5 +1,22 @@
 #!/usr/bin/env bash
 
+create_help() {
+cat << EOF
+${BOLD_CYAN}🔹 dockero create ${GREEN}<name> [<image>] [-d] [--volume <host:container>] [--no-volume] [-p <port>]${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Create and start a new container.
+   ${BOLD_WHITE}• Parameters:${RESET_COLOR}
+     - ${GREEN}<name>${RESET_COLOR}: Container name.
+     - ${GREEN}[<image>]${RESET_COLOR}: Docker image (defaults to <name>).
+     - ${GREEN}-d, --detach${RESET_COLOR}: Run in background.
+     - ${GREEN}--volume <host:container>${RESET_COLOR}: Override default volume mount.
+     - ${GREEN}--no-volume${RESET_COLOR}: Disable volume mounting.
+     - ${GREEN}-p <port>${RESET_COLOR}: Port mapping (host:container or single port).
+   ${BOLD_WHITE}• Default volume:${RESET_COLOR} /opt/<name>:/workspace
+   ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
+     ${YELLOW}docker run -it -v /opt/<name>:/workspace --name <name> <image>${RESET_COLOR}
+EOF
+}
+
 create() {
   local container_name="${args[1]:-}"
   local image_name
@@ -50,7 +67,7 @@ create() {
   log.setline "🚀 Dockero Create: $container_name"
 
   # If container already exists, warn and exit
-  if docker ps -a --format '{{.Names}}' | grep -q "^${container_name}$"; then
+  if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^${container_name}$"; then
     log.warn "Container '${BOLD}$container_name${RESET_COLOR}' already exists."
     log.hint "Use '${BOLD_YELLOW}dockero start $container_name${RESET_COLOR}' to start it."
     log.endline "Dockero Create: $container_name"
@@ -58,7 +75,7 @@ create() {
   fi
 
   # Pull image if not available locally
-  if ! docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${search_image_name}$"; then
+  if ! ${DOCKERO_RUNTIME:-docker} images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${search_image_name}$"; then
     log.warn "Image '${BOLD}$image_name${RESET_COLOR}' not found locally. Pulling..."
     if ! image_pulling "$image_name"; then
       log.error "Failed to pull image: ${BOLD}$image_name${RESET_COLOR}."

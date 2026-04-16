@@ -2,6 +2,22 @@
 
 # Self-healing automation system for Dockero
 
+heal_help() {
+cat << EOF
+${BOLD_CYAN}🔹 dockero heal ${GREEN}<check|fix|auto|diagnose|cleanup|restore|watch|policy> [options]${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Self-healing automation system.
+   ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
+     - ${GREEN}check [target]${RESET_COLOR}       Health checks (system, containers, networks).
+     - ${GREEN}fix <target> [item]${RESET_COLOR}  Auto-fix identified issues.
+     - ${GREEN}auto${RESET_COLOR}                 Run health check and apply fixes automatically.
+     - ${GREEN}diagnose <type>${RESET_COLOR}      Deep diagnosis (startup, network, performance).
+     - ${GREEN}cleanup [target]${RESET_COLOR}     Clean up Docker resources.
+     - ${GREEN}restore <target>${RESET_COLOR}     Restore environment to expected state.
+     - ${GREEN}watch <target>${RESET_COLOR}       Real-time monitoring.
+     - ${GREEN}policy <action> [type]${RESET_COLOR} Manage health policies.
+EOF
+}
+
 heal() {
     # shellcheck disable=SC2154
     local subcommand="${args[1]:-}"
@@ -64,7 +80,7 @@ heal_check() {
             if ! command -v docker &> /dev/null; then
                 log.error "Docker not installed."
                 ((issues_found++))
-            elif ! docker ps -q &> /dev/null; then # Faster check
+            elif ! ${DOCKERO_RUNTIME:-docker} ps -q &> /dev/null; then # Faster check
                 log.error "Docker daemon not running."
                 ((issues_found++))
             else
@@ -74,7 +90,7 @@ heal_check() {
             # Check disk space
             log.sub "Checking disk space..."
             local docker_root
-            docker_root=$(docker info --format '{{.DockerRootDir}}' 2>/dev/null || echo "/var/lib/docker")
+            docker_root=$(${DOCKERO_RUNTIME:-docker} info --format '{{.DockerRootDir}}' 2>/dev/null || echo "/var/lib/docker")
             if [[ -d "$docker_root" ]]; then
                 local disk_usage
                 disk_usage=$(df "$docker_root" | awk 'NR==2 {print $5}' | sed 's/%//')
@@ -93,7 +109,7 @@ heal_check() {
             # Check for stopped containers
             log.sub "Checking containers..."
             local stopped_containers_count
-            stopped_containers_count=$(docker ps -a --filter "status=exited" -q | wc -l)
+            stopped_containers_count=$(${DOCKERO_RUNTIME:-docker} ps -a --filter "status=exited" -q | wc -l)
             if [[ "$stopped_containers_count" -gt 20 ]]; then
                 log.warn "${stopped_containers_count} stopped containers found."
                 ((issues_found++))
@@ -107,7 +123,7 @@ heal_check() {
             # Check for dangling images
             log.sub "Checking for unused images..."
             local dangling_images_count
-            dangling_images_count=$(docker images -f "dangling=true" -q | wc -l)
+            dangling_images_count=$(${DOCKERO_RUNTIME:-docker} images -f "dangling=true" -q | wc -l)
             if [[ "$dangling_images_count" -gt 5 ]]; then
                 log.warn "${dangling_images_count} dangling images found."
                 ((issues_found++))
@@ -119,7 +135,7 @@ heal_check() {
             # Check for unused volumes
             log.sub "Checking for unused volumes..."
             local unused_volumes_count
-            unused_volumes_count=$(docker volume ls -q -f "dangling=true" | wc -l)
+            unused_volumes_count=$(${DOCKERO_RUNTIME:-docker} volume ls -q -f "dangling=true" | wc -l)
             if [[ "$unused_volumes_count" -gt 5 ]]; then
                 log.warn "${unused_volumes_count} unused volumes found."
                 ((issues_found++))
@@ -132,9 +148,9 @@ heal_check() {
         "containers")
             log.info "Checking containers health..."
             local running_containers_count
-            running_containers_count=$(docker ps -q | wc -l)
+            running_containers_count=$(${DOCKERO_RUNTIME:-docker} ps -q | wc -l)
             local total_containers_count
-            total_containers_count=$(docker ps -a -q | wc -l)
+            total_containers_count=$(${DOCKERO_RUNTIME:-docker} ps -a -q | wc -l)
             local stopped_containers_count=$((total_containers_count - running_containers_count))
 
             log.sub "Running: ${BOLD_GREEN}$running_containers_count${RESET_COLOR}, Stopped: ${BOLD_YELLOW}$stopped_containers_count${RESET_COLOR}, Total: ${total_containers_count}"
@@ -142,7 +158,7 @@ heal_check() {
             if [[ $running_containers_count -gt 0 ]]; then
                 log.info "Checking running container health..."
                 local problematic_containers_output
-                problematic_containers_output=$(docker ps --format "table {{.Names}}\t{{.Status}}" | tail -n +2 | while read -r name status; do
+                problematic_containers_output=$(${DOCKERO_RUNTIME:-docker} ps --format "table {{.Names}}\t{{.Status}}" | tail -n +2 | while read -r name status; do
                     if [[ "$status" =~ (Restarting|Paused|Dead) ]]; then
                         log.warn "Container ${BOLD_YELLOW}$name${RESET_COLOR} in problematic state: ${RED}$status${RESET_COLOR}"
                         echo "ISSUE" # Indicate an issue found
@@ -160,14 +176,14 @@ heal_check() {
         "networks")
             log.info "Checking networks..."
             local networks_list
-            networks_list=$(docker network ls --format "{{.Name}}")
+            networks_list=$(${DOCKERO_RUNTIME:-docker} network ls --format "{{.Name}}")
             local networks_count
             networks_count=$(echo "$networks_list" | wc -l)
             log.sub "Networks: ${BOLD_GREEN}$networks_count${RESET_COLOR} total"
             echo "$networks_list" | while read -r net; do
                 if [[ "$net" != "bridge" && "$net" != "host" && "$net" != "none" ]]; then
                     local connected_containers
-                    connected_containers=$(docker network inspect "$net" --format '{{len .Containers}}')
+                    connected_containers=$(${DOCKERO_RUNTIME:-docker} network inspect "$net" --format '{{len .Containers}}')
                     log.sub "  ${YELLOW}$net${RESET_COLOR}: ${connected_containers} connected containers"
                 else
                     log.sub "  $net: default network"
@@ -213,13 +229,13 @@ heal_fix() {
             log.info "Fixing container issues..."
             if [[ -n "$specific_item" ]]; then
                 # Fix specific container
-                if docker ps -a --format '{{.Names}}' | grep -q "^$specific_item$"; then
+                if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$specific_item$"; then
                     local status
-                    status=$(docker inspect -f '{{.State.Status}}' "$specific_item" 2>/dev/null)
+                    status=$(${DOCKERO_RUNTIME:-docker} inspect -f '{{.State.Status}}' "$specific_item" 2>/dev/null)
                     case "$status" in
                         "exited")
                             log.info "Starting stopped container: ${BOLD_YELLOW}$specific_item${RESET_COLOR}"
-                            if docker start "$specific_item" > /dev/null 2>&1; then
+                            if ${DOCKERO_RUNTIME:-docker} start "$specific_item" > /dev/null 2>&1; then
                                 log.done "Container ${BOLD_GREEN}$specific_item${RESET_COLOR} started."
                             else
                                 log.error "Failed to start ${RED}$specific_item${RESET_COLOR}."
@@ -227,7 +243,7 @@ heal_fix() {
                             ;;
                         "dead")
                             log.warn "Container ${BOLD_YELLOW}$specific_item${RESET_COLOR} is dead, removing..."
-                            if docker rm -f "$specific_item" > /dev/null 2>&1; then
+                            if ${DOCKERO_RUNTIME:-docker} rm -f "$specific_item" > /dev/null 2>&1; then
                                 log.done "Dead container ${BOLD_GREEN}$specific_item${RESET_COLOR} removed."
                             else
                                 log.error "Failed to remove dead container ${RED}$specific_item${RESET_COLOR}."
@@ -243,12 +259,12 @@ heal_fix() {
             else
                 # Fix all containers with issues
                 local stopped_containers
-                stopped_containers=$(docker ps -a --filter "status=exited" -q)
+                stopped_containers=$(${DOCKERO_RUNTIME:-docker} ps -a --filter "status=exited" -q)
                 local stopped_count
             stopped_count=$(echo "$stopped_containers" | wc -l)
                 if [[ "$stopped_count" -gt 0 ]]; then
                     log.info "Starting ${stopped_count} stopped containers..."
-                    echo "$stopped_containers" | xargs -r docker start > /dev/null 2>&1
+                    echo "$stopped_containers" | xargs -r ${DOCKERO_RUNTIME:-docker} start > /dev/null 2>&1
                     log.done "Attempted to start all stopped containers."
                 else
                     log.info "No stopped containers to fix."
@@ -258,7 +274,7 @@ heal_fix() {
         "images")
             log.info "Cleaning dangling images..."
             local dangling_count
-            dangling_count=$(docker images -f "dangling=true" -q | wc -l)
+            dangling_count=$(${DOCKERO_RUNTIME:-docker} images -f "dangling=true" -q | wc -l)
             if [[ "$dangling_count" -gt 0 ]]; then
                 docker image prune -f > /dev/null 2>&1
                 log.done "Removed ${BOLD_GREEN}$dangling_count${RESET_COLOR} dangling images."
@@ -269,9 +285,9 @@ heal_fix() {
         "volumes")
             log.info "Cleaning unused volumes..."
             local unused_count
-            unused_count=$(docker volume ls -q -f "dangling=true" | wc -l)
+            unused_count=$(${DOCKERO_RUNTIME:-docker} volume ls -q -f "dangling=true" | wc -l)
             if [[ "$unused_count" -gt 0 ]]; then
-                docker volume prune -f > /dev/null 2>&1
+                ${DOCKERO_RUNTIME:-docker} volume prune -f > /dev/null 2>&1
                 log.done "Removed ${BOLD_GREEN}$unused_count${RESET_COLOR} unused volumes."
             else
                 log.info "No unused volumes to clean."
@@ -290,7 +306,7 @@ heal_fix() {
             heal_fix "volumes"
 
             # Check Docker daemon if needed
-            if ! docker ps -q &> /dev/null; then # Faster check
+            if ! ${DOCKERO_RUNTIME:-docker} ps -q &> /dev/null; then # Faster check
                 log.info "Attempting to restart Docker service..."
                 if command -v systemctl &> /dev/null; then
                     sudo systemctl restart docker 2>/dev/null && log.done "Docker service restarted." || log.warn "Could not restart Docker service automatically via systemctl."
@@ -377,17 +393,17 @@ heal_auto() {
 
     # Perform health check
     local stopped_containers_count
-    stopped_containers_count=$(docker ps -a --filter "status=exited" -q | wc -l) # Corrected calculation
+    stopped_containers_count=$(${DOCKERO_RUNTIME:-docker} ps -a --filter "status=exited" -q | wc -l) # Corrected calculation
 
     local dangling_images_count
-    dangling_images_count=$(docker images -f "dangling=true" -q | wc -l)
+    dangling_images_count=$(${DOCKERO_RUNTIME:-docker} images -f "dangling=true" -q | wc -l)
 
     if [[ "$stopped_containers_count" -gt 0 || "$dangling_images_count" -gt 0 ]]; then
         log.info "Issues detected, applying automatic fixes..."
 
         if [[ "$stopped_containers_count" -gt 0 ]]; then
             log.sub "Starting ${stopped_containers_count} stopped containers..."
-            docker ps -a --filter "status=exited" --format "{{.ID}}" | xargs -r docker start > /dev/null 2>&1 || true # Using xargs -r
+            ${DOCKERO_RUNTIME:-docker} ps -a --filter "status=exited" --format "{{.ID}}" | xargs -r ${DOCKERO_RUNTIME:-docker} start > /dev/null 2>&1 || true # Using xargs -r
             log.done "Attempted to start stopped containers."
         fi
 
@@ -435,7 +451,7 @@ heal_diagnose() {
             log.done "Docker installation check OK."
 
             log.sub "2. Checking Docker service..."
-            if ! docker ps -q &> /dev/null; then # Faster check
+            if ! ${DOCKERO_RUNTIME:-docker} ps -q &> /dev/null; then # Faster check
                 log.error "Docker daemon not running."
                 log.hint "Start Docker: ${BOLD_YELLOW}sudo systemctl start docker${RESET_COLOR}"
                 return 1
@@ -443,7 +459,7 @@ heal_diagnose() {
             log.done "Docker service check OK."
 
             log.sub "3. Checking permissions..."
-            if ! docker ps &> /dev/null; then
+            if ! ${DOCKERO_RUNTIME:-docker} ps &> /dev/null; then
                 log.error "Permission denied - not in docker group? Make sure your user is in the 'docker' group."
                 log.hint "Add user to docker group: ${BOLD_YELLOW}sudo usermod -aG docker \$USER${RESET_COLOR}"
                 return 1
@@ -451,7 +467,7 @@ heal_diagnose() {
             log.done "Permissions check OK."
 
             log.sub "4. Testing basic functionality..."
-            if ! docker run --rm hello-world &> /dev/null; then
+            if ! ${DOCKERO_RUNTIME:-docker} run --rm hello-world &> /dev/null; then
                 log.error "Docker basic test failed. Could not run 'hello-world'."
                 log.hint "Check Docker installation integrity."
                 return 1
@@ -463,7 +479,7 @@ heal_diagnose() {
         "network")
             log.info "Diagnosing network issues..."
             local bridge_info
-            bridge_info=$(docker network inspect bridge --format '{{.IPAM.Config}}' 2>/dev/null) # More precise info
+            bridge_info=$(${DOCKERO_RUNTIME:-docker} network inspect bridge --format '{{.IPAM.Config}}' 2>/dev/null) # More precise info
             if [[ -n "$bridge_info" ]]; then
                 log.sub "Bridge network IPAM config: ${BOLD_GREEN}$bridge_info${RESET_COLOR}"
             else
@@ -472,7 +488,7 @@ heal_diagnose() {
 
             # Check if containers can connect internally
             local test_result
-            test_result=$(docker run --rm alpine ping -c 1 -W 3 8.8.8.8 &> /dev/null && echo "OK" || echo "FAIL")
+            test_result=$(${DOCKERO_RUNTIME:-docker} run --rm alpine ping -c 1 -W 3 8.8.8.8 &> /dev/null && echo "OK" || echo "FAIL")
             log.sub "Internet connectivity test: ${BOLD_GREEN}$test_result${RESET_COLOR}"
 
             if [[ "$test_result" == "FAIL" ]]; then
@@ -487,18 +503,18 @@ heal_diagnose() {
 
             # Check Docker disk usage
             local disk_usage
-            disk_usage=$(docker system df --format '{{.Size}}' 2>/dev/null | grep "Local Images" | awk '{print $3}')
+            disk_usage=$(${DOCKERO_RUNTIME:-docker} system df --format '{{.Size}}' 2>/dev/null | grep "Local Images" | awk '{print $3}')
             log.sub "Docker disk usage: ${BOLD_YELLOW}$disk_usage${RESET_COLOR}"
 
             # Check running container resource usage
-            if command -v docker stats &> /dev/null; then
+            if command -v ${DOCKERO_RUNTIME:-docker} stats &> /dev/null; then
                 log.sub "Active container monitoring would show real-time stats."
-                log.hint "Run ${BOLD_YELLOW}docker stats${RESET_COLOR} for live resource usage."
+                log.hint "Run ${BOLD_YELLOW}${DOCKERO_RUNTIME:-docker} stats${RESET_COLOR} for live resource usage."
             fi
 
             # Check for resource constraints
             local mem_limit
-            mem_limit=$(docker info --format '{{.MemTotal}}' 2>/dev/null)
+            mem_limit=$(${DOCKERO_RUNTIME:-docker} info --format '{{.MemTotal}}' 2>/dev/null)
             if [[ -n "$mem_limit" && "$mem_limit" -gt 0 ]]; then
                 log.sub "System memory available: ${BOLD_GREEN}$((mem_limit / 1024 / 1024)) MB${RESET_COLOR}"
             else
@@ -538,10 +554,10 @@ heal_cleanup() {
 
             # Remove unused containers
             local unused_containers_count
-            unused_containers_count=$(docker ps -a --filter "status=exited" -q | wc -l)
+            unused_containers_count=$(${DOCKERO_RUNTIME:-docker} ps -a --filter "status=exited" -q | wc -l)
             if [[ "$unused_containers_count" -gt 0 ]]; then
                 log.info "Removing ${unused_containers_count} unused containers..."
-                docker ps -a --filter "status=exited" -q | xargs -r docker rm -v > /dev/null 2>&1
+                ${DOCKERO_RUNTIME:-docker} ps -a --filter "status=exited" -q | xargs -r ${DOCKERO_RUNTIME:-docker} rm -v > /dev/null 2>&1
                 log.done "Removed unused containers."
             else
                 log.info "No unused containers to remove."
@@ -549,7 +565,7 @@ heal_cleanup() {
 
             # Remove dangling images
             local dangling_images_count
-            dangling_images_count=$(docker images -f "dangling=true" -q | wc -l)
+            dangling_images_count=$(${DOCKERO_RUNTIME:-docker} images -f "dangling=true" -q | wc -l)
             if [[ "$dangling_images_count" -gt 0 ]]; then
                 log.info "Removing ${dangling_images_count} dangling images..."
                 docker image prune -f > /dev/null 2>&1
@@ -560,10 +576,10 @@ heal_cleanup() {
 
             # Remove unused volumes
             local unused_volumes_count
-            unused_volumes_count=$(docker volume ls -q -f "dangling=true" | wc -l)
+            unused_volumes_count=$(${DOCKERO_RUNTIME:-docker} volume ls -q -f "dangling=true" | wc -l)
             if [[ "$unused_volumes_count" -gt 0 ]]; then
                 log.info "Removing ${unused_volumes_count} unused volumes..."
-                docker volume prune -f > /dev/null 2>&1
+                ${DOCKERO_RUNTIME:-docker} volume prune -f > /dev/null 2>&1
                 log.done "Removed unused volumes."
             else
                 log.info "No unused volumes to remove."
@@ -585,11 +601,11 @@ heal_cleanup() {
         "logs")
             log.info "Cleaning container logs..."
             local containers_list
-            containers_list=$(docker ps -q)
+            containers_list=$(${DOCKERO_RUNTIME:-docker} ps -q)
             if [[ -n "$containers_list" ]]; then
                 echo "$containers_list" | while read -r container; do
                     local log_file
-                    log_file=$(docker inspect "$container" --format='{{.LogPath}}' 2>/dev/null)
+                    log_file=$(${DOCKERO_RUNTIME:-docker} inspect "$container" --format='{{.LogPath}}' 2>/dev/null)
                     if [[ -f "$log_file" ]]; then
                         local current_size
                         current_size=$(stat -c%s "$log_file")
@@ -647,12 +663,12 @@ heal_restore() {
                     
                     if [[ -n "$expected_name" ]]; then
                         # Check if container exists and matches configuration
-                        if docker ps -a --format '{{.Names}}' | grep -q "^$expected_name$"; then
+                        if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$expected_name$"; then
                             log.sub "Container ${BOLD_YELLOW}$expected_name${RESET_COLOR} exists, checking configuration..."
                             
                             # Get actual container image
                             local actual_image
-                            actual_image=$(docker inspect -f '{{.Config.Image}}' "$expected_name" 2>/dev/null)
+                            actual_image=$(${DOCKERO_RUNTIME:-docker} inspect -f '{{.Config.Image}}' "$expected_name" 2>/dev/null)
                             
                             # If configuration doesn't match, instruct user to fix
                             if [[ "$actual_image" != "$expected_image" ]]; then
@@ -696,11 +712,11 @@ heal_restore() {
             
             # Get all containers that have .dockero references in their names or labels
             local all_containers_names
-            all_containers_names=$(docker ps -a --format "{{.Names}}")
+            all_containers_names=$(${DOCKERO_RUNTIME:-docker} ps -a --format "{{.Names}}")
             
             local containers_to_restore_output
             containers_to_restore_output=$(echo "$all_containers_names" | while read -r container_name; do
-                if docker ps --format "{{.Names}}" | grep -q "^$container_name$"; then
+                if ${DOCKERO_RUNTIME:-docker} ps --format "{{.Names}}" | grep -q "^$container_name$"; then
                     log.sub "✓ ${GREEN}$container_name${RESET_COLOR} running."
                 else
                     log.sub "~ ${YELLOW}$container_name${RESET_COLOR} stopped. Checking if it should be running..."

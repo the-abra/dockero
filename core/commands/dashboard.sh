@@ -1,12 +1,21 @@
 #!/usr/bin/env bash
 
-dashboard() {
+dashboard_help() {
+cat << EOF
+${BOLD_CYAN}🔹 dockero dashboard${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Quick overview of Docker system status, running containers, and suggested actions.
+   ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
+     ${YELLOW}docker ps -a${RESET_COLOR} + ${YELLOW}docker images${RESET_COLOR} + ${YELLOW}docker info${RESET_COLOR}
+EOF
+}
+
+
   log.setline "Dockero Dashboard"
   
   log.setline "Docker Dashboard"
   
   # Check Docker status
-  if command -v docker &> /dev/null && docker ps -q &>/dev/null; then
+  if command -v docker &> /dev/null && ${DOCKERO_RUNTIME:-docker} ps -q &>/dev/null; then
     log.done "Docker Daemon: Active"
   else
     log.error "Docker Daemon: Inactive"
@@ -19,9 +28,9 @@ dashboard() {
   local running_containers
   local all_containers
   local all_images
-  running_containers=$(docker ps -q | wc -l 2>/dev/null || echo 0)
-  all_containers=$(docker ps -a -q | wc -l 2>/dev/null || echo 0)
-  all_images=$(docker images -q | wc -l 2>/dev/null || echo 0)
+  running_containers=$(${DOCKERO_RUNTIME:-docker} ps -q | wc -l 2>/dev/null || echo 0)
+  all_containers=$(${DOCKERO_RUNTIME:-docker} ps -a -q | wc -l 2>/dev/null || echo 0)
+  all_images=$(${DOCKERO_RUNTIME:-docker} images -q | wc -l 2>/dev/null || echo 0)
   
   echo ""
   log.info "📊 Container Stats:"
@@ -33,7 +42,7 @@ dashboard() {
   if [ "$running_containers" -gt 0 ]; then
     echo ""
     log.info "📦 Running Containers:"
-    docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}" | sed 's/.*/  &/'
+    ${DOCKERO_RUNTIME:-docker} ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}" | sed 's/.*/  &/'
   else
     echo ""
     log.info "📦 Running Containers:"

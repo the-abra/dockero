@@ -1,8 +1,23 @@
 #!/usr/bin/env bash
 
 # Extra function to get container metrics
+
+monitor_help() {
+cat << EOF
+${BOLD_CYAN}🔹 dockero monitor ${GREEN}<top|stats|health|logs|watch> [options]${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Monitor Docker containers.
+   ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
+     - ${GREEN}top [container]${RESET_COLOR}                         Show processes.
+     - ${GREEN}stats [container] [-f]${RESET_COLOR}                  Resource usage (-f to follow).
+     - ${GREEN}health [container]${RESET_COLOR}                      Health status.
+     - ${GREEN}logs <container> [-f] [-t <lines>]${RESET_COLOR}      View logs.
+     - ${GREEN}watch [container] [--interval <s>] [--duration <s>]${RESET_COLOR}  Continuous monitoring.
+   ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
+     ${YELLOW}docker top / stats / inspect / logs${RESET_COLOR}
+EOF
+}
+
 monitor() {
-    # shellcheck disable=SC2154
     local subcommand="${args[1]:-}"
     
     if [[ -z "$subcommand" ]]; then
@@ -41,10 +56,10 @@ monitor_top() {
 
     if [[ -n "$container_name" ]]; then
         log.info "Top processes in container: ${BOLD}$container_name${RESET_COLOR}"
-        docker top "$container_name"
+        ${DOCKERO_RUNTIME:-docker} top "$container_name"
     else
         log.info "Running containers:"
-        docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Command}}" | sed '1s/.*/'"${COLOR_GENERIC}${BOLD}"'&\033[0m/' # Color header using log.sh vars
+        ${DOCKERO_RUNTIME:-docker} ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Command}}" | sed '1s/.*/'"${COLOR_GENERIC}${BOLD}"'&\033[0m/' # Color header using log.sh vars
     fi
 }
 
@@ -57,18 +72,18 @@ monitor_stats() {
     if [[ "$follow" == "true" ]]; then
         if [[ -n "$container_name" ]]; then
             log.info "Live statistics for container: ${BOLD}$container_name${RESET_COLOR}"
-            docker stats --no-stream=false "$container_name"
+            ${DOCKERO_RUNTIME:-docker} stats --no-stream=false "$container_name"
         else
             log.info "Live statistics for all containers"
-            docker stats --no-stream=false
+            ${DOCKERO_RUNTIME:-docker} stats --no-stream=false
         fi
     else
         if [[ -n "$container_name" ]]; then
             log.info "Statistics for container: ${BOLD}$container_name${RESET_COLOR}"
-            docker stats --no-stream=true "$container_name"
+            ${DOCKERO_RUNTIME:-docker} stats --no-stream=true "$container_name"
         else
             log.info "Statistics for all containers"
-            docker stats --no-stream=true
+            ${DOCKERO_RUNTIME:-docker} stats --no-stream=true
         fi
     fi
 }
@@ -80,26 +95,37 @@ monitor_health() {
     if [[ -z "$container_name" ]]; then
         log.info "Health status for all containers:"
         log.setline "❤️  Container Health Status"
-        docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Image}}" | tail -n +2 | while IFS= read -r line; do
-            local name
-            name=$(echo "$line" | awk '{print $1}')
-            local status
-            status=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}N/A{{end}}' "$name" 2>/dev/null || echo "N/A")
-            local health_color="${RESET_COLOR}"
-            if [[ "$status" == "healthy" ]]; then
-                health_color="${COLOR_DONE}"
-            elif [[ "$status" == "unhealthy" ]]; then
-                health_color="${COLOR_ERROR}"
-            elif [[ "$status" == "starting" ]]; then
-                health_color="${COLOR_WARN}"
-            fi
-            printf "${BOLD}${COLOR_SUB}%-25s${RESET_COLOR} %-35s %-25s ${health_color}%s${RESET_COLOR}\n" "$name" "$(echo "$line" | awk '{print $2}')" "$(echo "$line" | awk '{print $3}')" "$status"
+
+        # Batch inspect all running containers in one call
+        local names
+        names=$(${DOCKERO_RUNTIME:-docker} ps --format "{{.Names}}" 2>/dev/null)
+        [[ -z "$names" ]] && log.warn "No running containers." && return 0
+
+        # Single docker inspect call for all containers
+        local inspect_json
+        # shellcheck disable=SC2086
+        inspect_json=$(${DOCKERO_RUNTIME:-docker} inspect $names 2>/dev/null)
+
+        echo "$names" | while IFS= read -r name; do
+            local status image health_status health_color
+            status=$(${DOCKERO_RUNTIME:-docker} ps --filter "name=^${name}$" --format "{{.Status}}" 2>/dev/null)
+            image=$(${DOCKERO_RUNTIME:-docker} ps --filter "name=^${name}$" --format "{{.Image}}" 2>/dev/null)
+            health_status=$(echo "$inspect_json" | jq -r --arg n "$name" \
+                '.[] | select(.Name == "/"+$n) | if .State.Health then .State.Health.Status else "N/A" end' 2>/dev/null || echo "N/A")
+            health_color="${RESET_COLOR}"
+            case "$health_status" in
+                healthy)   health_color="${COLOR_DONE}"  ;;
+                unhealthy) health_color="${COLOR_ERROR}" ;;
+                starting)  health_color="${COLOR_WARN}"  ;;
+            esac
+            printf "${BOLD}${COLOR_SUB}%-25s${RESET_COLOR} %-35s %-25s ${health_color}%s${RESET_COLOR}\n" \
+                "$name" "$status" "$image" "$health_status"
         done
         return 0
     fi
     
     # Check if container exists
-    if docker ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
+    if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
         container_exists=1
     fi
 
@@ -110,7 +136,7 @@ monitor_health() {
 
     log.setline "❤️  Health Check for ${BOLD}$container_name${RESET_COLOR}"
     local health_json
-    health_json=$(docker inspect --format='{{json .State.Health}}' "$container_name" 2>/dev/null)
+    health_json=$(${DOCKERO_RUNTIME:-docker} inspect --format='{{json .State.Health}}' "$container_name" 2>/dev/null)
 
     if [[ -n "$health_json" ]] && [[ "$health_json" != "null" ]]; then
         # Parse with jq
@@ -148,107 +174,57 @@ monitor_health() {
 monitor_logs() {
     local container_name="${1:-}"
     local follow=false
-    local tail=10 # Default to 10 lines
+    local tail="${params[t]:-${params[tail]:-10}}"
 
-    # Parse remaining arguments for flags like -f and -t
-    local ARGS_ARRAY=("${@:2}") # All arguments after container_name
-    local i=0
-    while [[ $i -lt ${#ARGS_ARRAY[@]} ]]; do
-        case "${ARGS_ARRAY[$i]}" in
-            -f|--follow)
-                follow=true
-                ;;
-            -t|--tail)
-                if [[ -n "${ARGS_ARRAY[$((i+1))]}" && ! "${ARGS_ARRAY[$((i+1))]}" =~ ^- ]]; then
-                    tail="${ARGS_ARRAY[$((i+1))]}"
-                    i=$((i+1)) # Consume the next argument
-                else
-                    log.error "Missing value for --tail."
-                    return 1
-                fi
-                ;;
-        esac
-        i=$((i+1))
-    done
-    
+    [[ -n "${params[f]+set}" || -n "${params[follow]+set}" ]] && follow=true
+
     if [[ -z "$container_name" ]]; then
         log.error "Container name required."
-        log.hint "Usage: dockero monitor logs <container> [-f|--follow] [-t|--tail <lines>]"
+        log.hint "Usage: dockero monitor logs <container> [-f] [-t <lines>]"
         return 1
     fi
-    
+
     log.setline "📜 Logs for ${BOLD}$container_name${RESET_COLOR} (last ${BOLD}$tail${RESET_COLOR} lines)"
 
-    local docker_logs_cmd=(docker logs)
-    if [[ "$follow" == "true" ]]; then
-        docker_logs_cmd+=(-f)
-    fi
+    local docker_logs_cmd=("${DOCKERO_RUNTIME:-docker}" logs)
+    [[ "$follow" == "true" ]] && docker_logs_cmd+=(-f)
     docker_logs_cmd+=(--tail "$tail" "$container_name")
-
-    # Execute the docker logs command
     "${docker_logs_cmd[@]}"
 }
 
 monitor_watch() {
     local container_name="${1:-}"
-    local interval=5 # Default interval
-    local duration=0 # Default duration (0 means indefinite)
+    local interval="${params[interval]:-5}"
+    local duration="${params[duration]:-0}"
 
-    # Parse remaining arguments for flags like --interval and --duration
-    local ARGS_ARRAY=("${@:2}") # All arguments after container_name
-    local i=0
-    while [[ $i -lt ${#ARGS_ARRAY[@]} ]]; do
-        case "${ARGS_ARRAY[$i]}" in
-            --interval)
-                if [[ -n "${ARGS_ARRAY[$((i+1))]}" && "${ARGS_ARRAY[$((i+1))]}" =~ ^[0-9]+$ ]]; then
-                    interval="${ARGS_ARRAY[$((i+1))]}"
-                    i=$((i+1))
-                else
-                    log.error "Invalid or missing value for --interval. Must be a number."
-                    return 1
-                fi
-                ;;
-            --duration)
-                if [[ -n "${ARGS_ARRAY[$((i+1))]}" && "${ARGS_ARRAY[$((i+1))]}" =~ ^[0-9]+$ ]]; then
-                    duration="${ARGS_ARRAY[$((i+1))]}"
-                    i=$((i+1))
-                else
-                    log.error "Invalid or missing value for --duration. Must be a number."
-                    return 1
-                fi
-                ;;
-        esac
-        i=$((i+1))
-    done
+    if ! [[ "$interval" =~ ^[0-9]+$ ]]; then
+        log.error "Invalid --interval value. Must be a number."; return 1
+    fi
+    if ! [[ "$duration" =~ ^[0-9]+$ ]]; then
+        log.error "Invalid --duration value. Must be a number."; return 1
+    fi
 
     log.setline "👁️  Container Watch System"
     log.info "Monitoring containers (interval: ${BOLD}$interval${RESET_COLOR}s)${duration:+, duration: ${BOLD}$duration${RESET_COLOR}s}"
     log.sub "Press Ctrl+C to stop monitoring."
-    
-    local docker_stats_cmd=(docker stats --no-stream=true)
-    if [[ -n "$container_name" ]]; then
-        docker_stats_cmd+=("$container_name")
-    fi
-    
-    local count=0
-    local max_iterations=999999
+
+    local docker_stats_cmd=("${DOCKERO_RUNTIME:-docker}" stats --no-stream=true)
+    [[ -n "$container_name" ]] && docker_stats_cmd+=("$container_name")
+
+    local count=0 max_iterations=999999
     if [[ "$duration" -gt 0 ]]; then
-        max_iterations=$((duration / interval))
-        if [[ "$max_iterations" -eq 0 ]]; then # Ensure at least one iteration if duration < interval
-            max_iterations=1
-        fi
+        max_iterations=$(( duration / interval ))
+        [[ "$max_iterations" -eq 0 ]] && max_iterations=1
     fi
-    
+
     while [[ "$count" -lt "$max_iterations" ]]; do
         clear
-        echo -e "${COLOR_GENERIC}${BOLD}=== Dockero Container Monitoring ===${RESET_COLOR}" # Use COLOR_GENERIC
-        echo -e "${COLOR_DATE}$(date): Monitoring containers...\n${RESET_COLOR}" # Use COLOR_DATE
-        
+        echo -e "${COLOR_GENERIC}${BOLD}=== Dockero Container Monitoring ===${RESET_COLOR}"
+        echo -e "${COLOR_DATE}$(date): Monitoring containers...\n${RESET_COLOR}"
         "${docker_stats_cmd[@]}"
-        
         sleep "$interval"
-        ((count++))
+        (( count++ ))
     done
-    
+
     log.done "Monitoring session ended."
 }

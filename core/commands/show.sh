@@ -4,6 +4,22 @@
 # shellcheck disable=SC1091
 source "${CORE_DIR}/extra/inipars.sh"
 
+show_help() {
+cat << EOF
+${BOLD_CYAN}🔹 dockero show ${GREEN}<commands|dashboard|demo|visual|containers|status>${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Visual dashboards, command references, and concept visualizations.
+   ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
+     - ${GREEN}commands${RESET_COLOR}       Categorized list of all Dockero commands.
+     - ${GREEN}dashboard${RESET_COLOR}      Quick Docker system overview.
+     - ${GREEN}demo <cmd>${RESET_COLOR}     Interactive command demonstration.
+     - ${GREEN}visual <element>${RESET_COLOR} Visualize Docker concepts.
+     - ${GREEN}containers${RESET_COLOR}     Visual container status dashboard.
+     - ${GREEN}status${RESET_COLOR}         Comprehensive system status.
+EOF
+}
+
+
+
 show() {
     local subcommand="${args[1]:-}" # Safely access args[1]
     
@@ -303,7 +319,7 @@ show_containers_visual() {
     log.setline "${BOLD_CYAN}📊 Container Status Dashboard${RESET_COLOR}"
     
     local containers_output
-    containers_output=$(docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null)
+    containers_output=$(${DOCKERO_RUNTIME:-docker} ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null)
     
     if [[ -n "$containers_output" ]]; then
         echo "$containers_output" | sed '1s/.*/\033[1;36m&\033[0m/' # Color header
@@ -317,7 +333,7 @@ show_status_visual() {
     log.setline "${BOLD_CYAN}🔍 System Status Overview${RESET_COLOR}"
     
     # Check Docker daemon
-    if command -v docker &> /dev/null && docker ps -q &> /dev/null; then # Faster check
+    if command -v docker &> /dev/null && ${DOCKERO_RUNTIME:-docker} ps -q &> /dev/null; then # Faster check
         # shellcheck disable=SC2059
         printf "${GREEN}✓ Docker daemon:${RESET_COLOR} ${BOLD_GREEN}Running${RESET_COLOR}\n"
     else
@@ -327,23 +343,23 @@ show_status_visual() {
     
     # Count containers
     local total_containers
-    total_containers=$(docker ps -a -q | wc -l 2>/dev/null || echo 0)
+    total_containers=$(${DOCKERO_RUNTIME:-docker} ps -a -q | wc -l 2>/dev/null || echo 0)
     local running_containers
-    running_containers=$(docker ps -q | wc -l 2>/dev/null || echo 0)
+    running_containers=$(${DOCKERO_RUNTIME:-docker} ps -q | wc -l 2>/dev/null || echo 0)
     
     # shellcheck disable=SC2059
     printf "${BOLD_WHITE}📦 Containers:${RESET_COLOR} ${BOLD_GREEN}${total_containers:-0}${RESET_COLOR} total (${BOLD_YELLOW}${running_containers:-0}${RESET_COLOR} running)\n"
     
     # Count images  
     local total_images
-    total_images=$(docker images -q | wc -l 2>/dev/null || echo 0)
+    total_images=$(${DOCKERO_RUNTIME:-docker} images -q | wc -l 2>/dev/null || echo 0)
     # shellcheck disable=SC2059
     printf "${BOLD_WHITE}📚 Images:${RESET_COLOR} ${BOLD_GREEN}${total_images:-0}${RESET_COLOR} available\n"
     
     # Disk usage if available
     if command -v docker &> /dev/null; then
         local disk_usage
-        disk_usage=$(docker system df -q 2>/dev/null | grep "Local Images" | awk '{print $3}' 2>/dev/null || echo "N/A")
+        disk_usage=$(${DOCKERO_RUNTIME:-docker} system df -q 2>/dev/null | grep "Local Images" | awk '{print $3}' 2>/dev/null || echo "N/A")
         # shellcheck disable=SC2059
     printf "${BOLD_WHITE}💾 Disk usage:${RESET_COLOR} ${BOLD_YELLOW}$disk_usage${RESET_COLOR}\n"
     fi

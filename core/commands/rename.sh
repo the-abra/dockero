@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 
-rename() {
+rename_help() {
+cat << EOF
+${BOLD_CYAN}🔹 dockero rename ${GREEN}<old-name> <new-name> [-img]${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Rename a container or retag an image.
+   ${BOLD_WHITE}• Parameters:${RESET_COLOR}
+     - ${GREEN}-img${RESET_COLOR}: Retag an image instead of renaming a container.
+   ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
+     ${YELLOW}docker rename${RESET_COLOR} / ${YELLOW}docker tag${RESET_COLOR}
+EOF
+}
+
+
     local current_name="${args[1]:-}"
     local new_name="${args[2]:-}"
 
@@ -28,13 +39,13 @@ container_renaming() {
     if ! validate_container_name "$new_name"; then log.error "Invalid new container name: ${RED}$new_name${RESET_COLOR}."; return 1; fi
 
     # Check if new_name already exists as a container
-    if docker ps -a --format '{{.Names}}' | grep -q "^$new_name$"; then
+    if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$new_name$"; then
         log.error "A container with the name '${RED}$new_name${RESET_COLOR}' already exists."
         return 1
     fi
 
     # Check if current_name exists as a container
-    if docker ps -a --format '{{.Names}}' | grep -q "^$current_name$"; then
+    if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$current_name$"; then
         log.info "Renaming container '${BOLD_YELLOW}$current_name${RESET_COLOR}' to '${BOLD_YELLOW}$new_name${RESET_COLOR}'."
         if docker rename "$current_name" "$new_name"; then # Names are validated
             log.done "Container '${BOLD_GREEN}$current_name${RESET_COLOR}' renamed to '${BOLD_GREEN}$new_name${RESET_COLOR}' successfully."
@@ -61,15 +72,15 @@ image_renaming() {
     if ! validate_image_name "$new_image_tag"; then log.error "Invalid new image tag: ${RED}$new_image_tag${RESET_COLOR}."; return 1; fi
 
     # Check if new_image_tag already exists
-    if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^$new_image_tag$"; then # new_image_tag is validated
+    if ${DOCKERO_RUNTIME:-docker} images --format '{{.Repository}}:{{.Tag}}' | grep -q "^$new_image_tag$"; then # new_image_tag is validated
         log.error "An image with the tag '${RED}$new_image_tag${RESET_COLOR}' already exists."
         return 1
     fi
 
     # Check if current_image_tag exists
-    if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^$current_image_tag$"; then # current_image_tag is validated
+    if ${DOCKERO_RUNTIME:-docker} images --format '{{.Repository}}:{{.Tag}}' | grep -q "^$current_image_tag$"; then # current_image_tag is validated
         log.info "Retagging image '${BOLD_YELLOW}$current_image_tag${RESET_COLOR}' as '${BOLD_YELLOW}$new_image_tag${RESET_COLOR}'."
-        if docker tag "$current_image_tag" "$new_image_tag"; then # Tags are validated
+        if ${DOCKERO_RUNTIME:-docker} tag "$current_image_tag" "$new_image_tag"; then # Tags are validated
             log.done "Image '${BOLD_GREEN}$current_image_tag${RESET_COLOR}' retagged as '${BOLD_GREEN}$new_image_tag${RESET_COLOR}' successfully."
             log.hint "To remove the old tag, use: ${BOLD_YELLOW}dockero remove '$current_image_tag' -img${RESET_COLOR}"
             return 0

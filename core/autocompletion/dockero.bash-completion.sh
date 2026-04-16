@@ -36,7 +36,7 @@ _dockero_update_cache() {
 _dockero_get_containers() {
   local containers
   if ! _dockero_get_cache "containers"; then
-    _dockero_update_cache "containers" docker ps -a --format "{{.Names}}"
+    _dockero_update_cache "containers" ${DOCKERO_RUNTIME:-docker} ps -a --format "{{.Names}}"
   fi
 }
 
@@ -44,7 +44,7 @@ _dockero_get_containers() {
 _dockero_get_running() {
   local running
   if ! _dockero_get_cache "running"; then
-    _dockero_update_cache "running" docker ps --filter "status=running" --format "{{.Names}}"
+    _dockero_update_cache "running" ${DOCKERO_RUNTIME:-docker} ps --filter "status=running" --format "{{.Names}}"
   fi
 }
 
@@ -61,7 +61,7 @@ _dockero_get_tars() {
 _dockero_get_networks() {
   local networks
   if ! _dockero_get_cache "networks"; then
-    _dockero_update_cache "networks" docker network ls --format "{{.Name}}"
+    _dockero_update_cache "networks" ${DOCKERO_RUNTIME:-docker} network ls --format "{{.Name}}"
   fi
 }
 

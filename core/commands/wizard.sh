@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 
-wizard() {
+wizard_help() {
+cat << EOF
+${BOLD_CYAN}🔹 dockero wizard ${GREEN}[start|setup|init|quickstart|beginner]${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Interactive setup assistant for beginners.
+   ${BOLD_WHITE}• What it does:${RESET_COLOR} Guides through common use cases (web server, dev env, database).
+EOF
+}
+
+
     local subcommand="${args[1]:-""}"
     
     if [[ -z "$subcommand" ]]; then
@@ -35,7 +43,7 @@ wizard_interactive() {
     fi
     
     # Check if Docker daemon is running (using faster check)
-    if ! docker ps -q &> /dev/null; then
+    if ! ${DOCKERO_RUNTIME:-docker} ps -q &> /dev/null; then
         log.error "Docker daemon is not running."
         log.sub "Please start Docker daemon and run this wizard again."
         return 1
@@ -105,7 +113,7 @@ wizard_run_simple_server() {
                 log.error "Failed to start web server."
                 # Clean up if it failed (use validated container name)
                 if validate_container_name "my-web-server"; then
-                    docker rm -f my-web-server &>/dev/null
+                    ${DOCKERO_RUNTIME:-docker} rm -f my-web-server &>/dev/null
                 fi
                 return 1
             fi
@@ -161,7 +169,7 @@ wizard_run_dev_env() {
                 log.error "Failed to start development environment."
                 # Clean up if it failed (use validated container name)
                 if validate_container_name "$container_name"; then
-                    docker rm -f "$container_name" &>/dev/null
+                    ${DOCKERO_RUNTIME:-docker} rm -f "$container_name" &>/dev/null
                 fi
                 return 1
             fi
@@ -198,7 +206,7 @@ wizard_run_database() {
             db_password="${db_password:-mysecretpassword}"
 
             # Validate db_password for basic safety (no shell metacharacters)
-            # This is primarily to prevent unexpected behavior in the docker run command if db_password
+            # This is primarily to prevent unexpected behavior in the ${DOCKERO_RUNTIME:-docker} run command if db_password
             # were to contain things like quotes, backticks, or other shell special chars.
             if [[ "$db_password" =~ ['";`$()|&<>!{}[]'] ]]; then
                 log.error "Database password contains special characters that are not allowed for security reasons."
@@ -207,9 +215,9 @@ wizard_run_database() {
             
             log.info "Starting PostgreSQL database..."
             # Use shared docker_run helper.
-            # Directly call docker run here because docker_run doesn't support -e multiple times yet without a string parsing helper.
+            # Directly call ${DOCKERO_RUNTIME:-docker} run here because docker_run doesn't support -e multiple times yet without a string parsing helper.
             # Using hardcoded values validated as safe.
-            if docker run -d --name my-postgres-db \
+            if ${DOCKERO_RUNTIME:-docker} run -d --name my-postgres-db \
                 -e "POSTGRES_PASSWORD=$db_password" \
                 -p 5432:5432 \
                 postgres:13-alpine; then # All values here are validated/hardcoded
@@ -224,7 +232,7 @@ wizard_run_database() {
                 log.error "Failed to start database."
                 # Clean up if it failed (use validated container name)
                 if validate_container_name "my-postgres-db"; then
-                    docker rm -f my-postgres-db &>/dev/null
+                    ${DOCKERO_RUNTIME:-docker} rm -f my-postgres-db &>/dev/null
                 fi
                 return 1
             fi

@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 
-start() {
+start_help() {
+cat << EOF
+${BOLD_CYAN}🔹 dockero start ${GREEN}<container-name> [-c <command>]${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Start an existing stopped container.
+   ${BOLD_WHITE}• Parameters:${RESET_COLOR}
+     - ${GREEN}-c <command>${RESET_COLOR}: Execute a command inside the container after starting.
+   ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
+     ${YELLOW}docker start <name>${RESET_COLOR} / ${YELLOW}docker exec -it <name> <cmd>${RESET_COLOR}
+EOF
+}
+
+
   local container_name="${args[1]:-}"
   # shellcheck disable=SC2154
   local custom_command_flag="${params[c]+set}" # Check if -c flag is present
@@ -25,12 +36,12 @@ start() {
   log.setline "${BOLD_CYAN}🚀 Starting Container: ${GREEN}$container_name${RESET_COLOR}"
 
   # Check if container exists
-  if docker ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then # $container_name is validated
+  if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then # $container_name is validated
     log.info "Attempting to start container: ${BOLD_YELLOW}$container_name${RESET_COLOR}"
-    if docker ps --format '{{.Names}}' | grep -q "^$container_name$"; then # $container_name is validated
+    if ${DOCKERO_RUNTIME:-docker} ps --format '{{.Names}}' | grep -q "^$container_name$"; then # $container_name is validated
         log.warn "Container '${BOLD_YELLOW}$container_name${RESET_COLOR}' is already running."
     else
-        if docker start "$container_name" > /dev/null; then # $container_name is validated
+        if ${DOCKERO_RUNTIME:-docker} start "$container_name" > /dev/null; then # $container_name is validated
             log.done "Container '${BOLD_GREEN}$container_name${RESET_COLOR}' started."
             # Give the container a moment to initialize if a command is to be executed
             if [[ -n "$custom_command_flag" ]]; then
@@ -46,7 +57,7 @@ start() {
     # Execute custom command if -c flag is present and command arguments exist
     if [[ -n "$custom_command_flag" && ${#custom_command_args[@]} -gt 0 ]]; then
         log.info "Executing command in ${BOLD_YELLOW}$container_name${RESET_COLOR}: ${BOLD_GREEN}${custom_command_args[*]}${RESET_COLOR}"
-        if docker exec -it "$container_name" "${custom_command_args[@]}"; then # $container_name is validated
+        if ${DOCKERO_RUNTIME:-docker} exec -it "$container_name" "${custom_command_args[@]}"; then # $container_name is validated
             log.done "Command executed successfully in '${BOLD_GREEN}$container_name${RESET_COLOR}'."
         else
             log.error "Failed to execute command in '${RED}$container_name${RESET_COLOR}'."

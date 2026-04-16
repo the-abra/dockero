@@ -1,7 +1,21 @@
 #!/usr/bin/env bash
 
 # Helper function to extract environment name from file name
-_env_extract_name() {
+
+env_help() {
+cat << EOF
+${BOLD_CYAN}🔹 dockero env ${GREEN}<list|use|show|create|delete|switch> [environment]${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Manage deployment environments (dev, staging, prod).
+   ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
+     - ${GREEN}list${RESET_COLOR}          List available environments.
+     - ${GREEN}use <env>${RESET_COLOR}     Switch to an environment.
+     - ${GREEN}show${RESET_COLOR}          Show current environment info.
+     - ${GREEN}create <env>${RESET_COLOR}  Create a new environment.
+     - ${GREEN}delete <env>${RESET_COLOR}  Remove an environment.
+EOF
+}
+
+
     local filename="$1"
     echo "$filename" | sed 's/^\.dockero[-.]//' | sed 's/^\.env\.//' | sed 's/^\.environment\.//' | sed 's/\.yaml$//' | sed 's/\.yml$//'
 }

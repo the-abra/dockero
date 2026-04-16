@@ -11,7 +11,7 @@ image_pulling() { # Renamed from image_clonning for clarity
   local tmp_log_file
   tmp_log_file=$(mktemp "/tmp/dockero_pull_XXXXXX.log")
   
-  if docker pull "$image_name" >"$tmp_log_file" 2>&1; then
+  if ${DOCKERO_RUNTIME:-docker} pull "$image_name" >"$tmp_log_file" 2>&1; then
     log.done "Image '${BOLD_GREEN}$image_name${RESET_COLOR}' pulled successfully."
     rm "$tmp_log_file" # Clean up on success
     return 0
@@ -150,10 +150,10 @@ docker_run() {
       docker_args+=(--user "$user_name:$user_gid")
   fi
 
-  log.sub "Executing: ${BOLD_GREEN}docker run${RESET_COLOR} ${docker_args[*]} ${BOLD_YELLOW}$image_name${RESET_COLOR} ${cmd_args[*]}"
+  log.sub "Executing: ${BOLD_GREEN}${DOCKERO_RUNTIME:-docker} run${RESET_COLOR} ${docker_args[*]} ${BOLD_YELLOW}$image_name${RESET_COLOR} ${cmd_args[*]}"
 
-  # Execute docker run command
-  if ! docker run "${docker_args[@]}" "$image_name" "${cmd_args[@]}"; then
+  # Execute ${DOCKERO_RUNTIME:-docker} run command
+  if ! ${DOCKERO_RUNTIME:-docker} run "${docker_args[@]}" "$image_name" "${cmd_args[@]}"; then
     return 1
   fi
   return 0
