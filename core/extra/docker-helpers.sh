@@ -153,8 +153,12 @@ docker_run() {
   log.sub "Executing: ${BOLD_GREEN}${DOCKERO_RUNTIME:-docker} run${RESET_COLOR} ${docker_args[*]} ${BOLD_YELLOW}$image_name${RESET_COLOR} ${cmd_args[*]}"
 
   # Execute ${DOCKERO_RUNTIME:-docker} run command
-  if ! ${DOCKERO_RUNTIME:-docker} run "${docker_args[@]}" "$image_name" "${cmd_args[@]}"; then
-    return 1
+  ${DOCKERO_RUNTIME:-docker} run "${docker_args[@]}" "$image_name" "${cmd_args[@]}"
+  
+  # For interactive containers, exit code may be non-zero even on success
+  # Check if container was actually created
+  if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^${container_name}$"; then
+    return 0
   fi
-  return 0
+  return 1
 }
