@@ -75,10 +75,10 @@ function log() {
 }
 
 # ── Log levels ────────────────────────────────────────────────────────────────
-function log.info()  { log "INFO " "$1" "$COLOR_INFO"  "$COLOR_MSG_INFO"  "";    }
-function log.warn()  { log "WARN " "$1" "$COLOR_WARN"  "$COLOR_MSG_WARN"  "";    }
-function log.error() { log "ERROR" "$1" "$COLOR_ERROR" "$COLOR_MSG_ERROR" ""; return 1; }
-function log.done()  { log "DONE " "$1" "$COLOR_DONE"  "$COLOR_MSG_DONE"  "";    }
+function log.info()  { log "INFO" "$1" "$COLOR_INFO"  "$COLOR_MSG_INFO"  "";    }
+function log.warn()  { log "WARN" "$1" "$COLOR_WARN"  "$COLOR_MSG_WARN"  "";    }
+function log.error() { log "FAIL" "$1" "$COLOR_ERROR" "$COLOR_MSG_ERROR" ""; return 1; }
+function log.done()  { log "DONE" "$1" "$COLOR_DONE"  "$COLOR_MSG_DONE"  "";    }
 function log.sub() {
     if [[ "$_DOCKERO_HAS_COLORS" == "true" ]]; then
         echo -e "              ${COLOR_SUB}›${RESET_COLOR} ${COLOR_MSG_SUB}${1}${RESET_COLOR}"
@@ -86,7 +86,7 @@ function log.sub() {
         echo -e "               › ${1}"
     fi
 }
-function log.hint()  { log " HINT" "$1" "$COLOR_HINT"  "$COLOR_MSG_HINT"  "  "; }
+function log.hint()  { log "HINT" "$1" "$COLOR_HINT"  "$COLOR_MSG_HINT"  ""; }
 
 # ── Section line ──────────────────────────────────────────────────────────────
 function log.setline() {

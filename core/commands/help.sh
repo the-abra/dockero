@@ -21,6 +21,7 @@ ${BOLD_GREEN}Container Management:${RESET_COLOR}
   dockero volume <list|create|remove|inspect|prune>
   dockero start <container> [-c <command>]
   dockero stop <container> [--timeout <seconds>]
+  dockero exec <command> [args...] <container>
   dockero list [-img]
   dockero remove <container|image>[:tag]
   dockero rename <old-name>[:tag] <new-name>[:tag] [-img]

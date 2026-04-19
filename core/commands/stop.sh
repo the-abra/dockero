@@ -43,13 +43,13 @@ stop() {
   if ${DOCKERO_RUNTIME:-docker} ps --format '{{.Names}}' | grep -q "^$container_name$"; then
     log.info "Attempting to stop container '${BOLD_YELLOW}$container_name${RESET_COLOR}' with timeout: ${BOLD_YELLOW}$timeout${RESET_COLOR} seconds."
     
-    # Use mktemp for secure temporary log file and add trap for cleanup
+    # Use mktemp for secure temporary log file
     local stop_log
     stop_log=$(mktemp "/tmp/dockero_stop_${container_name}_XXXXXX.log")
-    trap 'rm -f "$stop_log"' EXIT
 
     if ${DOCKERO_RUNTIME:-docker} stop --time="$timeout" "$container_name" > "$stop_log" 2>&1; then # $container_name is validated
         log.done "Container '${BOLD_GREEN}$container_name${RESET_COLOR}' stopped successfully."
+        rm -f "$stop_log"
     else
         log.error "Failed to stop container '${RED}$container_name${RESET_COLOR}'."
         log.sub "Details logged at: ${YELLOW}$stop_log${RESET_COLOR}"

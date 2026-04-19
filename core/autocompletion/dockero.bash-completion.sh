@@ -72,7 +72,7 @@ _dockero_autocomplete() {
   prev="${COMP_WORDS[COMP_CWORD - 1]}"
 
   # Static options - no need to compute
-  local base_opts="create volume list stop start export import rename setup remove net sync compose env validate system learn explain show heal registry secrets monitor wizard --help --version"
+  local base_opts="create volume list stop start exec export import rename setup remove net sync compose env validate system learn explain show heal registry secrets monitor wizard --help --version"
 
   case $COMP_CWORD in
   1)
@@ -89,6 +89,9 @@ _dockero_autocomplete() {
       containers=$(_dockero_get_containers)
       # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "${containers}" -- "${cur}"))
+      ;;
+    exec)
+      # For exec, don't complete at position 2 - user needs to type command first
       ;;
     stop)
       # Use cached running containers
@@ -170,6 +173,16 @@ _dockero_autocomplete() {
   *)
     # Additional arguments for subcommands
     case "${COMP_WORDS[1]}" in
+    exec)
+      # For exec command, suggest running containers at any position >= 3
+      # Format: dockero exec <command> [args...] <container>
+      if [[ "$COMP_CWORD" -ge 3 ]]; then
+        local running
+        running=$(_dockero_get_running)
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "${running}" -- "${cur}"))
+      fi
+      ;;
     net)
       local subcmd="${COMP_WORDS[2]}"
       local containers
