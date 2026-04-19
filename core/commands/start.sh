@@ -17,6 +17,10 @@ start() {
   # shellcheck disable=SC2154
   local custom_command_flag="${params[c]+set}" # Check if -c flag is present
   local custom_command_args=("${args[@]:2}") # The command and its arguments
+  # If no positional args after container name, use the -c flag value directly
+  if [[ -n "$custom_command_flag" && ${#custom_command_args[@]} -eq 0 && -n "${params[c]:-}" ]]; then
+    read -ra custom_command_args <<< "${params[c]}"
+  fi
 
   # shellcheck disable=SC2154
   if [[ "${full_arr[1]}" =~ ^"-" ]]; then

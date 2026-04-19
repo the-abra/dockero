@@ -5,6 +5,13 @@ All notable changes to Dockero will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-04-19
+
+### Fixed
+- **Start command** - `-c <command>` flag now correctly executes the command after starting the container
+  - Previously, the command passed via `-c` was stored in `params[c]` but never read, causing the exec step to be silently skipped
+  - `dockero start <container> -c sh` now properly runs `docker exec -it <container> sh`
+
 ## [1.0.0] - 2026-04-19
 
 ### Added
