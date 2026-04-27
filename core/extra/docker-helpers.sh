@@ -28,12 +28,13 @@ docker_run() {
   local container_name="$1"
   local image_name="$2"
   local detach_mode="$3"
-  local cmd_args_str="$4" # A string of command args, will be converted to array
+  local cmd_args_str="$4"
   local volume_mount="$5"
   local port_mapping="$6"
   local restart_policy="$7"
   local user_name="$8"
   local user_gid="$9"
+  local network_mode="${10:-}"
 
   local -a cmd_args=()
   if [[ -n "$cmd_args_str" ]]; then
@@ -139,6 +140,11 @@ docker_run() {
 
   # Always add bus access
   docker_args+=(-v "/run/user/$(id -u)/bus:/run/user/$(id -u)/bus")
+
+  # Network mode
+  if [[ -n "$network_mode" ]]; then
+      docker_args+=(--network "$network_mode")
+  fi
 
   # Add restart policy
   if [[ -n "$restart_policy" ]]; then

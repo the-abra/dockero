@@ -94,8 +94,17 @@ net() {
       return 1
     fi
 
+    # host network requires the container to be created with --network host; it cannot be connected post-creation
+    if [[ "$name2" == "host" ]]; then
+      log.error "Cannot connect a running container to the 'host' network. Use ${BOLD_YELLOW}dockero create --net host${RESET_COLOR} when creating the container."
+      return 1
+    fi
+
     log.info "Connecting container '${BOLD_YELLOW}$name1${RESET_COLOR}' to network '${BOLD_YELLOW}$name2${RESET_COLOR}'"
-    ${DOCKERO_RUNTIME:-docker} network connect "$name2" "$name1" || log.error "Failed to connect container '${RED}$name1${RESET_COLOR}' to network '${RED}$name2${RESET_COLOR}'." && return 1
+    if ! ${DOCKERO_RUNTIME:-docker} network connect "$name2" "$name1"; then
+      log.error "Failed to connect container '${RED}$name1${RESET_COLOR}' to network '${RED}$name2${RESET_COLOR}'."
+      return 1
+    fi
     log.done "Container '${BOLD}$name1${RESET_COLOR}' connected to network '${BOLD}$name2${RESET_COLOR}' successfully."
     ;;
 

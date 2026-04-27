@@ -2,7 +2,7 @@
 
 create_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero create ${GREEN}<name> [<image>] [-d] [--volume <host:container>] [--no-volume] [-p <port>]${RESET_COLOR}
+${BOLD_CYAN}🔹 dockero create ${GREEN}<name> [<image>] [-d] [--volume <host:container>] [--no-volume] [-p <port>] [--net <network>]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Create and start a new container.
    ${BOLD_WHITE}• Parameters:${RESET_COLOR}
      - ${GREEN}<name>${RESET_COLOR}: Container name.
@@ -11,6 +11,7 @@ ${BOLD_CYAN}🔹 dockero create ${GREEN}<name> [<image>] [-d] [--volume <host:co
      - ${GREEN}--volume <host:container>${RESET_COLOR}: Override default volume mount.
      - ${GREEN}--no-volume${RESET_COLOR}: Disable volume mounting.
      - ${GREEN}-p <port>${RESET_COLOR}: Port mapping (host:container or single port).
+     - ${GREEN}--net, --network <network>${RESET_COLOR}: Network mode (e.g. host, bridge, none, or a custom network name).
    ${BOLD_WHITE}• Default volume:${RESET_COLOR} /opt/<name>:/workspace
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
      ${YELLOW}docker run -it -v /opt/<name>:/workspace --name <name> <image>${RESET_COLOR}
@@ -49,6 +50,7 @@ create() {
 
   local port_mapping="${params[p]:-${params[port]:-}}"
   local restart_policy="${params[restart]:-}"
+  local network_mode="${params[net]:-${params[network]:-}}"
 
   if [[ -z "$container_name" ]]; then
     log.error "Container name is required."
@@ -96,7 +98,7 @@ create() {
     log.info "Volume: ${BOLD}$volume_mount${RESET_COLOR}"
   fi
 
-  if ! docker_run "$container_name" "$image_name" "$detach_mode" "$command_args_str" "$volume_mount" "$port_mapping" "$restart_policy" "" ""; then
+  if ! docker_run "$container_name" "$image_name" "$detach_mode" "$command_args_str" "$volume_mount" "$port_mapping" "$restart_policy" "" "" "$network_mode"; then
     log.error "Failed to create container: ${BOLD}$container_name${RESET_COLOR}."
     log.endline "Dockero Create: $container_name"
     return 1
