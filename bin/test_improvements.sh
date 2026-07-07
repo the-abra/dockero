@@ -12,35 +12,54 @@ PASS=0
 FAIL=0
 
 # Colors
-GREEN='\033[0;32m'
-RED='\033[0;31m'
+GREEN='\033[1;32m'
+RED='\033[1;31m'
 YELLOW='\033[1;33m'
+CYAN='\033[1;36m'
 NC='\033[0m'
+BOLD='\033[1m'
 
-pass() { echo -e "${GREEN}✓${NC} $1"; ((PASS++)) || true; }
-fail() { echo -e "${RED}✗${NC} $1"; ((FAIL++)) || true; }
-info() { echo -e "${YELLOW}→${NC} $1"; }
+print_section() {
+    echo -e "\n${BOLD}${CYAN}🔹 $1${NC}"
+}
+
+pass() {
+    printf "  %-65s %b[ PASS ]%b\n" "$1" "$GREEN" "$NC"
+    ((PASS++)) || true
+}
+
+fail() {
+    printf "  %-65s %b[ FAIL ]%b\n" "$1" "$RED" "$NC"
+    ((FAIL++)) || true
+}
+
+skip() {
+    printf "  %-65s %b[ SKIP ]%b\n" "$1" "$YELLOW" "$NC"
+    ((PASS++)) || true
+}
 
 DOCKER_AVAILABLE=false
 command -v docker &>/dev/null && docker ps &>/dev/null 2>&1 && DOCKER_AVAILABLE=true
 
-skip() { echo -e "${YELLOW}⊘${NC} $1 (skipped: docker unavailable)"; ((PASS++)) || true; }
+echo -e "${BOLD}${CYAN}========================================================================${NC}"
+echo -e "${BOLD}${CYAN}   Dockero Core Unit & Improvement Tests                                ${NC}"
+echo -e "${BOLD}${CYAN}========================================================================${NC}"
 
 # Test 1: Dependency validation
-info "Test 1: Dependency validation"
+print_section "Dependency Validation"
 if $DOCKER_AVAILABLE; then
     pass "Docker is installed and running"
 else
-    info "Docker not found or not running (runtime tests will be skipped)"
+    skip "Docker is installed and running (skipped: docker unavailable)"
 fi
 if command -v jq &>/dev/null; then
-    pass "jq is installed"
+    pass "jq utility is installed"
 else
-    info "jq not found (some features will be limited)"
+    skip "jq utility is installed (skipped: jq unavailable)"
 fi
 
 # Test 2: Parameter parsing with values
-info "Test 2: Parameter parsing"
+print_section "Parameter Parsing"
 if (
     declare -A params
     args=()
@@ -48,34 +67,31 @@ if (
     parameter-indexing mycontainer -t 50 -f
     [[ "${params[t]}" == "50" && "${params[f]}" == "true" && "${args[0]}" == "mycontainer" ]]
 ); then
-    pass "Parameter parsing handles 'mycontainer -t 50 -f' correctly"
+    pass "Handles 'mycontainer -t 50 -f' parameter indexing"
 else
-    fail "Parameter parsing broken"
+    fail "Handles 'mycontainer -t 50 -f' parameter indexing"
 fi
 
 # Test 3: Standalone execution of help
-info "Test 3: Standalone execution"
+print_section "Standalone Execution"
 OUT=$("$DOCKERO" --help 2>/dev/null)
 if echo "$OUT" | grep -q "Available commands:"; then
-    pass "Help command returns general manual options"
+    pass "General manual help output structure"
 else
-    fail "Help command output not found"
+    fail "General manual help output structure"
 fi
 
 # Test 4: Dynamic explain system
-info "Test 4: Dynamic explain system"
+print_section "Dynamic Explain System"
 OUT=$("$DOCKERO" explain create 2>&1)
-echo "=== DOCKERO OUTPUT ==="
-echo "$OUT"
-echo "======================"
 if echo "$OUT" | grep -q "Create and start a new container"; then
-    pass "Dynamic explain works for 'create'"
+    pass "Explain output for 'create' subcommand"
 else
-    fail "Dynamic explain failed for 'create'"
+    fail "Explain output for 'create' subcommand"
 fi
 
 # Test 5: Plugin loading
-info "Test 5: Plugin loading"
+print_section "Plugin System"
 mkdir -p ~/.dockero/commands
 cat > ~/.dockero/commands/testplugin.sh << 'EOF'
 #!/usr/bin/env bash
@@ -85,22 +101,22 @@ EOF
 chmod +x ~/.dockero/commands/testplugin.sh
 OUT=$("$DOCKERO" testplugin 2>/dev/null)
 if echo "$OUT" | grep -q "Plugin executed"; then
-    pass "Plugin system dynamically loads user commands"
+    pass "Dynamic user script plugin loading"
 else
-    fail "Plugin system failed to run custom scripts"
+    fail "Dynamic user script plugin loading"
 fi
 rm -f ~/.dockero/commands/testplugin.sh
 
 # Test 6: Runtime flexibility check
-info "Test 6: Runtime flexibility check"
+print_section "Runtime Abstraction"
 if grep -q 'DOCKERO_RUNTIME:-docker' "${SCRIPT_DIR}/lib/commands/create.sh"; then
-    pass "Commands use modular runtime config \${DOCKERO_RUNTIME:-docker}"
+    pass "Subcommands use runtime config abstraction"
 else
-    fail "Hardcoded docker calls still exist"
+    fail "Subcommands use runtime config abstraction"
 fi
 
 # Test 7: Help function coverage in codebase
-info "Test 7: Help function coverage"
+print_section "Help Documentation Coverage"
 missing=0
 for cmd in create volume list monitor heal net sync compose env; do
     if ! grep -q "${cmd}_help()" "${SCRIPT_DIR}/lib/commands/${cmd}.sh" 2>/dev/null; then
@@ -108,13 +124,13 @@ for cmd in create volume list monitor heal net sync compose env; do
     fi
 done
 if [[ $missing -eq 0 ]]; then
-    pass "All major commands contain inline _help() documentation"
+    pass "All subcommands contain inline help documentation"
 else
-    fail "$missing commands are missing help definition functions"
+    fail "$missing commands are missing help definitions"
 fi
 
 # Test 8: Setup Presets (New Feature!)
-info "Test 8: Setup Presets"
+print_section "Setup Presets"
 TEST_PROJ_DIR="${SCRIPT_DIR}/dist/test-project"
 mkdir -p "$TEST_PROJ_DIR"
 rm -f "${TEST_PROJ_DIR}/.dockero"
@@ -122,22 +138,26 @@ rm -f "${TEST_PROJ_DIR}/.dockero"
 if "$DOCKERO" setup init "$TEST_PROJ_DIR" --preset nginx 2>/dev/null; then
     if [[ -f "${TEST_PROJ_DIR}/.dockero" ]]; then
         if grep -q "image = nginx:alpine" "${TEST_PROJ_DIR}/.dockero" && grep -q "port = 8080:80" "${TEST_PROJ_DIR}/.dockero"; then
-            pass "Preset auto setup (nginx) successfully configured project configuration without prompt"
+            pass "Preset auto setup writes correct values to config"
         else
-            fail "Preset .dockero file populated with incorrect values"
+            fail "Preset config contains incorrect values"
         fi
     else
         fail "Preset failed to write config file"
     fi
 else
-    fail "setup init --preset execution failed"
+    fail "Preset setup init execution failed"
 fi
 rm -rf "$TEST_PROJ_DIR"
 
 # Summary
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo -e "Test Results: ${GREEN}$PASS passed${NC}, ${RED}$FAIL failed${NC}"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+TOTAL=$((PASS + FAIL))
+echo -e "\n${BOLD}${CYAN}========================================================================${NC}"
+if [[ $FAIL -eq 0 ]]; then
+    echo -e "${BOLD}${GREEN}   All tests passed successfully! ($PASS/$TOTAL)${NC}"
+else
+    echo -e "${BOLD}${RED}   Some tests failed! ($FAIL failed, $PASS passed)${NC}"
+fi
+echo -e "${BOLD}${CYAN}========================================================================${NC}"
 
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1
