@@ -24,6 +24,7 @@ _dockero_commands() {
         'heal:Remediate issues'
         'secrets:Manage secrets'
         'system:System commands'
+        'plugin:Manage custom subcommand plugins'
         'learn:Interactive lessons'
         'explain:Show subcommand help'
         'show:Visual command dashboard'
@@ -157,6 +158,16 @@ _dockero() {
                         'status:Comprehensive system status report'
                     )
                     _describe -t show_subcmds 'show category' show_subcmds
+                    ;;
+                plugin)
+                    local -a plugin_subcmds
+                    plugin_subcmds=(
+                        'list:List all installed user plugins'
+                        'install:Download and install a plugin from a URL'
+                        'remove:Uninstall a plugin'
+                        'delete:Uninstall a plugin'
+                    )
+                    _describe -t plugin_subcmds 'plugin subcommand' plugin_subcmds
                     ;;
             esac
             ;;
