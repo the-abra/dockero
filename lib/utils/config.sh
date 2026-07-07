@@ -22,3 +22,6 @@
 
 # Enable/Disable automatic GPU detection
 : "${DOCKERO_AUTO_GPU_ENABLED:=true}"
+
+# Enable/Disable verbose debug logging (true/false)
+: "${DOCKERO_DEBUG:=false}"

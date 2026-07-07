@@ -37,8 +37,8 @@ _inipars_ensure_file_exists() {
 _inipars_get_section_bounds() {
   local file="$1"
   local escaped_section="$2"
-  local __start_line_ref="$3" # Variable to store start line
-  local __end_line_ref="$4"   # Variable to store end line (next section or EOF)
+  local -n __start_line_ref="$3"
+  local -n __end_line_ref="$4"
 
   local section_start_line
   section_start_line=$(grep -n "^\[$escaped_section\]$" "$file" | cut -d: -f1)
@@ -50,8 +50,8 @@ _inipars_get_section_bounds() {
   local next_section_line
   next_section_line=$(grep -n "^\[.*\]$" "$file" | awk -v start_line="$section_start_line" '$1 > start_line {print $1; exit}')
 
-  eval "$__start_line_ref='$section_start_line'"
-  eval "$__end_line_ref='${next_section_line:-$(wc -l < "$file")}'" # Default to EOF if no next section
+  __start_line_ref="$section_start_line"
+  __end_line_ref="${next_section_line:-$(wc -l < "$file")}"
   return 0
 }
 

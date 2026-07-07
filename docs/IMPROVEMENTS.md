@@ -97,11 +97,11 @@ All changes are backward compatible. Existing scripts and workflows continue to 
 
 ## Testing
 
-Comprehensive test suite added in `tests/test_improvements.sh`:
+Comprehensive test suite added in `bin/test_improvements.sh`:
 
 ```bash
 # Run all tests
-./tests/test_improvements.sh
+./bin/test_improvements.sh
 
 # Tests cover:
 # - Dependency validation

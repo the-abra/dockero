@@ -82,7 +82,7 @@ We follow the **GitHub Flow**:
   - Indent with **2 spaces**, not tabs.
   - Quote variables: `"$var"`.
   - Limit line length to 80 characters where possible.
-  - Prefer to use functions under `extra/`.
+  - Prefer to use functions under `lib/utils/`.
 
 ---
 
@@ -90,11 +90,12 @@ We follow the **GitHub Flow**:
 
 To add a new command:
 
-1. **Create** a new file in `core/commands/` named `commandname.sh`
+1. **Create** a new file in `lib/commands/` named `commandname.sh`
 2. **Implement** a function with the same name as your command
-3. **Add** a corresponding help function `help-commandname()` in `core/commands/help.sh`
-4. **Test** your command works via the main `dockero` entry point
-5. **Update** documentation as needed
+3. **Add** a corresponding help function `commandname_help()` inside your new file (help functions are now dynamically loaded from each command script!)
+4. **Compile** your changes into the standalone executable by running `make build` (or `make test` to compile and run tests)
+5. **Test** your command works by executing `./dist/dockero commandname`
+6. **Update** documentation and the man page [dockero.1](file:///usr/local/share/dockero/docs/man/dockero.1) as needed
 
 ---
 

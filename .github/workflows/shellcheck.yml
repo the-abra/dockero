@@ -18,8 +18,5 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y shellcheck
 
-    - name: Run ShellCheck on all shell scripts
-      run: |
-        # Check all shell script files with appropriate severity level
-        # Only fail on critical syntax errors, not style/warning/info messages
-        find . -name "*.sh" -type f -not -path "./.git/*" -exec shellcheck --severity=error {} +
+    - name: Run ShellCheck via Makefile
+      run: make lint

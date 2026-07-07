@@ -4,14 +4,16 @@ set -euo pipefail # Exit on error, unset variables, and pipe failures
 
 # === Project Root Detection ===
 if [ -L "$0" ] ; then
-    CORE_DIR=$(dirname "$(readlink -f "$0")") ;
+    BIN_DIR=$(dirname "$(readlink -f "$0")") ;
 else
-    CORE_DIR=$(dirname "$0") ;
+    BIN_DIR=$(dirname "$0") ;
 fi ;
+PROJECT_ROOT=$(cd "${BIN_DIR}/.." && pwd)
+CORE_DIR="${PROJECT_ROOT}/lib"
 COMMANDS_DIR="${CORE_DIR}/commands"
 
 # === Load Configuration ===
-DEFAULT_CONFIG="${CORE_DIR}/extra/config.sh"
+DEFAULT_CONFIG="${CORE_DIR}/utils/config.sh"
 USER_CONFIG="${HOME}/.dockero/config"
 
 # Source default configuration
@@ -39,16 +41,8 @@ _check_dependencies() {
     fi
 }
 _check_dependencies
-# shellcheck disable=SC1091
-source "${CORE_DIR}/extra/log.sh"
-# shellcheck disable=SC1091
-source "${CORE_DIR}/extra/colors.sh"
-# shellcheck disable=SC1091
-source "${CORE_DIR}/extra/inipars.sh"
-# shellcheck disable=SC1091
-source "${CORE_DIR}/extra/docker-helpers.sh" # New line
-# shellcheck disable=SC1091
-source "${CORE_DIR}/parameter-indexing.sh"
+# Note: Sourced utilities config, colors, log, inipars, docker-helpers, and parameter-indexing
+# are bundled/concatenated during the build process.
 
 # === Parameter Indexing ===
 parameter-indexing "$@" || exit 1 # Exit if parameter-indexing fails
@@ -60,6 +54,16 @@ if [[ ${#args[@]} -eq 0 ]]; then
         if [[ ! "$arg" =~ ^- ]]; then
             args+=("$arg")
         fi
+    done
+fi
+
+if [[ "${DOCKERO_DEBUG:-false}" == "true" ]]; then
+    log.debug "Dockero Debug Mode Enabled"
+    log.debug "Command: ${args[0]:-None}"
+    log.debug "Global arguments: [${args[*]}]"
+    log.debug "Parameters parsed: "
+    for key in "${!params[@]}"; do
+        log.debug "  - ${key} = ${params[$key]}"
     done
 fi
 
@@ -76,7 +80,7 @@ validate_container_name() {
     # $               - Ends of the string
     if [[ ! "$name" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]]; then
         log.error "Invalid container name: ${RED}$name${RESET_COLOR}"
-        log.hint "Container names must start with alphanumeric and contain only [a-zA-Z0-9_.-]"
+        log.hint "Container names must start with alphanumeric and contain only [a-zA-Z0-9_.-]" >&2
         return 1
     fi
 }
@@ -91,51 +95,39 @@ validate_image_name() {
     # $                     - End of the string
     if [[ ! "$name" =~ ^[a-zA-Z0-9._-]+(/[a-zA-Z0-9._-]+)*(:[a-zA-Z0-9._-]+)?$ ]]; then
         log.error "Invalid image name: ${RED}$name${RESET_COLOR}"
-        log.hint "Image names should follow format: [registry/]name[:tag]"
+        log.hint "Image names should follow format: [registry/]name[:tag]" >&2
         return 1
     fi
 }
 
 # === Dynamic Command Loader ===
 load_command() {
-  # cmd_name is the actual command (e.g., "explain", "run")
-  # Its value comes from args[0] in the main script.
-  local cmd_name_from_global_args="${args[0]}" # Use global args[0] explicitly
+  local cmd_name_from_global_args="${args[0]}"
 
   # Validate cmd_name for path traversal and invalid characters
   if [[ ! "$cmd_name_from_global_args" =~ ^[a-zA-Z0-9_-]+$ ]]; then
-    log.error "Invalid command name: '${BOLD_RED}$cmd_name_from_global_args${RESET_COLOR}'. Command names can only contain alphanumeric characters, underscores, and hyphens."
-    log.hint "Run '${BOLD_YELLOW}$0 -h${RESET_COLOR}' for usage."
+    log.error "Invalid command name: '${BOLD_RED}$cmd_name_from_global_args${RESET_COLOR}'."
     exit 1
   fi
 
-  local cmd_file="${COMMANDS_DIR}/${cmd_name_from_global_args}.sh"
-  # Check user plugin directory first (~/.dockero/commands/)
+  # 1. Check user plugin directory first (~/.dockero/commands/)
   local user_cmd_file="${HOME}/.dockero/commands/${cmd_name_from_global_args}.sh"
   if [[ -f "$user_cmd_file" ]]; then
-      cmd_file="$user_cmd_file"
+      # shellcheck disable=SC1090
+      source "$user_cmd_file"
   fi
-  
-  if [[ -f "$cmd_file" ]]; then
-    # shellcheck disable=SC1090
-    source "$cmd_file"
-    
-    # Resolve the actual function name
-    local func_name="$cmd_name_from_global_args" # The function name is the same as the command name
 
-    # Validate the command function exists and call it
-    if declare -f "$func_name" >/dev/null 2>&1; then
-        # The arguments for the command function start from global args[1]
-        "$func_name" "${args[@]:1}" # Pass arguments starting from args[1] of the GLOBAL args array
-    else
-        log.error "Command function '${BOLD_RED}$func_name${RESET_COLOR}' is not defined in ${BOLD_YELLOW}$cmd_file${RESET_COLOR}."
-        exit 1
-    fi
-  else
-    log.error "Unknown command '${BOLD_RED}$cmd_name_from_global_args${RESET_COLOR}'."
-    log.hint "Run '${BOLD_YELLOW}$0 -h${RESET_COLOR}' for usage."
-    exit 1
+  local func_name="$cmd_name_from_global_args"
+
+  # 2. Check if the function is already loaded (compiled built-in or loaded plugin)
+  if declare -f "$func_name" >/dev/null 2>&1; then
+      "$func_name" "${args[@]:1}"
+      return 0
   fi
+
+  log.error "Unknown command '${BOLD_RED}$cmd_name_from_global_args${RESET_COLOR}'."
+  log.hint "Run '${BOLD_YELLOW}$0 -h${RESET_COLOR}' for usage."
+  exit 1
 }
 
 # === Version Command Handler ===
@@ -149,18 +141,13 @@ show_version() {
 # === Entrypoint ===
 
 # Handle global flags first (--version, --help)
-# Only handle version if no command is specified
 if [[ -z "${args[0]:-}" && ( -n "${params[v]+set}" || -n "${params[version]+set}" ) ]]; then
   show_version
   exit 0
 elif [[ -n "${params[h]+set}"  || -n "${params[help]+set}" ]]; then
    # For 'dockero CMD -h', the command to explain is args[0].
    # For 'dockero -h', it's empty, so general help.
-   
-   # Source explain directly to display help for args[0]
-   # shellcheck disable=SC1091
-   source "${COMMANDS_DIR}/explain.sh"
-   explain "${args[0]:-}" "${args[@]:1}" # Explain args[0] and pass any further args
+   explain "${args[0]:-}" "${args[@]:1}"
    exit 0
 fi
 
@@ -172,10 +159,7 @@ fi
 
 # If no positional command is given after processing flags (e.g., just `dockero`)
 if [[ -z "${args[0]:-}" ]]; then
-    # Show general help
-    # shellcheck disable=SC1091
-    source "${COMMANDS_DIR}/help.sh"
-    _show_general_help # Call the general help function directly
+    _show_general_help
     exit 0
 fi
 

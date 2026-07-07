@@ -1,0 +1,173 @@
+.TH DOCKERO 1 "July 2026" "v1.0.0" "Dockero Manual"
+.SH NAME
+dockero \- Lightweight Bash-based CLI enhancement layer for Docker and Podman
+.SH SYNOPSIS
+.B dockero
+[\fB\-h\fR|\fB\-\-help\fR] [\fB\-v\fR|\fB\-\-version\fR]
+.br
+.B dockero
+.I command
+[\fIarguments...\fR] [\fIflags...\fR]
+.SH DESCRIPTION
+.B dockero
+is a wrapper and enhancement suite designed to make Docker and Podman workflows more accessible, readable, and maintainable. It adds colorized output, structured logging, automatic Nvidia GPU configuration, unified runtime compatibility (Docker/Podman), an interactive learning interface, system diagnostic/healing tools, and plugin extensibility.
+
+.SH GLOBAL OPTIONS
+.TP
+.BR \-h ", " \-\-help
+Display the global help manual or subcommand-specific help when preceded by a command.
+.TP
+.BR \-v ", " \-\-version
+Print version information and active runtime configuration.
+
+.SH COMMAND CATEGORIES
+The following subcommands are supported, grouped by functional categories:
+
+.SS 1. Container Management
+.TP
+.BI create " container_name" " image"
+Create and start a new container. Validates that the container name conforms to Docker specifications.
+.TP
+.BI start " container_name"
+Start a stopped container.
+.TP
+.BI stop " container_name"
+Stop a running container.
+.TP
+.BI remove " container_name"
+Remove a container.
+.TP
+.BI rename " old_name" " new_name"
+Rename an existing container.
+.TP
+.B list
+List running containers. Add \fBimg\fR as an argument to list local images instead.
+
+.SS 2. Image Management
+.TP
+.BI export " container_name" " output_file.tar"
+Export a container's filesystem to a tar archive.
+.TP
+.BI import " input_file.tar" " image_name"
+Import a tar archive filesystem as a new Docker image.
+.TP
+.BI registry " [login|push|pull|list|search|logout]"
+Manage private registry authentications and operations.
+
+.SS 3. Volumes & Networking
+.TP
+.BI volume " [list|create|remove|inspect|attach|prune]"
+Perform volume operations with cleaner formatting.
+.TP
+.BI net " [new|delete|add|connect|disconnect|rename|prune|list|inspect]"
+Manage Docker/Podman networks.
+
+.SS 4. Multi-Container Projects
+.TP
+.BI setup " [project_name]"
+Create standardized workspace templates for applications (e.g. Nginx, PostgreSQL).
+.TP
+.BI compose " [up|down|start|stop|restart|ps|logs]"
+Wrapper for docker-compose operations.
+.TP
+.BI env " [list|use|show|create|delete|switch]"
+Manage environment-specific configuration files (.env).
+.TP
+.B validate
+Check project files, Dockerfiles, and compose configurations for syntax correctness.
+
+.SS 5. Synchronization & Backup
+.TP
+.BI sync " [push|pull|watch|status|init]"
+Synchronize directories and data into/from running containers.
+
+.SS 6. Monitoring & Health
+.TP
+.BI monitor " [top|stats|health|logs|watch]"
+View container performance metrics, process trees, check health in batch, or watch output.
+.TP
+.B dashboard
+Start a terminal-based live monitoring dashboard.
+.TP
+.BI heal " [check|fix|auto|diagnose|cleanup|monitor]"
+Diagnose container/network issues and automatically apply remediation steps.
+
+.SS 7. Security & Secrets
+.TP
+.BI secrets " [create|ls|rm|show|inspect]"
+Manage credentials, keys, and confidential environment parameters.
+
+.SS 8. System & Utilities
+.TP
+.BI system " [service|config|info|cleanup|install]"
+Configure global system integrations, clean up unused caches, and view system specs.
+
+.SS 9. Interactive Learning
+.TP
+.BI learn " [start|basic|intermediate|advanced|docker|concepts|examples]"
+Launch interactive guided lessons covering Docker concepts and practices.
+.TP
+.BI explain " subcommand"
+Fetch internal instruction manuals for any subcommand.
+.TP
+.B wizard
+Start a conversational CLI setup configuration helper.
+
+.SH CONFIGURATION
+Dockero reads configuration variables from
+.B ~/.dockero/config
+if it exists. This file is sourced as a shell script.
+
+.SS Supported Config Variables:
+.TP
+.B DOCKERO_RUNTIME
+Configures the underlying virtualization runtime. Set to \fBdocker\fR (default) or \fBpodman\fR.
+.TP
+.B DOCKERO_RESTART_POLICY
+Defines default restart parameters for created containers. Defaults to \fBunless-stopped\fR.
+.TP
+.B DOCKERO_DEFAULT_PORT
+Port mapped to host for quick containers. Defaults to \fB80\fR.
+.TP
+.B DOCKERO_LOG_TIMESTAMPS
+Boolean (\fBtrue\fR/\fBfalse\fR). If set, prepends timestamps to log messages.
+.TP
+.B DOCKERO_AUTO_GPU_ENABLED
+Boolean (\fBtrue\fR/\fBfalse\fR). Automatically configures Nvidia container runtime parameters if a compatible GPU is detected.
+
+.SH EXTENSIBILITY (PLUGINS)
+Users can extend the CLI with custom scripts placed in the
+.B ~/.dockero/commands/
+directory.
+.PP
+If a script named
+.B ~/.dockero/commands/backup.sh
+exists, calling \fBdockero backup\fR will automatically source it and run its \fBbackup\fR function.
+The plugin script should define two functions:
+.IP 1.
+.BI <command_name>_help()
+displays help instructions when running \fBdockero explain <command_name>\fR.
+.IP 2.
+.BI <command_name>()
+contains the execution logic. Sourced parameters are accessible via the \fBargs\fR array.
+
+.SH FILES
+.TP
+.I /usr/local/bin/dockero
+Symlink to the main runner script.
+.TP
+.I /usr/local/share/dockero/
+Root folder containing Dockero's bin, lib, documentation, and completion assets.
+.TP
+.I ~/.dockero/config
+User configuration overrides.
+.TP
+.I ~/.dockero/commands/
+Custom plugin scripts.
+
+.SH REPORTING BUGS
+Submit bug reports or suggest features on GitHub at
+.I https://github.com/the-abra/dockero/issues
+
+.SH LICENSE
+Dockero is distributed under the terms of the MIT License.

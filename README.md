@@ -1,12 +1,86 @@
 # Dockero
 
-Dockero is a lightweight Bash-based CLI enhancement layer for Docker. It simplifies container workflows with intuitive commands, structured logging, and autocompletion.
+[![ShellCheck](https://github.com/the-abra/dockero/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/the-abra/dockero/actions/workflows/shellcheck.yml)
+[![Tests](https://github.com/the-abra/dockero/actions/workflows/tests.yml/badge.svg)](https://github.com/the-abra/dockero/actions/workflows/tests.yml)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-## Installation
+Dockero is a lightweight Bash-based CLI enhancement layer for Docker and Podman. It simplifies container workflows with intuitive commands, structured logging, completions, and customizable command plugins.
+
+The source code is modularly structured under the `lib/` directory for developer maintainability and is compiled/bundled into a single standalone executable script under `dist/dockero`.
+
+---
+
+## Developer Guide: Compilation
+
+To build/compile the standalone execution script from the modular source files:
 
 ```bash
-sudo git clone https://github.com/the-abra/dockero.git /usr/local/share/dockero && sudo ln -sf /usr/local/share/dockero/core/dockero /usr/local/bin/dockero
+make build
 ```
+
+This generates the compiled executable file at `dist/dockero`.
+
+> [!NOTE]
+> You can build and run all tests in one go by executing `make test` or `make dist`.
+
+---
+
+## Installation & Setup
+
+Since Dockero compiles down to a single standalone file, you can install the executable, man page documentation, and shell completions manually.
+
+### 1. Locate and Install the Executable
+The compiled file is created at `dist/dockero`. You can copy it to your system binaries directory or create a symbolic link:
+
+```bash
+# Option A: Copy the binary executable (Recommended)
+sudo cp dist/dockero /usr/local/bin/dockero
+sudo chmod +x /usr/local/bin/dockero
+
+# Option B: Create a symbolic link (Ideal for active development)
+sudo ln -sf "$(pwd)/dist/dockero" /usr/local/bin/dockero
+```
+
+### 2. Configure Shell Autocompletions
+Dockero comes with full autocomplete scripts for both Bash and Zsh.
+
+#### Bash Completions
+Place the completion file in your system completion directory:
+```bash
+sudo cp completions/bash/dockero /etc/bash_completion.d/dockero
+```
+*Alternatively, you can source it manually in your `~/.bashrc`:*
+```bash
+source /usr/local/share/dockero/completions/bash/dockero
+```
+
+#### Zsh Completions
+Copy the Zsh completion file to a directory in your `$fpath` (e.g., `/usr/local/share/zsh/site-functions`):
+```bash
+sudo cp completions/zsh/_dockero /usr/local/share/zsh/site-functions/_dockero
+```
+*Alternatively, add the directory to your `$fpath` in `~/.zshrc` before calling `compinit`:*
+```zsh
+fpath=(/usr/local/share/dockero/completions/zsh $fpath)
+autoload -U compinit && compinit
+```
+
+### 3. Install UNIX Man Pages
+To read documentation directly from your terminal using `man dockero`:
+```bash
+# Copy the man page to man1 path
+sudo mkdir -p /usr/local/share/man/man1
+sudo cp docs/man/dockero.1 /usr/local/share/man/man1/dockero.1
+
+# Rebuild the man database cache
+sudo mandb
+```
+Read the manual anytime with:
+```bash
+man dockero
+```
+
+---
 
 ## Quick Start
 
@@ -17,7 +91,9 @@ dockero stop webserver           # Stop a container
 dockero explain create           # Show help for any command
 ```
 
-## Commands
+---
+
+## Command Reference
 
 | Category | Commands |
 |---|---|
@@ -29,14 +105,16 @@ dockero explain create           # Show help for any command
 | Sync | `sync` |
 | Monitoring | `monitor`, `dashboard`, `heal` |
 | Secrets | `secrets` |
-| System | `system` |
+| System | `system`, `plugin` |
 | Learning | `learn`, `explain`, `show`, `wizard` |
 
-Run `dockero explain <command>` for detailed help on any command.
+Run `dockero explain <command>` for detailed help on any subcommand.
+
+---
 
 ## Configuration
 
-Dockero can be configured by creating `~/.dockero/config`:
+Configure custom settings by creating a shell configuration file at `~/.dockero/config`:
 
 ```bash
 mkdir -p ~/.dockero
@@ -55,61 +133,22 @@ DOCKERO_LOG_TIMESTAMPS=true
 
 # Auto-detect and use NVIDIA GPU
 DOCKERO_AUTO_GPU_ENABLED=true
+
+# Verbose debugging logs
+DOCKERO_DEBUG=false
 EOF
 ```
 
-All settings are optional — defaults are used if not set.
+---
 
-## Plugins
+## Project Documentation
+Check out the dedicated documentation files inside the `docs/` folder:
+*   [docs/CHANGELOG.md](file:///usr/local/share/dockero/docs/CHANGELOG.md) - Project release history and semver logs.
+*   [docs/CONTRIBUTING.md](file:///usr/local/share/dockero/docs/CONTRIBUTING.md) - Coding style, subcommand architectures, and pull request processes.
+*   [docs/IMPROVEMENTS.md](file:///usr/local/share/dockero/docs/IMPROVEMENTS.md) - Technical benchmark records, parsing layouts, and runtime specifications.
+*   [docs/LICENSE](file:///usr/local/share/dockero/docs/LICENSE) - Official GNU General Public License v3 terms.
 
-You can add custom commands by placing shell scripts in `~/.dockero/commands/`. Dockero will load them automatically, and they work exactly like built-in commands.
-
-**Example — create `~/.dockero/commands/backup.sh`:**
-
-```bash
-mkdir -p ~/.dockero/commands
-cat > ~/.dockero/commands/backup.sh << 'EOF'
-#!/usr/bin/env bash
-
-backup_help() {
-cat << HELP
-🔹 dockero backup <container>
-   • Purpose: Backup a container as a .tar file in ~/backups/
-HELP
-}
-
-backup() {
-    local container="${args[1]:-}"
-    [[ -z "$container" ]] && log.error "Container name required." && return 1
-
-    mkdir -p ~/backups
-    ${DOCKERO_RUNTIME:-docker} commit "$container" "backup-$container"
-    ${DOCKERO_RUNTIME:-docker} save -o ~/backups/"$container-$(date +%F).tar" "backup-$container"
-    log.done "Saved to ~/backups/$container-$(date +%F).tar"
-}
-EOF
-```
-
-Then use it like any built-in command:
-
-```bash
-dockero backup mycontainer
-dockero explain backup
-```
-
-**Plugin conventions:**
-- File name = command name (e.g. `backup.sh` → `dockero backup`)
-- Define a `<name>_help()` function for `dockero explain <name>` support
-- Use `${DOCKERO_RUNTIME:-docker}` instead of `docker` directly
-- Access arguments via `${args[1]}`, `${args[2]}`, etc.
-- Access flags via `${params[flag]}`
-
-## Autocompletion
-
-```bash
-echo 'source /usr/local/share/dockero/core/autocompletion/dockero.bash-completion.sh' >> ~/.bashrc
-source ~/.bashrc
-```
+---
 
 ## Podman Support
 
@@ -117,4 +156,4 @@ Set `DOCKERO_RUNTIME=podman` in `~/.dockero/config` to use Podman instead of Doc
 
 ## License
 
-MIT License
+GNU General Public License v3

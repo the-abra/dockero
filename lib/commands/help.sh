@@ -8,11 +8,9 @@ ${BOLD_CYAN}🔹 dockero help ${GREEN}[command]${RESET_COLOR}
 EOF
 }
 
-# === TITLE ===
-log.setline "Dockero - V$DOCKERO_VERSION"
-log.info "Dockero - Simplified Docker CLI"
-
 _show_general_help() { # Renamed to a private helper
+  log.setline "Dockero - V$DOCKERO_VERSION"
+  log.info "Dockero - Simplified Docker CLI"
   echo -e "
 ${BOLD_CYAN}Usage 🪬 :${RESET_COLOR}
 
@@ -44,6 +42,7 @@ ${BOLD_GREEN}Monitoring & Management:${RESET_COLOR}
   dockero system <service|config|info|cleanup|install>
   dockero heal <check|fix|auto|diagnose|cleanup>
   dockero validate [path] [config-file]
+  dockero plugin <list|install|remove>
 
 ${BOLD_GREEN}Learning & Help:${RESET_COLOR}
   dockero explain <command>
@@ -65,9 +64,7 @@ help() {
   if [[ -z "$target_command" ]]; then
       _show_general_help # No specific command given, show general help
   else
-      # We have a specific command. Redirect to explain.
-      # shellcheck disable=SC1091
-      source "${COMMANDS_DIR}/explain.sh"
+      # We have a specific command. Redirect to explain directly.
       explain "$target_command" "${args[@]:2}" # Pass the target command and any further args
   fi
   exit 0

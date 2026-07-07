@@ -76,8 +76,8 @@ function log() {
 
 # ── Log levels ────────────────────────────────────────────────────────────────
 function log.info()  { log "INFO" "$1" "$COLOR_INFO"  "$COLOR_MSG_INFO"  "";    }
-function log.warn()  { log "WARN" "$1" "$COLOR_WARN"  "$COLOR_MSG_WARN"  "";    }
-function log.error() { log "FAIL" "$1" "$COLOR_ERROR" "$COLOR_MSG_ERROR" ""; return 1; }
+function log.warn()  { log "WARN" "$1" "$COLOR_WARN"  "$COLOR_MSG_WARN"  "" >&2; }
+function log.error() { log "FAIL" "$1" "$COLOR_ERROR" "$COLOR_MSG_ERROR" "" >&2; return 1; }
 function log.done()  { log "DONE" "$1" "$COLOR_DONE"  "$COLOR_MSG_DONE"  "";    }
 function log.sub() {
     if [[ "$_DOCKERO_HAS_COLORS" == "true" ]]; then
@@ -87,6 +87,11 @@ function log.sub() {
     fi
 }
 function log.hint()  { log "HINT" "$1" "$COLOR_HINT"  "$COLOR_MSG_HINT"  ""; }
+function log.debug() {
+    if [[ "${DOCKERO_DEBUG:-false}" == "true" ]]; then
+        log "DEBG" "$1" "$COLOR_SUB" "$COLOR_MSG_SUB" ""
+    fi
+}
 
 # ── Section line ──────────────────────────────────────────────────────────────
 function log.setline() {

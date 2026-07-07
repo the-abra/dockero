@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 # Source helper for regex escaping
-# shellcheck disable=SC1091
-source "${CORE_DIR}/extra/inipars.sh"
+
 
 show_help() {
 cat << EOF
@@ -128,9 +127,6 @@ show_commands() {
 }
 
 show_dashboard() {
-    # Explicitly source the dashboard function from the dedicated file
-    # shellcheck disable=SC1091
-    source "${COMMANDS_DIR}/dashboard.sh"
     dashboard
 }
 

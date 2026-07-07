@@ -50,7 +50,7 @@ net() {
       return 1
     fi
     log.info "✨ Creating network: ${BOLD}$name1${RESET_COLOR}"
-    ${DOCKERO_RUNTIME:-docker} network create "$name1" || log.error "Failed to create network '${RED}$name1${RESET_COLOR}'." && return 1
+    ${DOCKERO_RUNTIME:-docker} network create "$name1" || { log.error "Failed to create network '${RED}$name1${RESET_COLOR}'."; return 1; }
     log.done "Network '${BOLD}$name1${RESET_COLOR}' created successfully."
     ;;
 
@@ -63,7 +63,7 @@ net() {
     if ! _net_validate_name "$name1"; then return 1; fi # Validate network name
     log.info "🗑️  Deleting network: ${BOLD}$name1${RESET_COLOR}"
     if ${DOCKERO_RUNTIME:-docker} network inspect "$name1" &>/dev/null; then
-        ${DOCKERO_RUNTIME:-docker} network rm "$name1" || log.error "Failed to delete network '${RED}$name1${RESET_COLOR}'." && return 1
+        ${DOCKERO_RUNTIME:-docker} network rm "$name1" || { log.error "Failed to delete network '${RED}$name1${RESET_COLOR}'."; return 1; }
         log.done "Network '${BOLD}$name1${RESET_COLOR}' deleted successfully."
     else
         log.warn "Network '${BOLD_YELLOW}$name1${RESET_COLOR}' does not exist. Nothing to delete."
@@ -118,7 +118,7 @@ net() {
     if ! _net_validate_name "$name2"; then return 1; fi # Validate network name
 
     log.info "❌ Disconnecting container '${BOLD}$name1${RESET_COLOR}' from network '${BOLD}$name2${RESET_COLOR}'"
-    ${DOCKERO_RUNTIME:-docker} network disconnect "$name2" "$name1" || log.error "Failed to disconnect container '${RED}$name1${RESET_COLOR}' from network '${RED}$name2${RESET_COLOR}'." && return 1
+    ${DOCKERO_RUNTIME:-docker} network disconnect "$name2" "$name1" || { log.error "Failed to disconnect container '${RED}$name1${RESET_COLOR}' from network '${RED}$name2${RESET_COLOR}'."; return 1; }
     log.done "Container '${BOLD}$name1${RESET_COLOR}' disconnected from network '${BOLD}$name2${RESET_COLOR}' successfully."
     ;;
 
@@ -140,7 +140,7 @@ net() {
       return 1
     fi
     log.info "Renaming network '${BOLD_YELLOW}$name1${RESET_COLOR}' to '${BOLD_YELLOW}$name2${RESET_COLOR}'"
-    ${DOCKERO_RUNTIME:-docker} network create "$name2" || log.error "Failed to create new network '${RED}$name2${RESET_COLOR}' for renaming." && return 1
+    ${DOCKERO_RUNTIME:-docker} network create "$name2" || { log.error "Failed to create new network '${RED}$name2${RESET_COLOR}' for renaming."; return 1; }
     log.info "🔄 Reconnecting containers to new network '${BOLD}$name2${RESET_COLOR}'..."
     for container in $(${DOCKERO_RUNTIME:-docker} network inspect -f '{{range .Containers}}{{.Name}} {{end}}' "$name1"); do
       # Validate container name before use (from ${DOCKERO_RUNTIME:-docker} inspect output)
@@ -148,7 +148,7 @@ net() {
       log.sub "🔗 Connecting container: ${BOLD}$container${RESET_COLOR}"
       ${DOCKERO_RUNTIME:-docker} network connect "$name2" "$container" || log.warn "Failed to connect container '${YELLOW}$container${RESET_COLOR}' to new network '${YELLOW}$name2${RESET_COLOR}'."
     done
-    ${DOCKERO_RUNTIME:-docker} network rm "$name1" || log.error "Failed to remove old network '${RED}$name1${RESET_COLOR}'." && return 1
+    ${DOCKERO_RUNTIME:-docker} network rm "$name1" || { log.error "Failed to remove old network '${RED}$name1${RESET_COLOR}'."; return 1; }
     log.done "Network '${BOLD}$name1${RESET_COLOR}' successfully renamed to '${BOLD}$name2${RESET_COLOR}'."
     ;;
 

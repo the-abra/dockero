@@ -161,7 +161,7 @@ setup_init() {
     local project_path="$1"
     
     if [[ -z "$project_path" ]]; then
-        log.hint "Usage: ${BOLD_YELLOW}dockero setup init <project-path>${RESET_COLOR}"
+        log.hint "Usage: ${BOLD_YELLOW}dockero setup init <project-path> [--preset <type>]${RESET_COLOR}"
         return 1
     fi
 
@@ -179,28 +179,88 @@ setup_init() {
         return 1
     fi
 
-    log.setline "${BOLD_CYAN}✨ Setup Configuration Wizard${RESET_COLOR}"
-    log.info "Creating new .dockero configuration for: ${BOLD_GREEN}$project_path${RESET_COLOR}."
+    local preset=""
+    if [[ -n "${params[preset]+set}" ]]; then
+        preset="${params[preset]}"
+    elif [[ -n "${params[p]+set}" ]]; then
+        preset="${params[p]}"
+    fi
 
-    # Interactive setup using read -rp for portability and coloring
     local container_name_default="${project_path##*/}"
-    read -rp "${YELLOW}Container Name${RESET_COLOR} [default: ${container_name_default}]: " container_name
-    container_name=${container_name:-$container_name_default}
+    local container_name="$container_name_default"
+    local docker_image="ubuntu:latest"
+    local port_mapping="8080:80"
+    local volume_mount="$project_path:/workspace"
+    local custom_command="bash"
+    local restart_policy="no"
 
-    read -rp "${YELLOW}Docker Image${RESET_COLOR} [default: ubuntu:latest]: " docker_image
-    docker_image=${docker_image:-ubuntu:latest}
+    if [[ -n "$preset" ]]; then
+        case "$preset" in
+            "nginx")
+                container_name="${container_name_default}-nginx"
+                docker_image="nginx:alpine"
+                port_mapping="8080:80"
+                volume_mount="$project_path:/usr/share/nginx/html"
+                custom_command=""
+                ;;
+            "postgres"|"postgresql")
+                container_name="${container_name_default}-postgres"
+                docker_image="postgres:alpine"
+                port_mapping="5432:5432"
+                volume_mount=""
+                custom_command=""
+                ;;
+            "node"|"nodejs")
+                container_name="${container_name_default}-node"
+                docker_image="node:alpine"
+                port_mapping="3000:3000"
+                volume_mount="$project_path:/app"
+                custom_command="npm start"
+                ;;
+            "python")
+                container_name="${container_name_default}-python"
+                docker_image="python:3.10-alpine"
+                port_mapping=""
+                volume_mount="$project_path:/app"
+                custom_command="python app.py"
+                ;;
+            "redis")
+                container_name="${container_name_default}-redis"
+                docker_image="redis:alpine"
+                port_mapping="6379:6379"
+                volume_mount=""
+                custom_command=""
+                ;;
+            *)
+                log.error "Unknown preset: ${BOLD_RED}$preset${RESET_COLOR}"
+                log.hint "Supported presets: nginx, postgres, node, python, redis"
+                return 1
+                ;;
+        esac
+        log.info "Using preset configuration: ${BOLD_GREEN}$preset${RESET_COLOR}"
+    else
+        log.setline "${BOLD_CYAN}✨ Setup Configuration Wizard${RESET_COLOR}"
+        log.info "Creating new .dockero configuration for: ${BOLD_GREEN}$project_path${RESET_COLOR}."
 
-    read -rp "${YELLOW}Port Mapping${RESET_COLOR} [format: host:container, default: 8080:80]: " port_mapping
-    port_mapping=${port_mapping:-8080:80}
+        # Interactive setup using read -rp for portability and coloring
+        read -rp "${YELLOW}Container Name${RESET_COLOR} [default: ${container_name_default}]: " container_name
+        container_name=${container_name:-$container_name_default}
 
-    read -rp "${YELLOW}Volume Mount${RESET_COLOR} [format: host:container, default: $project_path:/workspace]: " volume_mount
-    volume_mount=${volume_mount:-$project_path:/workspace}
+        read -rp "${YELLOW}Docker Image${RESET_COLOR} [default: ubuntu:latest]: " docker_image
+        docker_image=${docker_image:-ubuntu:latest}
 
-    read -rp "${YELLOW}Custom Command${RESET_COLOR} [optional, default: bash]: " custom_command
-    custom_command=${custom_command:-bash}
+        read -rp "${YELLOW}Port Mapping${RESET_COLOR} [format: host:container, default: 8080:80]: " port_mapping
+        port_mapping=${port_mapping:-8080:80}
 
-    read -rp "${YELLOW}Restart Policy${RESET_COLOR} [no,always,on-failure,unless-stopped, default: no]: " restart_policy
-    restart_policy=${restart_policy:-no}
+        read -rp "${YELLOW}Volume Mount${RESET_COLOR} [format: host:container, default: $project_path:/workspace]: " volume_mount
+        volume_mount=${volume_mount:-$project_path:/workspace}
+
+        read -rp "${YELLOW}Custom Command${RESET_COLOR} [optional, default: bash]: " custom_command
+        custom_command=${custom_command:-bash}
+
+        read -rp "${YELLOW}Restart Policy${RESET_COLOR} [no,always,on-failure,unless-stopped, default: no]: " restart_policy
+        restart_policy=${restart_policy:-no}
+    fi
 
     # Create the .dockero file
     cat > "$CONF_FILE" << EOF

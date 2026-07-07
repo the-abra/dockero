@@ -77,7 +77,7 @@ secrets_create() {
     read -rs -p "${BOLD_WHITE}Secret value:${RESET_COLOR} " secret_value
     echo  # New line after hidden input
     # Create secret from stdin
-    if echo -n "$secret_value" | ${DOCKERO_RUNTIME:-docker} secret create "$secret_name" -; then
+    if printf "%s" "$secret_value" | ${DOCKERO_RUNTIME:-docker} secret create "$secret_name" -; then
       log.done "Secret '${BOLD_GREEN}$secret_name${RESET_COLOR}' created successfully."
     else
       log.error "Failed to create secret '${RED}$secret_name${RESET_COLOR}'."

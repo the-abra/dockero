@@ -373,8 +373,6 @@ system_cleanup() {
             ;;
         "networks")
             log.info "Removing unused networks using ${BOLD_YELLOW}dockero net prune${RESET_COLOR}..."
-            # shellcheck disable=SC1091
-            source "${COMMANDS_DIR}/net.sh" # Source net.sh to use net prune
             if net prune; then
                 log.done "Unused networks removed."
             else

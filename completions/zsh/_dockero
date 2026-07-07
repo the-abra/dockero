@@ -1,0 +1,166 @@
+#compdef dockero
+
+_dockero_commands() {
+    local -a commands
+    commands=(
+        'create:Create and start a container'
+        'start:Start a container'
+        'stop:Stop a container'
+        'remove:Remove a container'
+        'rename:Rename a container'
+        'list:List containers'
+        'export:Export a container filesystem to tar'
+        'import:Import a tar to an image'
+        'registry:Registry authentications and operations'
+        'volume:Manage volumes'
+        'net:Manage networks'
+        'setup:Setup application templates'
+        'compose:Docker Compose wrapper'
+        'env:Manage environment files'
+        'validate:Validate config files'
+        'sync:Sync container directories'
+        'monitor:Monitor containers'
+        'dashboard:Terminal dashboard'
+        'heal:Remediate issues'
+        'secrets:Manage secrets'
+        'system:System commands'
+        'learn:Interactive lessons'
+        'explain:Show subcommand help'
+        'show:Visual command dashboard'
+        'wizard:Guided config setup'
+        'version:Show version'
+        'help:Show general help'
+    )
+    _describe -t commands 'dockero command' commands
+}
+
+_dockero_containers() {
+    local runtime="${DOCKERO_RUNTIME:-docker}"
+    local -a containers
+    containers=(${(f)"$($runtime ps -a --format '{{.Names}}' 2>/dev/null)"})
+    _describe -t containers 'container' containers
+}
+
+_dockero_running_containers() {
+    local runtime="${DOCKERO_RUNTIME:-docker}"
+    local -a containers
+    containers=(${(f)"$($runtime ps --filter 'status=running' --format '{{.Names}}' 2>/dev/null)"})
+    _describe -t containers 'running container' containers
+}
+
+_dockero_networks() {
+    local runtime="${DOCKERO_RUNTIME:-docker}"
+    local -a networks
+    networks=(${(f)"$($runtime network ls --format '{{.Name}}' 2>/dev/null)"})
+    _describe -t networks 'network' networks
+}
+
+_dockero() {
+    local context state line
+    typeset -A opt_args
+
+    _arguments -C \
+        '(-h --help)'{-h,--help}'[Show help info]' \
+        '(-v --version)'{-v,--version}'[Show version info]' \
+        '1: :_dockero_commands' \
+        '*:: :->args'
+
+    case $state in
+        args)
+            case $words[1] in
+                create|rename|start|export|remove)
+                    _dockero_containers
+                    ;;
+                stop)
+                    _dockero_running_containers
+                    ;;
+                net)
+                    local -a net_subcmds
+                    net_subcmds=(
+                        'new:Create a new network'
+                        'create:Create a new network'
+                        'delete:Delete a network'
+                        'add:Connect container to network'
+                        'connect:Connect container to network'
+                        'remove:Disconnect container from network'
+                        'disconnect:Disconnect container from network'
+                        'rename:Rename a network'
+                        'prune:Cleanup unused networks'
+                        'list:List networks'
+                        'inspect:Inspect network configuration'
+                    )
+                    if (( CURRENT == 2 )); then
+                        _describe -t net_subcmds 'net subcommand' net_subcmds
+                    elif (( CURRENT == 3 )); then
+                        case $words[2] in
+                            add|remove|connect|disconnect)
+                                _dockero_containers
+                                ;;
+                            delete|inspect|rename)
+                                _dockero_networks
+                                ;;
+                        esac
+                    elif (( CURRENT == 4 )); then
+                        case $words[2] in
+                            add|remove|connect|disconnect|rename)
+                                _dockero_networks
+                                ;;
+                        esac
+                    fi
+                    ;;
+                volume)
+                    local -a vol_subcmds
+                    vol_subcmds=(
+                        'list:List volumes'
+                        'ls:List volumes'
+                        'create:Create a volume'
+                        'remove:Remove a volume'
+                        'rm:Remove a volume'
+                        'inspect:Inspect volume configuration'
+                        'attach:Attach volume to a container'
+                        'prune:Cleanup unused volumes'
+                    )
+                    _describe -t vol_subcmds 'volume subcommand' vol_subcmds
+                    ;;
+                monitor)
+                    local -a mon_subcmds
+                    mon_subcmds=(
+                        'top:Show top processes in container'
+                        'stats:Show container usage stats'
+                        'health:Check health of containers'
+                        'logs:Fetch logs of container'
+                        'watch:Watch container execution'
+                    )
+                    _describe -t mon_subcmds 'monitor subcommand' mon_subcmds
+                    ;;
+                learn)
+                    local -a learn_subcmds
+                    learn_subcmds=(
+                        'start:Start interactive learning'
+                        'basic:Basic Docker lessons'
+                        'intermediate:Intermediate network/env lessons'
+                        'advanced:Advanced security lessons'
+                        'docker:Core Docker CLI training'
+                        'concepts:Conceptual understanding'
+                        'examples:Real-world setup examples'
+                    )
+                    _describe -t learn_subcmds 'learn category' learn_subcmds
+                    ;;
+                show)
+                    local -a show_subcmds
+                    show_subcmds=(
+                        'dashboard:Launch terminal dashboard'
+                        'commands:List categorized commands'
+                        'demo:Launch interactive demo for subcommand'
+                        'visual:Visualize Docker concepts'
+                        'containers:Container status board'
+                        'status:Comprehensive system status report'
+                    )
+                    _describe -t show_subcmds 'show category' show_subcmds
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+_dockero "$@"

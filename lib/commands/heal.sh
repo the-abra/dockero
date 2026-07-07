@@ -585,10 +585,7 @@ heal_cleanup() {
                 log.info "No unused volumes to remove."
             fi
 
-            # Remove unused networks (use dockero net prune)
             log.info "Pruning unused networks using ${BOLD_YELLOW}dockero net prune${RESET_COLOR}..."
-            # shellcheck disable=SC1091
-            source "${COMMANDS_DIR}/net.sh" # Source net.sh to use net prune
             net prune # Call the newly implemented prune function
             
             # Clean Docker build cache

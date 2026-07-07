@@ -5,6 +5,23 @@ All notable changes to Dockero will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-07-06
+
+### Added
+*   **Standalone Bash Compiler**: Added `build.sh` script to compile/bundle modular code into a single distribution-ready script `dist/dockero`.
+*   **Zsh Completion Support**: Created a native Zsh autocompletion script at `completions/zsh/_dockero` for completing containers, subcommands, and networks.
+*   **UNIX Man Page**: Added a comprehensive man page at `docs/man/dockero.1` covering usage, configs, and plugins.
+*   **Debug Mode (`DOCKERO_DEBUG`)**: Added verbose trace logging and parameter indexing output at execution startup.
+*   **GitHub Templates**: Added issue templates (bug reports, feature requests) and PR templates under `.github/`.
+
+### Changed
+*   **Filesystem Restructuring (FSH)**: Reorganized codebase to match File System Hierarchy standards:
+    *   Main executable moved to `bin/dockero`.
+    *   Subcommands and utilities moved to `lib/`.
+    *   Shell completions moved to `completions/`.
+*   **Unified Installer**: Updated `install.sh` to build the standalone executable, configure Bash/Zsh completions, install the man page, and trigger `mandb`.
+*   **License Standardization**: Aligned repository badge and documentation to refer to the GNU GPLv3 license instead of MIT.
+
 ## [1.0.1] - 2026-04-19
 
 ### Fixed
@@ -49,5 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial release with core Docker management features.
 
+[1.1.0]: https://github.com/the-abra/dockero/releases/tag/v1.1.0
+[1.0.1]: https://github.com/the-abra/dockero/releases/tag/v1.0.1
 [1.0.0]: https://github.com/the-abra/dockero/releases/tag/v1.0.0
 [0.1.1]: https://github.com/the-abra/dockero/releases/tag/v0.1.1
