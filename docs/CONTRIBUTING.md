@@ -4,7 +4,7 @@ Thank you for considering contributing to **Dockero**! This guide covers everyth
 
 ---
 
-### 📋 Table of Contents
+### Table of Contents
 
 1. [Getting Started](#getting-started)
 2. [Project Architecture](#project-architecture)
@@ -17,7 +17,7 @@ Thank you for considering contributing to **Dockero**! This guide covers everyth
 
 ---
 
-### 🛠️ Getting Started
+### Getting Started
 
 1. **Fork** the repository to your GitHub account.
 2. **Clone** your fork locally:
@@ -28,25 +28,24 @@ Thank you for considering contributing to **Dockero**! This guide covers everyth
 
 ---
 
-### 🏗️ Project Architecture
+### Project Architecture
 
 Dockero follows a modular architecture:
 
-- `core/dockero` - Main entry point and command loader
-- `core/commands/` - Individual command implementations
-- `core/extra/` - Utility libraries (logging, colors, etc.)
-- `core/autocompletion/` - Bash completion scripts
+- `bin/dockero` - Main entry point and command loader
+- `lib/commands/` - Individual subcommand implementations
+- `lib/utils/` - Utility libraries (logging, colors, etc.)
+- `completions/` - Shell completion scripts
 - `docs/` - Documentation files
-- `tests/` - Test configurations
 
-Each command is implemented as a separate `.sh` file in the `commands/` directory with:
+Each command is implemented as a separate `.sh` file in the `lib/commands/` directory with:
 - Main function named after the command
-- Help function named `help-COMMAND`
+- Help function named `COMMAND_help`
 - Proper error handling and logging
 
 ---
 
-### 🐛 Reporting Issues
+### Reporting Issues
 
 - Check existing issues to avoid duplicates.
 - Use clear, descriptive titles.
@@ -55,7 +54,7 @@ Each command is implemented as a separate `.sh` file in the `commands/` director
 
 ---
 
-### 🌿 Branching & Workflow
+### Branching & Workflow
 
 We follow the **GitHub Flow**:
 
@@ -75,7 +74,7 @@ We follow the **GitHub Flow**:
 
 ---
 
-### 🔍 Coding Standards
+### Coding Standards
 
 - **Style Guide**: Follow [Google Shell Style Guide](https://google.github.io/styleguide/shellguide.html):
   - `#!/usr/bin/env bash` at top of all scripts not sourced by dockero.
@@ -86,7 +85,7 @@ We follow the **GitHub Flow**:
 
 ---
 
-### ⚙️ Adding New Commands
+### Adding New Commands
 
 To add a new command:
 
@@ -99,7 +98,7 @@ To add a new command:
 
 ---
 
-### 🚀 Pull Request Process
+### Pull Request Process
 
 1. **Open a PR** against the `dev` branch.
 2. **Link issues** by using keywords (e.g., "Closes #123").
@@ -109,10 +108,10 @@ To add a new command:
 
 ---
 
-### 📜 License
+### License
 
 By contributing, you agree that your contributions will be licensed under the project's [GNU License](LICENSE).
 
 ---
 
-Thank you for helping make Dockero better! 🎉
+Thank you for helping make Dockero better!

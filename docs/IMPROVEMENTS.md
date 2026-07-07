@@ -45,7 +45,7 @@ cat > ~/.dockero/commands/backup.sh << 'EOF'
 
 backup_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero backup ${GREEN}<container>${RESET_COLOR}
+${BOLD_CYAN}dockero backup ${GREEN}<container>${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Backup a container to ~/backups/
 EOF
 }
@@ -85,12 +85,12 @@ dockero monitor watch myapp --interval 10 --duration 300
 ## Technical Details
 
 ### Files Modified
-- `core/dockero` - Added dependency check, plugin directory support
-- `core/parameter-indexing.sh` - Fixed short flag value parsing
-- `core/commands/explain.sh` - Rewritten to dynamically call `command_help()` functions
-- `core/commands/*.sh` (22 files) - Added `command_help()` functions, replaced `docker` with `${DOCKERO_RUNTIME:-docker}`
-- `core/commands/monitor.sh` - Optimized health check, simplified logs/watch using params
-- `core/autocompletion/dockero.bash-completion.sh` - Uses `${DOCKERO_RUNTIME:-docker}`
+- `bin/dockero` - Added dependency check, plugin directory support
+- `lib/parameter-indexing.sh` - Fixed short flag value parsing
+- `lib/commands/explain.sh` - Rewritten to dynamically call `command_help()` functions
+- `lib/commands/*.sh` (22 files) - Added `command_help()` functions, replaced `docker` with `${DOCKERO_RUNTIME:-docker}`
+- `lib/commands/monitor.sh` - Optimized health check, simplified logs/watch using params
+- `completions/bash/dockero` - Uses `${DOCKERO_RUNTIME:-docker}`
 
 ### Backward Compatibility
 All changes are backward compatible. Existing scripts and workflows continue to work unchanged.

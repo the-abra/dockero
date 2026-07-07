@@ -30,6 +30,7 @@ This generates the compiled executable file at `dist/dockero`.
 Since Dockero compiles down to a single standalone file, you can install the executable, man page documentation, and shell completions manually.
 
 ### 1. Locate and Install the Executable
+
 The compiled file is created at `dist/dockero`. You can copy it to your system binaries directory or create a symbolic link:
 
 ```bash
@@ -42,31 +43,42 @@ sudo ln -sf "$(pwd)/dist/dockero" /usr/local/bin/dockero
 ```
 
 ### 2. Configure Shell Autocompletions
+
 Dockero comes with full autocomplete scripts for both Bash and Zsh.
 
 #### Bash Completions
+
 Place the completion file in your system completion directory:
+
 ```bash
 sudo cp completions/bash/dockero /etc/bash_completion.d/dockero
 ```
+
 *Alternatively, you can source it manually in your `~/.bashrc`:*
+
 ```bash
 source /usr/local/share/dockero/completions/bash/dockero
 ```
 
 #### Zsh Completions
+
 Copy the Zsh completion file to a directory in your `$fpath` (e.g., `/usr/local/share/zsh/site-functions`):
+
 ```bash
 sudo cp completions/zsh/_dockero /usr/local/share/zsh/site-functions/_dockero
 ```
+
 *Alternatively, add the directory to your `$fpath` in `~/.zshrc` before calling `compinit`:*
+
 ```zsh
 fpath=(/usr/local/share/dockero/completions/zsh $fpath)
 autoload -U compinit && compinit
 ```
 
 ### 3. Install UNIX Man Pages
+
 To read documentation directly from your terminal using `man dockero`:
+
 ```bash
 # Copy the man page to man1 path
 sudo mkdir -p /usr/local/share/man/man1
@@ -75,7 +87,9 @@ sudo cp docs/man/dockero.1 /usr/local/share/man/man1/dockero.1
 # Rebuild the man database cache
 sudo mandb
 ```
+
 Read the manual anytime with:
+
 ```bash
 man dockero
 ```
@@ -95,18 +109,18 @@ dockero explain create           # Show help for any command
 
 ## Command Reference
 
-| Category | Commands |
-|---|---|
+| Category   | Commands                                              |
+| ---------- | ----------------------------------------------------- |
 | Containers | `create`, `start`, `stop`, `remove`, `rename`, `list` |
-| Images | `export`, `import`, `registry` |
-| Volumes | `volume` |
-| Networking | `net` |
-| Projects | `setup`, `compose`, `env`, `validate` |
-| Sync | `sync` |
-| Monitoring | `monitor`, `dashboard`, `heal` |
-| Secrets | `secrets` |
-| System | `system`, `plugin` |
-| Learning | `learn`, `explain`, `show`, `wizard` |
+| Images     | `export`, `import`, `registry`                        |
+| Volumes    | `volume`                                              |
+| Networking | `net`                                                 |
+| Projects   | `setup`, `compose`, `env`, `validate`                 |
+| Sync       | `sync`                                                |
+| Monitoring | `monitor`, `dashboard`, `heal`                        |
+| Secrets    | `secrets`                                             |
+| System     | `system`, `plugin`                                    |
+| Learning   | `learn`, `explain`, `show`, `wizard`                  |
 
 Run `dockero explain <command>` for detailed help on any subcommand.
 
@@ -142,12 +156,13 @@ EOF
 ---
 
 ## Project Documentation
+
 Check out the dedicated documentation files inside the `docs/` folder:
-*   [docs/CHANGELOG.md](https://github.com/the-abra/dockero/blob/main/docs/CHANGELOG.md) - Project release history and semver logs.
-*   [docs/CONTRIBUTING.md](https://github.com/the-abra/dockero/blob/main/docs/CONTRIBUTING.md) - Coding style, subcommand architectures, and pull request processes.
-*   [docs/IMPROVEMENTS.md](https://github.com/the-abra/dockero/blob/main/docs/IMPROVEMENTS.md) - Technical benchmark records, parsing layouts, and runtime specifications.
-*   [docs/ROADMAP.md](https://github.com/the-abra/dockero/blob/main/docs/ROADMAP.md) - Project feature roadmap and development plan.
-*   [docs/LICENSE](https://github.com/the-abra/dockero/blob/main/docs/LICENSE) - Official GNU General Public License v3 terms.
+
+* [docs/CHANGELOG.md](https://github.com/the-abra/dockero/blob/main/docs/CHANGELOG.md) - Project release history and semver logs.
+* [docs/CONTRIBUTING.md](https://github.com/the-abra/dockero/blob/main/docs/CONTRIBUTING.md) - Coding style, subcommand architectures, and pull request processes.
+* [docs/IMPROVEMENTS.md](https://github.com/the-abra/dockero/blob/main/docs/IMPROVEMENTS.md) - Technical benchmark records, parsing layouts, and runtime specifications.
+* [docs/LICENSE](https://github.com/the-abra/dockero/blob/main/docs/LICENSE) - Official GNU General Public License v3 terms.
 
 ---
 
