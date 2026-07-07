@@ -96,6 +96,8 @@ To add a new command:
 5. **Test** your command works by executing `./dist/dockero commandname`
 6. **Update** documentation and the man page [dockero.1](https://github.com/the-abra/dockero/blob/main/docs/man/dockero.1) as needed
 
+*Note: To add runtime subcommands dynamically without modifying core files or rebuilding the executable, check out the [Custom Plugins Guide](https://github.com/the-abra/dockero/blob/main/docs/PLUGINS.md).*
+
 ---
 
 ### Pull Request Process

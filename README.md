@@ -162,6 +162,7 @@ Check out the dedicated documentation files inside the `docs/` folder:
 * [docs/CHANGELOG.md](https://github.com/the-abra/dockero/blob/main/docs/CHANGELOG.md) - Project release history and semver logs.
 * [docs/CONTRIBUTING.md](https://github.com/the-abra/dockero/blob/main/docs/CONTRIBUTING.md) - Coding style, subcommand architectures, and pull request processes.
 * [docs/IMPROVEMENTS.md](https://github.com/the-abra/dockero/blob/main/docs/IMPROVEMENTS.md) - Technical benchmark records, parsing layouts, and runtime specifications.
+* [docs/PLUGINS.md](https://github.com/the-abra/dockero/blob/main/docs/PLUGINS.md) - Guide on creating and managing custom subcommand plugins.
 * [docs/LICENSE](https://github.com/the-abra/dockero/blob/main/docs/LICENSE) - Official GNU General Public License v3 terms.
 
 ---
