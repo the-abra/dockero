@@ -7,7 +7,7 @@ This document outlines the project roadmap, listing recently implemented archite
 ## 🗺️ Future Feature Roadmap
 
 ### 1. 🔌 Expanded Subcommand Plugin Manager (`dockero plugin`)
-The initial plugin manager is implemented inside [lib/commands/plugin.sh](file:///usr/local/share/dockero/lib/commands/plugin.sh), supporting local list, installation, and removal:
+The initial plugin manager is implemented inside [lib/commands/plugin.sh](https://github.com/the-abra/dockero/blob/main/lib/commands/plugin.sh), supporting local list, installation, and removal:
 *   **Next Phase**:
     *   Add a local update mechanism (`dockero plugin update <name>`) to fetch the latest changes from the original source URL.
     *   Support GitHub repository paths directly: `dockero plugin install mycmd owner/repo/path/to/script.sh`.
@@ -40,11 +40,11 @@ Enhance `dockero setup init --preset` to generate full development stack archite
 *   Collapsed the redundant namespace subdirectory, moving all files from `lib/dockero/` directly into `lib/` at the root of the project.
 
 ### 2. Compilation-Focused Architecture
-*   Decoupled files from complex, regex-based file-stripping compile logic by removing all dynamic utility `source` statements from [bin/dockero](file:///usr/local/share/dockero/bin/dockero). 
-*   All utility libraries and subcommand functions are inlined directly at compile time using a clean, concatenation-based builder [bin/build.sh](file:///usr/local/share/dockero/bin/build.sh).
+*   Decoupled files from complex, regex-based file-stripping compile logic by removing all dynamic utility `source` statements from [bin/dockero](https://github.com/the-abra/dockero/blob/main/bin/dockero). 
+*   All utility libraries and subcommand functions are inlined directly at compile time using a clean, concatenation-based builder [bin/build.sh](https://github.com/the-abra/dockero/blob/main/bin/build.sh).
 
 ### 3. Centralized Makefile Build System
-*   Added a unified [Makefile](file:///usr/local/share/dockero/Makefile) to build, clean, lint, and test the project using standardized commands (`make build`, `make test`, `make lint`, `make dist`).
+*   Added a unified [Makefile](https://github.com/the-abra/dockero/blob/main/Makefile) to build, clean, lint, and test the project using standardized commands (`make build`, `make test`, `make lint`, `make dist`).
 *   Configured GitHub CI/CD workflows to run tests and lints directly via `make`.
 
 ### 4. Preset Auto-Setups

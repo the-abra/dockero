@@ -95,7 +95,7 @@ To add a new command:
 3. **Add** a corresponding help function `commandname_help()` inside your new file (help functions are now dynamically loaded from each command script!)
 4. **Compile** your changes into the standalone executable by running `make build` (or `make test` to compile and run tests)
 5. **Test** your command works by executing `./dist/dockero commandname`
-6. **Update** documentation and the man page [dockero.1](file:///usr/local/share/dockero/docs/man/dockero.1) as needed
+6. **Update** documentation and the man page [dockero.1](https://github.com/the-abra/dockero/blob/main/docs/man/dockero.1) as needed
 
 ---
 

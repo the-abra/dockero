@@ -143,10 +143,11 @@ EOF
 
 ## Project Documentation
 Check out the dedicated documentation files inside the `docs/` folder:
-*   [docs/CHANGELOG.md](file:///usr/local/share/dockero/docs/CHANGELOG.md) - Project release history and semver logs.
-*   [docs/CONTRIBUTING.md](file:///usr/local/share/dockero/docs/CONTRIBUTING.md) - Coding style, subcommand architectures, and pull request processes.
-*   [docs/IMPROVEMENTS.md](file:///usr/local/share/dockero/docs/IMPROVEMENTS.md) - Technical benchmark records, parsing layouts, and runtime specifications.
-*   [docs/LICENSE](file:///usr/local/share/dockero/docs/LICENSE) - Official GNU General Public License v3 terms.
+*   [docs/CHANGELOG.md](https://github.com/the-abra/dockero/blob/main/docs/CHANGELOG.md) - Project release history and semver logs.
+*   [docs/CONTRIBUTING.md](https://github.com/the-abra/dockero/blob/main/docs/CONTRIBUTING.md) - Coding style, subcommand architectures, and pull request processes.
+*   [docs/IMPROVEMENTS.md](https://github.com/the-abra/dockero/blob/main/docs/IMPROVEMENTS.md) - Technical benchmark records, parsing layouts, and runtime specifications.
+*   [docs/ROADMAP.md](https://github.com/the-abra/dockero/blob/main/docs/ROADMAP.md) - Project feature roadmap and development plan.
+*   [docs/LICENSE](https://github.com/the-abra/dockero/blob/main/docs/LICENSE) - Official GNU General Public License v3 terms.
 
 ---
 
