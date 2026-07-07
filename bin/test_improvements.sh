@@ -12,15 +12,15 @@ PASS=0
 FAIL=0
 
 # Colors
-GREEN='\033[1;32m'
-RED='\033[1;31m'
-YELLOW='\033[1;33m'
-CYAN='\033[1;36m'
-NC='\033[0m'
-BOLD='\033[1m'
+GREEN='\e[38;5;82m'
+RED='\e[38;5;196m'
+YELLOW='\e[38;5;214m'
+BLUE='\e[38;5;75m'
+NC='\e[0m'
+BOLD='\e[1m'
 
 print_section() {
-    echo -e "\n${BOLD}${CYAN}🔹 $1${NC}"
+    echo -e "\n${BOLD}${BLUE}🔹 $1${NC}"
 }
 
 pass() {
@@ -41,9 +41,9 @@ skip() {
 DOCKER_AVAILABLE=false
 command -v docker &>/dev/null && docker ps &>/dev/null 2>&1 && DOCKER_AVAILABLE=true
 
-echo -e "${BOLD}${CYAN}========================================================================${NC}"
-echo -e "${BOLD}${CYAN}   Dockero Core Unit & Improvement Tests                                ${NC}"
-echo -e "${BOLD}${CYAN}========================================================================${NC}"
+echo -e "${BOLD}${BLUE}========================================================================${NC}"
+echo -e "${BOLD}${BLUE}   Dockero Core Unit & Improvement Tests                                ${NC}"
+echo -e "${BOLD}${BLUE}========================================================================${NC}"
 
 # Test 1: Dependency validation
 print_section "Dependency Validation"
@@ -152,12 +152,12 @@ rm -rf "$TEST_PROJ_DIR"
 
 # Summary
 TOTAL=$((PASS + FAIL))
-echo -e "\n${BOLD}${CYAN}========================================================================${NC}"
+echo -e "\n${BOLD}${BLUE}========================================================================${NC}"
 if [[ $FAIL -eq 0 ]]; then
     echo -e "${BOLD}${GREEN}   All tests passed successfully! ($PASS/$TOTAL)${NC}"
 else
     echo -e "${BOLD}${RED}   Some tests failed! ($FAIL failed, $PASS passed)${NC}"
 fi
-echo -e "${BOLD}${CYAN}========================================================================${NC}"
+echo -e "${BOLD}${BLUE}========================================================================${NC}"
 
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1
