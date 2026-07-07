@@ -101,6 +101,9 @@ Manage credentials, keys, and confidential environment parameters.
 .TP
 .BI system " [service|config|info|cleanup|install]"
 Configure global system integrations, clean up unused caches, and view system specs.
+.TP
+.BI plugin " [list|install|remove]"
+Manage custom subcommand plugins.
 
 .SS 9. Interactive Learning
 .TP
@@ -140,6 +143,19 @@ Users can extend the CLI with custom scripts placed in the
 .B ~/.dockero/commands/
 directory.
 .PP
+Plugins can be managed using the built-in
+.B dockero plugin
+subcommand:
+.TP
+.BI "dockero plugin install " "name" " url"
+Downloads and installs a custom script from a raw script URL.
+.TP
+.BI "dockero plugin list"
+Lists all active custom commands and their helper descriptions.
+.TP
+.BI "dockero plugin remove " "name"
+Uninstalls the specified plugin.
+.PP
 If a script named
 .B ~/.dockero/commands/backup.sh
 exists, calling \fBdockero backup\fR will automatically source it and run its \fBbackup\fR function.
@@ -164,10 +180,22 @@ User configuration overrides.
 .TP
 .I ~/.dockero/commands/
 Custom plugin scripts.
+.SH COMPILATION & BUILD
+Dockero utilizes a compilation-focused layout where individual subcommands and utilities are bundled into a single standalone executable.
+.PP
+To compile Dockero from source, execute:
+.B make build
+.PP
+To run the full test suite and shell validations, execute:
+.B make test
+.PP
+To clean and bundle a production release, run:
+.B make dist
 
 .SH REPORTING BUGS
 Submit bug reports or suggest features on GitHub at
 .I https://github.com/the-abra/dockero/issues
 
 .SH LICENSE
-Dockero is distributed under the terms of the MIT License.
+Dockero is distributed under the terms of the GNU General Public License v3 (GPLv3).
+
