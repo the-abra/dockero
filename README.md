@@ -12,14 +12,22 @@ The source code is modularly structured under the `lib/` directory for developer
 
 ## Installation & Setup
 
-Since Dockero compiles down to a single standalone file, you can install the executable, man page documentation, and shell completions manually.
+To install Dockero, first clone the repository to the recommended system directory `/usr/local/share/dockero` and build it:
+
+```bash
+sudo git clone https://github.com/the-abra/dockero.git /usr/local/share/dockero
+cd /usr/local/share/dockero
+sudo make build
+```
+
+Once built, you can install the executable, man page documentation, and shell completions manually.
 
 ### 1. Install the Executable
 
-The compiled file is created at `dist/dockero`. You can copy it to your system binaries directory:
+You can copy the compiled file from `/usr/local/share/dockero/dist/dockero` to your system binaries directory:
 
 ```bash
-sudo cp dist/dockero /usr/local/bin/dockero
+sudo cp /usr/local/share/dockero/dist/dockero /usr/local/bin/dockero
 sudo chmod +x /usr/local/bin/dockero
 ```
 
