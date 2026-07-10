@@ -29,7 +29,13 @@ make build
 This generates the file `dist/dockero`.
 
 ### 2. Create Development Symbolic Links
-Rather than copying files manually on each change, create symbolic links to your local repository directory:
+Rather than copying files manually on each change, you can automate this using the built-in system development setup command:
+
+```bash
+sudo dockero system dev
+```
+
+Alternatively, you can manually create the symbolic links:
 
 ```bash
 # Link the compiled executable to your system path

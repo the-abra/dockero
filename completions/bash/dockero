@@ -133,7 +133,7 @@ _dockero_autocomplete() {
       ;;
     system)
       # shellcheck disable=SC2207
-      COMPREPLY=($(compgen -W "service config info cleanup install" -- "${cur}"))
+      COMPREPLY=($(compgen -W "service config info cleanup install dev" -- "${cur}"))
       ;;
     learn)
       # shellcheck disable=SC2207

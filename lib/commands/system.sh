@@ -4,16 +4,17 @@
 
 system_help() {
 cat << EOF
-${BOLD_CYAN}dockero system ${GREEN}<service|config|info|cleanup|install> [options]${RESET_COLOR}
-   ${BOLD_WHITE}• Purpose:${RESET_COLOR} System integration and management.
-   ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
-     - ${GREEN}service${RESET_COLOR}   Manage containers as systemd services.
-     - ${GREEN}config${RESET_COLOR}    Manage Dockero configuration (get/set/list/reset).
-     - ${GREEN}info${RESET_COLOR}      Display system and Dockero environment info.
-     - ${GREEN}cleanup${RESET_COLOR}   Clean up Docker resources.
-     - ${GREEN}install${RESET_COLOR}   Install Dockero to a system location.
-   ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
-     ${YELLOW}docker system prune${RESET_COLOR} / ${YELLOW}docker info${RESET_COLOR}
+dockero system <service|config|info|cleanup|install|dev> [options]
+   • Purpose: System integration and management.
+   • Subcommands:
+     - service   Manage containers as systemd services.
+     - config    Manage Dockero configuration (get/set/list/reset).
+     - info      Display system and Dockero environment info.
+     - cleanup   Clean up Docker resources.
+     - install   Install Dockero to a system location.
+     - dev       Convert installation to development symlinked setup.
+   • Equivalent Docker:
+     docker system prune / docker info
 EOF
 }
 
@@ -44,7 +45,7 @@ system() {
     local subcommand="${args[1]:-}"
 
     if [[ -z "$subcommand" ]]; then
-        log.error "Subcommand required. Use: ${BOLD_YELLOW}dockero system <service|config|info|cleanup|install> [options]${RESET_COLOR}"
+        log.error "Subcommand required. Use: ${BOLD_YELLOW}dockero system <service|config|info|cleanup|install|dev> [options]${RESET_COLOR}"
         log.hint "Run ${BOLD_YELLOW}dockero system -h${RESET_COLOR} for more information."
         return 1
     fi
@@ -65,9 +66,12 @@ system() {
         "install")
             system_install "${args[@]:2}"
             ;;
+        "dev")
+            system_dev
+            ;;
         *)
             log.error "Unknown system subcommand: ${BOLD_RED}$subcommand${RESET_COLOR}"
-            log.hint "Use: ${BOLD_YELLOW}dockero system <service|config|info|cleanup|install> [options]${RESET_COLOR}"
+            log.hint "Use: ${BOLD_YELLOW}dockero system <service|config|info|cleanup|install|dev> [options]${RESET_COLOR}"
             return 1
             ;;
     esac
@@ -443,5 +447,78 @@ system_install() {
         log.sub "${GREEN}export PATH=\"\$PATH:$location\"${RESET_COLOR}"
     fi
     log.done "Installation completed."
+    return 0
+}
+
+system_dev() {
+    log.setline "Convert to Development Setup"
+    
+    local repo_dir
+    repo_dir=$(pwd)
+    
+    # Verify that we are indeed in a dockero repository
+    if [[ ! -f "$repo_dir/dist/dockero" ]]; then
+        if [[ -f "$repo_dir/Makefile" ]]; then
+            log.info "dist/dockero not found. Running 'make build' first..."
+            make build
+        else
+            log.error "Please run this command from the root of your dockero repository."
+            return 1
+        fi
+    fi
+    
+    local exec_dest="/usr/local/bin/dockero"
+    local bash_completion_dest="/etc/bash_completion.d/dockero"
+    local zsh_completion_dest="/usr/local/share/zsh/site-functions/_dockero"
+
+    log.info "Checking for existing copied binaries/files to clean up..."
+
+    # Remove executable if it exists
+    if [[ -f "$exec_dest" || -L "$exec_dest" ]]; then
+        log.info "Removing existing executable at $exec_dest..."
+        if ! rm -f "$exec_dest" 2>/dev/null; then
+            log.error "Permission denied. Please run as root (sudo dockero system dev)."
+            return 1
+        fi
+    fi
+
+    # Remove Bash completions
+    if [[ -f "$bash_completion_dest" || -L "$bash_completion_dest" ]]; then
+        log.info "Removing existing Bash completions at $bash_completion_dest..."
+        rm -f "$bash_completion_dest" 2>/dev/null
+    fi
+
+    # Remove Zsh completions
+    if [[ -f "$zsh_completion_dest" || -L "$zsh_completion_dest" ]]; then
+        log.info "Removing existing Zsh completions at $zsh_completion_dest..."
+        rm -f "$zsh_completion_dest" 2>/dev/null
+    fi
+
+    log.info "Creating development symbolic links from $repo_dir..."
+
+    # Link executable
+    if ln -sf "$repo_dir/dist/dockero" "$exec_dest" 2>/dev/null; then
+        chmod +x "$repo_dir/dist/dockero"
+        log.done "Linked executable: $exec_dest -> $repo_dir/dist/dockero"
+    else
+        log.error "Failed to create link: $exec_dest. Try running with sudo."
+        return 1
+    fi
+
+    # Link Bash completions
+    if ln -sf "$repo_dir/completions/bash/dockero" "$bash_completion_dest" 2>/dev/null; then
+        log.done "Linked Bash completions: $bash_completion_dest -> $repo_dir/completions/bash/dockero"
+    else
+        log.warn "Could not link Bash completions to $bash_completion_dest."
+    fi
+
+    # Link Zsh completions
+    if mkdir -p "$(dirname "$zsh_completion_dest")" 2>/dev/null && ln -sf "$repo_dir/completions/zsh/_dockero" "$zsh_completion_dest" 2>/dev/null; then
+        log.done "Linked Zsh completions: $zsh_completion_dest -> $repo_dir/completions/zsh/_dockero"
+    else
+        log.warn "Could not link Zsh completions to $zsh_completion_dest."
+    fi
+
+    log.done "Development setup conversion completed successfully!"
     return 0
 }

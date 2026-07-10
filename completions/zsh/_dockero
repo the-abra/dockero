@@ -176,6 +176,18 @@ _dockero() {
                     )
                     _describe -t list_subcmds 'list parameter' list_subcmds
                     ;;
+                system)
+                    local -a system_subcmds
+                    system_subcmds=(
+                        'service:Manage containers as systemd services'
+                        'config:Manage configuration (get/set/list/reset)'
+                        'info:Display environment information'
+                        'cleanup:Clean up Docker resources'
+                        'install:Install to a system location'
+                        'dev:Convert installation to development symlinked setup'
+                    )
+                    _describe -t system_subcmds 'system subcommand' system_subcmds
+                    ;;
             esac
             ;;
     esac
