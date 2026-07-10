@@ -5,6 +5,18 @@ All notable changes to Dockero will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-07-10
+
+### Added
+*   **Plugin Command**: Added `dockero plugin` command supporting `list`, `install`, and `remove` subcommands to fetch and manage user plugins.
+*   **System Development Command**: Added `dockero system dev` command to convert a standard system installation into a symlinked development installation.
+*   **Custom Plugins Guide**: Added `docs/PLUGINS.md` to document plugin architecture, function names, and parameter specifications.
+
+### Changed
+*   **Simplified Image Listing**: Changed `dockero list -img` to `dockero list img` (removing the hyphen) to improve CLI user experience.
+*   **Developer Guide Rewrite**: Overhauled `docs/CONTRIBUTING.md` to provide comprehensive details on development symbolic links, command data flows, and integration procedures.
+*   **Emoji Stripping**: Removed all decorative emojis from all command outputs, help documentation, manuals, and logs to align with standard shell output conventions.
+
 ## [1.1.0] - 2026-07-06
 
 ### Added
@@ -66,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial release with core Docker management features.
 
+[1.2.0]: https://github.com/the-abra/dockero/releases/tag/v1.2.0
 [1.1.0]: https://github.com/the-abra/dockero/releases/tag/v1.1.0
 [1.0.1]: https://github.com/the-abra/dockero/releases/tag/v1.0.1
 [1.0.0]: https://github.com/the-abra/dockero/releases/tag/v1.0.0
