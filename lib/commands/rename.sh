@@ -2,7 +2,7 @@
 
 rename_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero rename ${GREEN}<old-name> <new-name> [-img]${RESET_COLOR}
+${BOLD_CYAN}dockero rename ${GREEN}<old-name> <new-name> [-img]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Rename a container or retag an image.
    ${BOLD_WHITE}• Parameters:${RESET_COLOR}
      - ${GREEN}-img${RESET_COLOR}: Retag an image instead of renaming a container.

@@ -4,7 +4,7 @@
 
 secrets_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero secrets ${GREEN}<create|list|show|remove> <name> [source]${RESET_COLOR}
+${BOLD_CYAN}dockero secrets ${GREEN}<create|list|show|remove> <name> [source]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Manage Docker secrets (passwords, API keys).
    ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
      - ${GREEN}create <name> [source]${RESET_COLOR}  Create from file or stdin.
@@ -69,7 +69,7 @@ secrets_create() {
   # --- Input Validation ---
   if ! _secrets_validate_name "$secret_name"; then return 1; fi
   
-  log.setline "${BOLD_CYAN}🔒 Creating Secret${RESET_COLOR}"
+  log.setline "${BOLD_CYAN}Creating Secret${RESET_COLOR}"
 
   if [[ -z "$source_path" ]]; then
     log.info "Enter secret value for '${BOLD_YELLOW}$secret_name${RESET_COLOR}' (press Enter twice to finish):"
@@ -106,7 +106,7 @@ secrets_create() {
 }
 
 secrets_list() {
-  log.setline "${BOLD_CYAN}🔑 Listing Secrets${RESET_COLOR}"
+  log.setline "${BOLD_CYAN}Listing Secrets${RESET_COLOR}"
   log.info "Displaying all Docker secrets:"
   ${DOCKERO_RUNTIME:-docker} secret ls --format "table {{.ID}}\t{{.Name}}\t{{.CreatedAt}}\t{{.UpdatedAt}}" | sed '1s/.*/\033[1;36m&\033[0m/' # Color header
 }
@@ -122,7 +122,7 @@ secrets_remove() {
   # --- Input Validation ---
   if ! _secrets_validate_name "$secret_name"; then return 1; fi
   
-  log.setline "${BOLD_CYAN}🗑️ Removing Secret${RESET_COLOR}"
+  log.setline "${BOLD_CYAN}Removing Secret${RESET_COLOR}"
   log.warn "This will permanently remove the secret: ${BOLD_YELLOW}$secret_name${RESET_COLOR}."
   local response
   read -rp "${YELLOW}Are you sure? (y/N): ${RESET_COLOR}" -n 1 response
@@ -152,7 +152,7 @@ secrets_show() {
   # --- Input Validation ---
   if ! _secrets_validate_name "$secret_name"; then return 1; fi
   
-  log.setline "${BOLD_CYAN}🔍 Secret Details for ${BOLD_GREEN}$secret_name${RESET_COLOR}"
+  log.setline "${BOLD_CYAN}Secret Details for ${BOLD_GREEN}$secret_name${RESET_COLOR}"
   log.info "Showing details for secret: ${BOLD_YELLOW}$secret_name${RESET_COLOR}."
   # Check if jq is available for pretty printing
   if command -v jq &> /dev/null; then

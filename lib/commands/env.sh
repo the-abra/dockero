@@ -4,7 +4,7 @@
 
 env_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero env ${GREEN}<list|use|show|create|delete|switch> [environment]${RESET_COLOR}
+${BOLD_CYAN}dockero env ${GREEN}<list|use|show|create|delete|switch> [environment]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Manage deployment environments (dev, staging, prod).
    ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
      - ${GREEN}list${RESET_COLOR}          List available environments.

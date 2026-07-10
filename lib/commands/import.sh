@@ -2,7 +2,7 @@
 
 import_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero import ${GREEN}</path/to/archive.tar>${RESET_COLOR}
+${BOLD_CYAN}dockero import ${GREEN}</path/to/archive.tar>${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Import a .tar archive as a Docker image.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
      ${YELLOW}docker load -i /path/to/archive.tar${RESET_COLOR}
@@ -34,7 +34,7 @@ import() {
         return 1
     fi
 
-    log.setline "${BOLD_CYAN}📦 Importing Image${RESET_COLOR}"
+    log.setline "${BOLD_CYAN}Importing Image${RESET_COLOR}"
     log.info "Attempting to load image from archive: ${BOLD_YELLOW}$tar_file${RESET_COLOR}."
 
     if ${DOCKERO_RUNTIME:-docker} load -i "$tar_file"; then # $tar_file is now validated

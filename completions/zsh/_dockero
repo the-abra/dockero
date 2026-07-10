@@ -169,6 +169,13 @@ _dockero() {
                     )
                     _describe -t plugin_subcmds 'plugin subcommand' plugin_subcmds
                     ;;
+                list)
+                    local -a list_subcmds
+                    list_subcmds=(
+                        'img:List local images instead of containers'
+                    )
+                    _describe -t list_subcmds 'list parameter' list_subcmds
+                    ;;
             esac
             ;;
     esac

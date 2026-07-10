@@ -5,7 +5,7 @@
 
 show_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero show ${GREEN}<commands|dashboard|demo|visual|containers|status>${RESET_COLOR}
+${BOLD_CYAN}dockero show ${GREEN}<commands|dashboard|demo|visual|containers|status>${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Visual dashboards, command references, and concept visualizations.
    ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
      - ${GREEN}commands${RESET_COLOR}       Categorized list of all Dockero commands.
@@ -66,8 +66,8 @@ show_commands() {
     
     # Define command categories with icons and descriptions
     local -a categories=(
-        "🚀 Quick Start:run,list,start,stop"
-        "⚙️  Container Management:setup,create,remove,rename"
+        "Quick Start:run,list,start,stop"
+        "Container Management:setup,create,remove,rename"
         "🔗 Networking:net,compose"
         "🔄 Sync & Data:sync,export,import"
         "🌍 Environment:env,system"
@@ -326,7 +326,7 @@ show_containers_visual() {
 }
 
 show_status_visual() {
-    log.setline "${BOLD_CYAN}🔍 System Status Overview${RESET_COLOR}"
+    log.setline "${BOLD_CYAN}System Status Overview${RESET_COLOR}"
     
     # Check Docker daemon
     if command -v docker &> /dev/null && ${DOCKERO_RUNTIME:-docker} ps -q &> /dev/null; then # Faster check
@@ -344,7 +344,7 @@ show_status_visual() {
     running_containers=$(${DOCKERO_RUNTIME:-docker} ps -q | wc -l 2>/dev/null || echo 0)
     
     # shellcheck disable=SC2059
-    printf "${BOLD_WHITE}📦 Containers:${RESET_COLOR} ${BOLD_GREEN}${total_containers:-0}${RESET_COLOR} total (${BOLD_YELLOW}${running_containers:-0}${RESET_COLOR} running)\n"
+    printf "${BOLD_WHITE}Containers:${RESET_COLOR} ${BOLD_GREEN}${total_containers:-0}${RESET_COLOR} total (${BOLD_YELLOW}${running_containers:-0}${RESET_COLOR} running)\n"
     
     # Count images  
     local total_images

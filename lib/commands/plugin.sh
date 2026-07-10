@@ -2,7 +2,7 @@
 
 plugin_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero plugin ${GREEN}<subcommand> [args]${RESET_COLOR}
+${BOLD_CYAN}dockero plugin ${GREEN}<subcommand> [args]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Manage custom subcommands/plugins.
    ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
      - ${GREEN}list${RESET_COLOR}                       List all installed user plugins.
@@ -22,7 +22,7 @@ plugin() {
 
     case "$subcmd" in
         list)
-            log.setline "${BOLD_CYAN}🔌 Installed Plugins${RESET_COLOR}"
+            log.setline "${BOLD_CYAN}Installed Plugins${RESET_COLOR}"
             mkdir -p "$plugin_dir"
             local found=0
             for file in "$plugin_dir"/*.sh; do

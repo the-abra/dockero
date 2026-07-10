@@ -2,7 +2,7 @@
 
 export_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero export ${GREEN}<container-name> [--tag <image-tag>]${RESET_COLOR}
+${BOLD_CYAN}dockero export ${GREEN}<container-name> [--tag <image-tag>]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Export a container's state as a .tar archive.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
      ${YELLOW}docker commit <name> <tag> && docker save -o <path>.tar <tag>${RESET_COLOR}

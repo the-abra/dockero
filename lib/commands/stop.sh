@@ -2,7 +2,7 @@
 
 stop_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero stop ${GREEN}<container-name> [--timeout <seconds>]${RESET_COLOR}
+${BOLD_CYAN}dockero stop ${GREEN}<container-name> [--timeout <seconds>]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Gracefully stop a running container.
    ${BOLD_WHITE}• Parameters:${RESET_COLOR}
      - ${GREEN}--timeout <seconds>${RESET_COLOR}: Wait time before SIGKILL (default: 10).

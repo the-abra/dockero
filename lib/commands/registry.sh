@@ -4,7 +4,7 @@
 
 registry_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero registry ${GREEN}<login|push|pull|list|search|logout> [options]${RESET_COLOR}
+${BOLD_CYAN}dockero registry ${GREEN}<login|push|pull|list|search|logout> [options]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Manage Docker container registries.
    ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
      - ${GREEN}login [url]${RESET_COLOR}     Authenticate to a registry.
@@ -122,7 +122,7 @@ registry_login() {
     if ! _registry_validate_username "$username_arg"; then return 1; fi # Validate prompted username
   fi
   
-  log.setline "${BOLD_CYAN}🔑 Registry Login${RESET_COLOR}"
+  log.setline "${BOLD_CYAN}Registry Login${RESET_COLOR}"
 
   if [[ -z "$registry_url_arg" ]]; then
     log.info "Attempting to login to default registry as ${BOLD_YELLOW}$username_arg${RESET_COLOR}..."
@@ -186,7 +186,7 @@ registry_pull() {
 registry_list() {
   local registry_url="${1:-}" # Currently unused, as Docker doesn't support
   
-  log.setline "${BOLD_CYAN}📦 Registry List${RESET_COLOR}"
+  log.setline "${BOLD_CYAN}Registry List${RESET_COLOR}"
   log.info "Listing images in registry${registry_url:+ at ${BOLD_YELLOW}$registry_url${RESET_COLOR}}."
   log.warn "Docker doesn't support listing remote registry images directly."
   log.sub "Consider using '${BOLD_YELLOW}${DOCKERO_RUNTIME:-docker} search${RESET_COLOR}' for public registries."

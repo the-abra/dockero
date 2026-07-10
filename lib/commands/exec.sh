@@ -2,7 +2,7 @@
 
 exec_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero exec ${GREEN}<command> [args...] <container>${RESET_COLOR}
+${BOLD_CYAN}dockero exec ${GREEN}<command> [args...] <container>${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Execute a command in a running container.
    ${BOLD_WHITE}• Parameters:${RESET_COLOR}
      - ${GREEN}<command>${RESET_COLOR}: Command to execute inside the container.

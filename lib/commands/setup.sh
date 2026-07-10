@@ -5,7 +5,7 @@
 
 setup_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero setup ${GREEN}[init|run|update|teardown] [path] [--dry-run]${RESET_COLOR}
+${BOLD_CYAN}dockero setup ${GREEN}[init|run|update|teardown] [path] [--dry-run]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Set up a containerized project from a .dockero config file.
    ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
      - ${GREEN}init [path]${RESET_COLOR}      Create a new .dockero config file.
@@ -115,7 +115,7 @@ setup_run() {
         fi
     fi
 
-    log.setline "${BOLD_CYAN}📦 Project Setup: ${GREEN}$name${RESET_COLOR}"
+    log.setline "${BOLD_CYAN}Project Setup: ${GREEN}$name${RESET_COLOR}"
 
     if [[ "$dry_run" -eq 1 ]]; then
         log.info "DRY RUN MODE - Would launch container: ${BOLD_YELLOW}$name${RESET_COLOR}"
@@ -378,7 +378,7 @@ setup_teardown() {
         return 1
     fi
 
-    log.setline "${BOLD_CYAN}🗑️ Teardown Project: ${RED}$name${RESET_COLOR}"
+    log.setline "${BOLD_CYAN}Teardown Project: ${RED}$name${RESET_COLOR}"
     log.info "Stopping and removing container: ${BOLD_YELLOW}$name${RESET_COLOR}."
 
     # Stop container if running

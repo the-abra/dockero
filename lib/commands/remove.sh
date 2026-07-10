@@ -2,7 +2,7 @@
 
 remove_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero remove ${GREEN}<container|image[:tag]>${RESET_COLOR}
+${BOLD_CYAN}dockero remove ${GREEN}<container|image[:tag]>${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Remove a container or image.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
      ${YELLOW}docker rm -f <name>${RESET_COLOR} / ${YELLOW}docker rmi -f <image>:<tag>${RESET_COLOR}
@@ -40,7 +40,7 @@ remove() {
 
   # Check for container first
   if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$name$" && ! [[ "$input" =~ ':' ]]; then
-    log.setline "${BOLD_CYAN}🗑️ Removing Container${RESET_COLOR}"
+    log.setline "${BOLD_CYAN}Removing Container${RESET_COLOR}"
     log.info "Attempting to remove container: ${BOLD_YELLOW}$name${RESET_COLOR}"
     if ${DOCKERO_RUNTIME:-docker} rm -f "$name" > /dev/null 2>&1; then # $name is now validated
       log.done "Removed container ${BOLD_GREEN}$name${RESET_COLOR}."
@@ -51,7 +51,7 @@ remove() {
     return
   # Check for image next
   elif ${DOCKERO_RUNTIME:-docker} images --format '{{.Repository}}:{{.Tag}}' | grep -q "^$target_image$"; then # Use target_image here
-    log.setline "${BOLD_CYAN}🗑️ Removing Image${RESET_COLOR}"
+    log.setline "${BOLD_CYAN}Removing Image${RESET_COLOR}"
     log.info "Attempting to remove image: ${BOLD_YELLOW}$target_image${RESET_COLOR}"
     if ${DOCKERO_RUNTIME:-docker} rmi -f "$target_image" > /dev/null 2>&1; then # $target_image is now validated
       log.done "Removed image ${BOLD_GREEN}$target_image${RESET_COLOR}."

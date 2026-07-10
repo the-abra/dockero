@@ -4,7 +4,7 @@
 
 learn_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero learn ${GREEN}<start|basic|intermediate|advanced|docker|concepts|examples> [topic]${RESET_COLOR}
+${BOLD_CYAN}dockero learn ${GREEN}<start|basic|intermediate|advanced|docker|concepts|examples> [topic]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Interactive Docker learning system with structured lessons.
    ${BOLD_WHITE}• Topics:${RESET_COLOR} basics, intermediate (networks, env), advanced (security), concepts, examples.
 EOF

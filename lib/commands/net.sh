@@ -4,7 +4,7 @@
 
 net_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero net ${GREEN}<command> [args]${RESET_COLOR}
+${BOLD_CYAN}dockero net ${GREEN}<command> [args]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Manage Docker networks.
    ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
      - ${GREEN}new/create <name>${RESET_COLOR}                    Create a network.
@@ -61,7 +61,7 @@ net() {
   delete)
     [[ -z "$name1" ]] && log.hint "net delete <network_name>" && return 1
     if ! _net_validate_name "$name1"; then return 1; fi # Validate network name
-    log.info "🗑️  Deleting network: ${BOLD}$name1${RESET_COLOR}"
+    log.info "Deleting network: ${BOLD}$name1${RESET_COLOR}"
     if ${DOCKERO_RUNTIME:-docker} network inspect "$name1" &>/dev/null; then
         ${DOCKERO_RUNTIME:-docker} network rm "$name1" || { log.error "Failed to delete network '${RED}$name1${RESET_COLOR}'."; return 1; }
         log.done "Network '${BOLD}$name1${RESET_COLOR}' deleted successfully."
@@ -203,7 +203,7 @@ net() {
     ;;
 
   list)
-    log.info "🌐 Listing Networks with Connected Containers:"
+    log.info "Listing Networks with Connected Containers:"
     # Print header
     printf "${BOLD_WHITE}%-25s %s${RESET_COLOR}\n" "NETWORK NAME" "CONNECTED CONTAINERS"
     printf "${BOLD_WHITE}%-25s %s${RESET_COLOR}\n" "------------" "--------------------"

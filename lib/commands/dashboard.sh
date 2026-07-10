@@ -2,7 +2,7 @@
 
 dashboard_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero dashboard${RESET_COLOR}
+${BOLD_CYAN}dockero dashboard${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Quick overview of Docker system status, running containers, and suggested actions.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
      ${YELLOW}docker ps -a${RESET_COLOR} + ${YELLOW}docker images${RESET_COLOR} + ${YELLOW}docker info${RESET_COLOR}
@@ -41,11 +41,11 @@ dashboard() {
   # Show running containers with status
   if [ "$running_containers" -gt 0 ]; then
     echo ""
-    log.info "📦 Running Containers:"
+    log.info "Running Containers:"
     ${DOCKERO_RUNTIME:-docker} ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}" | sed 's/.*/  &/'
   else
     echo ""
-    log.info "📦 Running Containers:"
+    log.info "Running Containers:"
     log.sub "No containers running."
   fi
   
@@ -59,7 +59,7 @@ dashboard() {
   
   # Dockero info
   echo ""
-  log.info "⚙️  Dockero Info:"
+  log.info "Dockero Info:"
   log.sub "Version: ${BOLD}$DOCKERO_VERSION${RESET_COLOR}"
   log.sub "Runtime: ${BOLD}${DOCKERO_RUNTIME:-docker}${RESET_COLOR}"
   log.sub "Config:  ${HOME}/.dockero/config"

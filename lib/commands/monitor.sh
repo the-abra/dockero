@@ -4,7 +4,7 @@
 
 monitor_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero monitor ${GREEN}<top|stats|health|logs|watch> [options]${RESET_COLOR}
+${BOLD_CYAN}dockero monitor ${GREEN}<top|stats|health|logs|watch> [options]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Monitor Docker containers.
    ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
      - ${GREEN}top [container]${RESET_COLOR}                         Show processes.
@@ -184,7 +184,7 @@ monitor_logs() {
         return 1
     fi
 
-    log.setline "📜 Logs for ${BOLD}$container_name${RESET_COLOR} (last ${BOLD}$tail${RESET_COLOR} lines)"
+    log.setline "Logs for ${BOLD}$container_name${RESET_COLOR} (last ${BOLD}$tail${RESET_COLOR} lines)"
 
     local docker_logs_cmd=("${DOCKERO_RUNTIME:-docker}" logs)
     [[ "$follow" == "true" ]] && docker_logs_cmd+=(-f)

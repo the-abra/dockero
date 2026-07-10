@@ -4,7 +4,7 @@
 
 sync_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero sync ${GREEN}<push|pull|watch|status|init> [options]${RESET_COLOR}
+${BOLD_CYAN}dockero sync ${GREEN}<push|pull|watch|status|init> [options]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Synchronize files between host and container.
    ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
      - ${GREEN}push${RESET_COLOR}    Copy files from host to container.
@@ -298,8 +298,8 @@ sync_status() {
     local started
     started=$(${DOCKERO_RUNTIME:-docker} inspect -f '{{.State.StartedAt}}' "$container_name" 2>/dev/null || echo "N/A") # $container_name validated
     
-    log.sub "🔹 Container Status: $status"
-    log.sub "🔹 Started At: $started"
+    log.sub "Container Status: $status"
+    log.sub "Started At: $started"
     
     # Get all bind mounts
     local -a volume_info=()
@@ -310,12 +310,12 @@ sync_status() {
     done < <(${DOCKERO_RUNTIME:-docker} inspect -f '{{range .Mounts}}{{if eq .Type "bind"}}{{.Source}}:{{.Destination}}{{printf "\n"}}{{end}}{{end}}' "$container_name" 2>/dev/null) # $container_name validated
 
     if [[ ${#volume_info[@]} -gt 0 ]]; then
-        log.sub "🔹 Volumes:"
+        log.sub "Volumes:"
         for vol in "${volume_info[@]}"; do
             log.sub "  - $vol"
         done
     else
-        log.sub "🔹 Volumes: (none found or not bind-mounted)"
+        log.sub "Volumes: (none found or not bind-mounted)"
     fi
     
     # Check if container is running to do deeper analysis
@@ -323,9 +323,9 @@ sync_status() {
         # Try to get file count from container workspace
         local file_count
         file_count=$(${DOCKERO_RUNTIME:-docker} exec "$container_name" find /workspace -type f 2>/dev/null | wc -l | tr -d ' ') # $container_name validated
-        log.sub "🔹 Files in /workspace: ${file_count:-0}"
+        log.sub "Files in /workspace: ${file_count:-0}"
     else
-        log.sub "🔹 Files in /workspace: (container not running)"
+        log.sub "Files in /workspace: (container not running)"
     fi
 }
 
@@ -362,7 +362,7 @@ sync_init() {
         return 1
     fi
 
-    log.setline "${BOLD_CYAN}⚙️ Sync Configuration Wizard${RESET_COLOR}"
+    log.setline "${BOLD_CYAN}Sync Configuration Wizard${RESET_COLOR}"
     log.info "Creating sync configuration for: ${BOLD_GREEN}$project_path${RESET_COLOR}."
 
     # Create a basic sync configuration

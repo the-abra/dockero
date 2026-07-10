@@ -2,7 +2,7 @@
 
 create_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero create ${GREEN}<name> [<image>] [-d] [--volume <host:container>] [--no-volume] [-p <port>] [--net <network>]${RESET_COLOR}
+${BOLD_CYAN}dockero create ${GREEN}<name> [<image>] [-d] [--volume <host:container>] [--no-volume] [-p <port>] [--net <network>]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Create and start a new container.
    ${BOLD_WHITE}• Parameters:${RESET_COLOR}
      - ${GREEN}<name>${RESET_COLOR}: Container name.
@@ -66,7 +66,7 @@ create() {
   local search_image_name="$image_name"
   [[ "$image_name" != *:* ]] && search_image_name="$image_name:latest"
 
-  log.setline "🚀 Dockero Create: $container_name"
+  log.setline "Dockero Create: $container_name"
 
   # If container already exists, warn and exit
   if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^${container_name}$"; then

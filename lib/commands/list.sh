@@ -2,17 +2,17 @@
 
 list_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero list ${GREEN}[-img]${RESET_COLOR}
-   ${BOLD_WHITE}• Purpose:${RESET_COLOR} List all Docker containers or images.
-   ${BOLD_WHITE}• Parameters:${RESET_COLOR}
-     - ${GREEN}-img${RESET_COLOR}: List images instead of containers.
-   ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
-     ${YELLOW}docker ps -a${RESET_COLOR} / ${YELLOW}docker images${RESET_COLOR}
+dockero list [img]
+   • Purpose: List all Docker containers or images.
+   • Parameters:
+     - img: List images instead of containers.
+   • Equivalent Docker:
+     docker ps -a / docker images
 EOF
 }
 
 list() {
-  if [[ -n "${params[img]+set}" ]]; then
+  if [[ "${args[1]:-}" == "img" ]]; then
     ${DOCKERO_RUNTIME:-docker} images
   else
     log.setline "Container List"

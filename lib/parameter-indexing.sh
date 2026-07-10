@@ -43,10 +43,10 @@ while [[ $# -gt 0 ]]; do
 done
 }
 
-# 🔹 Access named parameters
+# Access named parameters
 # echo "Name param: ${params[name]}"
 # echo "Env param: ${params[env]}"
 
-# 🔹 Access by index
+# Access by index
 # echo "First positional arg: ${args[0]}"
 # echo "Second positional arg: ${args[1]}"

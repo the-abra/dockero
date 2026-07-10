@@ -4,7 +4,7 @@
 
 validate_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero validate ${GREEN}[path] [config-file]${RESET_COLOR}
+${BOLD_CYAN}dockero validate ${GREEN}[path] [config-file]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Validate .dockero and .dockero-compose config files.
    ${BOLD_WHITE}• What it checks:${RESET_COLOR} INI structure, required fields, container names, images, ports, paths.
 EOF

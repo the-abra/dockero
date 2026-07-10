@@ -4,7 +4,7 @@
 
 system_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero system ${GREEN}<service|config|info|cleanup|install> [options]${RESET_COLOR}
+${BOLD_CYAN}dockero system ${GREEN}<service|config|info|cleanup|install> [options]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} System integration and management.
    ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
      - ${GREEN}service${RESET_COLOR}   Manage containers as systemd services.
@@ -110,7 +110,7 @@ system_service() {
         service_file="/etc/systemd/system/$service_file_base"
     fi
     
-    log.setline "${BOLD_CYAN}⚙️ System Service Management: ${GREEN}$service_name${RESET_COLOR}"
+    log.setline "${BOLD_CYAN}System Service Management: ${GREEN}$service_name${RESET_COLOR}"
 
     case "$operation" in
         "create")
@@ -222,7 +222,7 @@ system_config() {
     mkdir -p "$config_dir"
     local config_file="$config_dir/config"
     
-    log.setline "${BOLD_CYAN}⚙️ Dockero Configuration Management${RESET_COLOR}"
+    log.setline "${BOLD_CYAN}Dockero Configuration Management${RESET_COLOR}"
 
     case "$operation" in
         "get")
@@ -410,7 +410,7 @@ system_cleanup() {
 system_install() {
     local location="${1:-/usr/local/bin}"
     
-    log.setline "${BOLD_CYAN}🚀 Dockero System Installation${RESET_COLOR}"
+    log.setline "${BOLD_CYAN}Dockero System Installation${RESET_COLOR}"
     log.info "Installing Dockero to: ${BOLD_YELLOW}$location${RESET_COLOR}."
     
     # --- Input Validation for location ---

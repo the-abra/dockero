@@ -2,7 +2,7 @@
 
 wizard_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero wizard ${GREEN}[start|setup|init|quickstart|beginner]${RESET_COLOR}
+${BOLD_CYAN}dockero wizard ${GREEN}[start|setup|init|quickstart|beginner]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Interactive setup assistant for beginners.
    ${BOLD_WHITE}• What it does:${RESET_COLOR} Guides through common use cases (web server, dev env, database).
 EOF
@@ -50,7 +50,7 @@ wizard_interactive() {
         return 1
     fi
     
-    log.done "Docker is available and running! 🎉"
+    log.done "Docker is available and running! "
     echo ""
     
     # Ask what they want to do
@@ -86,7 +86,7 @@ wizard_interactive() {
 }
 
 wizard_run_simple_server() {
-    log.setline "${BOLD_CYAN}🌐 Simple Web Server Setup${RESET_COLOR}"
+    log.setline "${BOLD_CYAN}Simple Web Server Setup${RESET_COLOR}"
     log.info "Setting up a simple web server..."
     log.info "This will:"
     log.sub "Pull the nginx:alpine image."
@@ -129,7 +129,7 @@ wizard_run_simple_server() {
 }
 
 wizard_run_dev_env() {
-    log.setline "${BOLD_CYAN}💻 Development Environment Setup${RESET_COLOR}"
+    log.setline "${BOLD_CYAN}Development Environment Setup${RESET_COLOR}"
     log.info "Setting up a development environment..."
     log.info "This will:"
     log.sub "Pull the node:16-alpine image."
@@ -248,7 +248,7 @@ wizard_run_database() {
 }
 
 wizard_explore_options() {
-    log.setline "${BOLD_CYAN}🗺️ Explore Dockero Options${RESET_COLOR}"
+    log.setline "${BOLD_CYAN}Explore Dockero Options${RESET_COLOR}"
     log.info "Here are some things you can do with Dockero:"
     echo ""
     log.info "Container Management:"

@@ -2,7 +2,7 @@
 
 help_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero help ${GREEN}[command]${RESET_COLOR}
+${BOLD_CYAN}dockero help ${GREEN}[command]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Show usage information and command list.
    ${BOLD_WHITE}• Usage:${RESET_COLOR} dockero help [command] - shows general help or specific command help
 EOF
@@ -12,7 +12,7 @@ _show_general_help() { # Renamed to a private helper
   log.setline "Dockero - V$DOCKERO_VERSION"
   log.info "Dockero - Simplified Docker CLI"
   echo -e "
-${BOLD_CYAN}Usage 🪬 :${RESET_COLOR}
+${BOLD_CYAN}Usage:${RESET_COLOR}
 
 ${BOLD_GREEN}Container Management:${RESET_COLOR}
   dockero create <name> [<image>] [-d] [--volume <host:container>] [--no-volume] [-p <port>]
@@ -20,7 +20,7 @@ ${BOLD_GREEN}Container Management:${RESET_COLOR}
   dockero start <container> [-c <command>]
   dockero stop <container> [--timeout <seconds>]
   dockero exec <command> [args...] <container>
-  dockero list [-img]
+  dockero list [img]
   dockero remove <container|image>[:tag]
   dockero rename <old-name>[:tag] <new-name>[:tag] [-img]
   dockero export <container-name>

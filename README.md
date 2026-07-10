@@ -10,36 +10,17 @@ The source code is modularly structured under the `lib/` directory for developer
 
 ---
 
-## Developer Guide: Compilation
-
-To build/compile the standalone execution script from the modular source files:
-
-```bash
-make build
-```
-
-This generates the compiled executable file at `dist/dockero`.
-
-> [!NOTE]
-> You can build and run all tests in one go by executing `make test` or `make dist`.
-
----
-
 ## Installation & Setup
 
 Since Dockero compiles down to a single standalone file, you can install the executable, man page documentation, and shell completions manually.
 
-### 1. Locate and Install the Executable
+### 1. Install the Executable
 
-The compiled file is created at `dist/dockero`. You can copy it to your system binaries directory or create a symbolic link:
+The compiled file is created at `dist/dockero`. You can copy it to your system binaries directory:
 
 ```bash
-# Option A: Copy the binary executable (Recommended)
 sudo cp dist/dockero /usr/local/bin/dockero
 sudo chmod +x /usr/local/bin/dockero
-
-# Option B: Create a symbolic link (Ideal for active development)
-sudo ln -sf "$(pwd)/dist/dockero" /usr/local/bin/dockero
 ```
 
 ### 2. Configure Shell Autocompletions

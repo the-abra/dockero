@@ -4,7 +4,7 @@
 
 compose_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero compose ${GREEN}<up|down|start|stop|restart|ps|logs>${RESET_COLOR}
+${BOLD_CYAN}dockero compose ${GREEN}<up|down|start|stop|restart|ps|logs>${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Manage multi-container apps from .dockero-compose files.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
      ${YELLOW}docker-compose up/down/start/stop/restart/ps/logs${RESET_COLOR}
@@ -446,7 +446,7 @@ compose_logs() {
         return 1
     fi
     
-    log.setline "${BOLD_CYAN}📜 Compose Logs${RESET_COLOR}"
+    log.setline "${BOLD_CYAN}Compose Logs${RESET_COLOR}"
 
     # If no service specified, show logs for all services, otherwise for specific service
     if [[ -z "$service_name_arg" ]]; then

@@ -2,7 +2,7 @@
 
 start_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero start ${GREEN}<container-name> [-c <command>]${RESET_COLOR}
+${BOLD_CYAN}dockero start ${GREEN}<container-name> [-c <command>]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Start an existing stopped container.
    ${BOLD_WHITE}• Parameters:${RESET_COLOR}
      - ${GREEN}-c <command>${RESET_COLOR}: Execute a command inside the container after starting.
@@ -38,7 +38,7 @@ start() {
     return 1
   fi
 
-  log.setline "${BOLD_CYAN}🚀 Starting Container: ${GREEN}$container_name${RESET_COLOR}"
+  log.setline "${BOLD_CYAN}Starting Container: ${GREEN}$container_name${RESET_COLOR}"
 
   # Check if container exists
   if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then # $container_name is validated

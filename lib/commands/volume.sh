@@ -2,7 +2,7 @@
 
 volume_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero volume ${GREEN}<subcommand> [args]${RESET_COLOR}
+${BOLD_CYAN}dockero volume ${GREEN}<subcommand> [args]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Manage Docker volumes.
    ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
      - ${GREEN}list / ls${RESET_COLOR}          List all volumes.
@@ -21,7 +21,7 @@ volume() {
 
   case "$subcmd" in
     list|ls)
-      log.setline "📦 Volumes"
+      log.setline "Volumes"
       ${DOCKERO_RUNTIME:-docker} volume ls
       log.endline ""
       ;;
@@ -32,7 +32,7 @@ volume() {
         log.hint "Usage: dockero volume create <name>"
         return 1
       fi
-      log.setline "📦 Create Volume: $vol_name"
+      log.setline "Create Volume: $vol_name"
       ${DOCKERO_RUNTIME:-docker} volume create "$vol_name"
       log.done "Volume '${BOLD}$vol_name${RESET_COLOR}' created."
       log.endline ""
@@ -44,7 +44,7 @@ volume() {
         log.hint "Usage: dockero volume remove <name>"
         return 1
       fi
-      log.setline "📦 Remove Volume: $vol_name"
+      log.setline "Remove Volume: $vol_name"
       ${DOCKERO_RUNTIME:-docker} volume rm "$vol_name"
       log.done "Volume '${BOLD}$vol_name${RESET_COLOR}' removed."
       log.endline ""
@@ -72,7 +72,7 @@ volume() {
       log.hint "  dockero create $container_name --volume $vol_spec"
       ;;
     prune)
-      log.setline "📦 Prune Unused Volumes"
+      log.setline "Prune Unused Volumes"
       log.warn "This will remove all unused volumes."
       ${DOCKERO_RUNTIME:-docker} volume prune -f
       log.done "Unused volumes pruned."

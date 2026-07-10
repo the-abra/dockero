@@ -20,7 +20,7 @@ NC='\e[0m'
 BOLD='\e[1m'
 
 print_section() {
-    echo -e "\n${BOLD}${BLUE}🔹 $1${NC}"
+    echo -e "\n${BOLD}${BLUE}$1${NC}"
 }
 
 pass() {

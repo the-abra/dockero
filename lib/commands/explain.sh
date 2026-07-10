@@ -2,7 +2,7 @@
 
 explain_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero explain ${GREEN}<command>${RESET_COLOR}
+${BOLD_CYAN}dockero explain ${GREEN}<command>${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Show what a Dockero command does and its equivalent Docker commands.
    ${BOLD_WHITE}• Usage:${RESET_COLOR} dockero explain <command>
 EOF

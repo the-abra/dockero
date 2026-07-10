@@ -4,7 +4,7 @@
 
 heal_help() {
 cat << EOF
-${BOLD_CYAN}🔹 dockero heal ${GREEN}<check|fix|auto|diagnose|cleanup|restore|watch|policy> [options]${RESET_COLOR}
+${BOLD_CYAN}dockero heal ${GREEN}<check|fix|auto|diagnose|cleanup|restore|watch|policy> [options]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Self-healing automation system.
    ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
      - ${GREEN}check [target]${RESET_COLOR}       Health checks (system, containers, networks).
@@ -69,7 +69,7 @@ heal_check() {
     local issues_found=0
     local fixes_available=0
 
-    log.setline "${BOLD_CYAN}🔍 Health Check System${RESET_COLOR}"
+    log.setline "${BOLD_CYAN}Health Check System${RESET_COLOR}"
 
     case "$target" in
         "system"|"all"|"")
@@ -437,7 +437,7 @@ heal_monitor() {
 heal_diagnose() {
     local issue_type="$1"
 
-    log.setline "${BOLD_CYAN}🔍 Deep Diagnosis${RESET_COLOR}"
+    log.setline "${BOLD_CYAN}Deep Diagnosis${RESET_COLOR}"
 
     case "$issue_type" in
         "startup"|"start")
@@ -798,7 +798,7 @@ heal_policy() {
         return 1
     fi
     
-    log.setline "${BOLD_CYAN}📋 Health Policy Management${RESET_COLOR}"
+    log.setline "${BOLD_CYAN}Health Policy Management${RESET_COLOR}"
     
     case "$action" in
         "list")
