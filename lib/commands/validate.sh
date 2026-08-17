@@ -22,12 +22,6 @@ _validate_file_path_basic() {
         log.error "Invalid path: '${RED}$path${RESET_COLOR}'. Path traversal sequences (..) are not allowed."
         return 1
     fi
-    # Disallow paths that are just '.' or '..'
-    if [[ "$path" == "." || "$path" == ".." ]]; then
-        log.error "Invalid path: '${RED}$path${RESET_COLOR}'. Cannot be '.' or '..'."
-        return 1
-    fi
-    # Further checks could be added for invalid characters, but this is a good start.
     return 0
 }
 

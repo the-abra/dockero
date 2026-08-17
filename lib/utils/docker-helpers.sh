@@ -23,7 +23,7 @@ image_pulling() { # Renamed from image_clonning for clarity
 }
 
 # Function to run a Docker container with various options
-# Arguments: container_name, image_name, detach_mode, cmd_args_str, volume_mount, port_mapping, restart_policy, user_name, user_gid
+# Arguments: container_name, image_name, detach_mode, cmd_args_str, volume_mount, port_mapping, restart_policy, user_name, user_gid, network_mode, env_var, env_file
 docker_run() {
   local container_name="$1"
   local image_name="$2"
@@ -35,6 +35,8 @@ docker_run() {
   local user_name="$8"
   local user_gid="$9"
   local network_mode="${10:-}"
+  local env_var="${11:-}"
+  local env_file="${12:-}"
 
   local -a cmd_args=()
   if [[ -n "$cmd_args_str" ]]; then
@@ -42,8 +44,6 @@ docker_run() {
   fi
 
   # --- Input Validation ---
-  # container_name and image_name are expected to be validated by calling script
-  
   if [[ -n "$port_mapping" ]]; then
       # Trim whitespace first
       port_mapping="${port_mapping#"${port_mapping%%[![:space:]]*}"}"
@@ -96,18 +96,24 @@ docker_run() {
 
   # Port mapping
   if [[ -n "$port_mapping" ]]; then
-      # If it's just a number, map it to the same port in the container
       if [[ "$port_mapping" =~ ^[0-9]+$ ]]; then
         docker_args+=(-p "${port_mapping}:${port_mapping}")
       else
-        # If it's already in format like "8080:80", use as is
         docker_args+=(-p "${port_mapping}")
       fi
   fi
 
-  # Volume mapping for project workspace if provided
+  # Volume mapping
   if [[ -n "$volume_mount" ]]; then
       docker_args+=(-v "$volume_mount")
+  fi
+
+  # Environment variables & files
+  if [[ -n "$env_var" ]]; then
+      docker_args+=(-e "$env_var")
+  fi
+  if [[ -n "$env_file" && -f "$env_file" ]]; then
+      docker_args+=(--env-file "$env_file")
   fi
 
   # Always add container name
@@ -161,8 +167,7 @@ docker_run() {
   # Execute ${DOCKERO_RUNTIME:-docker} run command
   ${DOCKERO_RUNTIME:-docker} run "${docker_args[@]}" "$image_name" "${cmd_args[@]}"
   
-  # For interactive containers, exit code may be non-zero even on success
-  # Check if container was actually created
+  # For interactive containers, check if container was actually created
   if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^${container_name}$"; then
     return 0
   fi

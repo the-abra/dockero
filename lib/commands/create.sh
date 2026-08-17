@@ -2,20 +2,26 @@
 
 create_help() {
 cat << EOF
-${BOLD_CYAN}dockero create ${GREEN}<name> [<image>] [-d] [--volume <host:container>] [--no-volume] [-p <port>] [--net <network>]${RESET_COLOR}
+${BOLD_CYAN}dockero create / dockero run ${GREEN}<name> [<image>] [-d] [-p <port>] [-v <vol>] [-e <VAR=val>] [--env-file <file>] [--net <net>]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Create and start a new container.
    ${BOLD_WHITE}• Parameters:${RESET_COLOR}
      - ${GREEN}<name>${RESET_COLOR}: Container name.
      - ${GREEN}[<image>]${RESET_COLOR}: Docker image (defaults to <name>).
-     - ${GREEN}-d, --detach${RESET_COLOR}: Run in background.
-     - ${GREEN}--volume <host:container>${RESET_COLOR}: Override default volume mount.
-     - ${GREEN}--no-volume${RESET_COLOR}: Disable volume mounting.
-     - ${GREEN}-p <port>${RESET_COLOR}: Port mapping (host:container or single port).
-     - ${GREEN}--net, --network <network>${RESET_COLOR}: Network mode (e.g. host, bridge, none, or a custom network name).
-   ${BOLD_WHITE}• Default volume:${RESET_COLOR} /opt/<name>:/workspace
+     - ${GREEN}-d, --detach${RESET_COLOR}: Run in background (detached).
+     - ${GREEN}-p, --port <port>${RESET_COLOR}: Port mapping (e.g. 8080:80 or 3000).
+     - ${GREEN}-v, --volume <host:container>${RESET_COLOR}: Volume mount (default: /opt/<name>:/workspace).
+     - ${GREEN}--no-volume${RESET_COLOR}: Disable default volume mounting.
+     - ${GREEN}-e, --env <VAR=val>${RESET_COLOR}: Set an environment variable.
+     - ${GREEN}--env-file <file>${RESET_COLOR}: Read in a file of environment variables.
+     - ${GREEN}--net, --network <net>${RESET_COLOR}: Network mode (bridge, host, or custom network).
+     - ${GREEN}--restart <policy>${RESET_COLOR}: Restart policy (no, always, on-failure, unless-stopped).
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
      ${YELLOW}docker run -it -v /opt/<name>:/workspace --name <name> <image>${RESET_COLOR}
 EOF
+}
+
+run_help() {
+  create_help
 }
 
 create() {
@@ -51,10 +57,12 @@ create() {
   local port_mapping="${params[p]:-${params[port]:-}}"
   local restart_policy="${params[restart]:-}"
   local network_mode="${params[net]:-${params[network]:-}}"
+  local env_var="${params[e]:-${params[env]:-}}"
+  local env_file="${params[env-file]:-}"
 
   if [[ -z "$container_name" ]]; then
     log.error "Container name is required."
-    log.hint "Usage: dockero create <name> [<image>] [<command>] [-d] [--volume <host:container>] [--no-volume] [-p <port>]"
+    log.hint "Usage: dockero create <name> [<image>] [<command>] [-d] [-p <port>] [-v <vol>] [-e <VAR=val>]"
     return 1
   fi
 
@@ -98,7 +106,7 @@ create() {
     log.info "Volume: ${BOLD}$volume_mount${RESET_COLOR}"
   fi
 
-  if ! docker_run "$container_name" "$image_name" "$detach_mode" "$command_args_str" "$volume_mount" "$port_mapping" "$restart_policy" "" "" "$network_mode"; then
+  if ! docker_run "$container_name" "$image_name" "$detach_mode" "$command_args_str" "$volume_mount" "$port_mapping" "$restart_policy" "" "" "$network_mode" "$env_var" "$env_file"; then
     log.error "Failed to create container: ${BOLD}$container_name${RESET_COLOR}."
     log.endline "Dockero Create: $container_name"
     return 1
@@ -107,4 +115,12 @@ create() {
   log.done "Container '${BOLD}$container_name${RESET_COLOR}' created successfully."
   log.endline "Dockero Create: $container_name"
   return 0
+}
+
+run() {
+  if [[ -z "${args[1]:-}" && -f "./.dockero" ]]; then
+    setup_run "."
+  else
+    create "$@"
+  fi
 }

@@ -119,6 +119,29 @@ load_command() {
 
   local func_name="$cmd_name_from_global_args"
 
+  # Map common aliases for native Docker familiarity
+  case "$func_name" in
+    "run")
+      if [[ ${#args[@]} -le 1 && -f "./.dockero" ]]; then
+        func_name="setup"
+      else
+        func_name="create"
+      fi
+      ;;
+    "ps"|"ls")
+      func_name="list"
+      ;;
+    "rm"|"rmi")
+      func_name="remove"
+      ;;
+    "logs")
+      func_name="monitor_logs"
+      ;;
+    "inspect")
+      func_name="show"
+      ;;
+  esac
+
   # 2. Check if the function is already loaded (compiled built-in or loaded plugin)
   if declare -f "$func_name" >/dev/null 2>&1; then
       "$func_name" "${args[@]:1}"

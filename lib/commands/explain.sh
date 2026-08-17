@@ -39,6 +39,13 @@ explain() {
     log.setline "${BOLD_CYAN}Command Explanation: ${YELLOW}$command_to_explain${RESET_COLOR}"
 
     local help_fn="${command_to_explain}_help"
+    case "$command_to_explain" in
+        "run") help_fn="create_help" ;;
+        "ps"|"ls") help_fn="list_help" ;;
+        "rm"|"rmi") help_fn="remove_help" ;;
+        "logs") help_fn="monitor_help" ;;
+        "inspect") help_fn="show_help" ;;
+    esac
 
     # 1. If help function is already declared (built-ins in compiled script)
     if declare -f "$help_fn" >/dev/null 2>&1; then

@@ -248,26 +248,23 @@ sync_watch() {
         # Wait for file changes in the current directory
         # Using a subshell to avoid breaking the main script's IFS
         if ! (inotifywait -r -e modify,create,delete,move --format '%w%f %e' "$host_path" 2>/dev/null | while IFS= read -r line; do
-            # Split the line into file and event
             local file_path_and_name
             file_path_and_name=$(echo "$line" | cut -d' ' -f1)
             local event
             event=$(echo "$line" | cut -d' ' -f2-)
             
-            # Extract just the filename from the path for safe tar usage
-            local file_name
-            file_name=$(basename "$file_path_and_name")
+            # Extract relative path from host root
+            local rel_path="${file_path_and_name#$host_path/}"
+            rel_path="${rel_path#./}"
 
-            log.info "File event: ${BOLD_YELLOW}$event${RESET_COLOR} on ${BOLD_YELLOW}$file_path_and_name${RESET_COLOR}"
+            log.info "File event: ${BOLD_YELLOW}$event${RESET_COLOR} on ${BOLD_YELLOW}$rel_path${RESET_COLOR}"
 
-            # Perform a quick sync
-            # Using basename "$file_path_and_name" to ensure only the file name is passed to tar
-            # and -C "$host_path" to ensure it operates within the designated directory.
-            if tar -cf - -C "$host_path" "$file_name" 2>/dev/null | \
-               ${DOCKERO_RUNTIME:-docker} exec -i "$container_name" tar -xf - -C "$container_path" 2>/dev/null; then # Paths validated
-                log.sub "Synced: ${GREEN}$file_path_and_name${RESET_COLOR}"
+            # Perform a quick sync preserving relative structure
+            if tar -cf - -C "$host_path" "$rel_path" 2>/dev/null | \
+               ${DOCKERO_RUNTIME:-docker} exec -i "$container_name" tar -xf - -C "$container_path" 2>/dev/null; then
+                log.sub "Synced: ${GREEN}$rel_path${RESET_COLOR}"
             else
-                log.warn "Failed to sync: ${RED}$file_path_and_name${RESET_COLOR}."
+                log.warn "Failed to sync: ${RED}$rel_path${RESET_COLOR}."
             fi
         done); then
             # Break the loop if inotifywait fails (e.g. directory no longer exists)

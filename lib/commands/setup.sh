@@ -5,13 +5,13 @@
 
 setup_help() {
 cat << EOF
-${BOLD_CYAN}dockero setup ${GREEN}[init|run|update|teardown] [path] [--dry-run]${RESET_COLOR}
-   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Set up a containerized project from a .dockero config file.
+${BOLD_CYAN}dockero setup ${GREEN}[init|run|update|teardown] [path] [--dry-run] [--preset <type>]${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} Set up and manage a containerized project from a .dockero config file.
    ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
-     - ${GREEN}init [path]${RESET_COLOR}      Create a new .dockero config file.
-     - ${GREEN}run [path]${RESET_COLOR}       Run the project defined in .dockero (default).
-     - ${GREEN}update [path]${RESET_COLOR}    Update a running project's container.
-     - ${GREEN}teardown [path]${RESET_COLOR}  Stop and remove the project's container.
+     - ${GREEN}init [path] [--preset <type>]${RESET_COLOR}  Create a new .dockero config (presets: node, python, go, rust, php, ruby, java, nginx, redis, postgres, mysql).
+     - ${GREEN}run [path] [--dry-run]${RESET_COLOR}         Run the project defined in .dockero (default).
+     - ${GREEN}update [path]${RESET_COLOR}                  Rebuild and update a running project container.
+     - ${GREEN}teardown [path]${RESET_COLOR}                Stop and remove the project container.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
      ${YELLOW}docker run [config from .dockero file]${RESET_COLOR}
 EOF

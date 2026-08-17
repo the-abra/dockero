@@ -15,15 +15,13 @@ EOF
 _compose_get_services() {
     local compose_file="$1"
     local -a services=()
-    while IFS= read -r line; do
-        if [[ $line =~ ^\[.*\]$ ]]; then
-            local service_name
-            service_name=$(echo "$line" | sed 's/\[service://g' | sed 's/\]//g' | cut -d':' -f2) # Fixed service_name extraction
-            if [[ -n "$service_name" && "$service_name" != "global" ]]; then
-                services+=("$service_name")
+    if [[ -f "$compose_file" ]]; then
+        while IFS= read -r line; do
+            if [[ $line =~ ^\[service:([^]]+)\]$ ]]; then
+                services+=("${BASH_REMATCH[1]}")
             fi
-        fi
-    done < <(grep '^\[service:' "$compose_file" 2>/dev/null || grep '^\[.*\]$' "$compose_file") # SC2002: Don't use 'cat' to pipe into 'grep'
+        done < "$compose_file"
+    fi
     echo "${services[@]}"
 }
 
