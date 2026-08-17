@@ -8,11 +8,11 @@
 all: build test
 
 build:
-	@chmod +x bin/build.sh
+	@chmod +x bin/build.sh 2>/dev/null || true
 	@./bin/build.sh
 
 test: build
-	@chmod +x bin/test_improvements.sh bin/test_commands.sh
+	@chmod +x bin/test_improvements.sh bin/test_commands.sh 2>/dev/null || true
 	@./bin/test_improvements.sh
 	@./bin/test_commands.sh
 

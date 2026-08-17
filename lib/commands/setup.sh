@@ -88,7 +88,10 @@ setup_run() {
     name=$(inipars.get "default" "name" "$CONF_FILE")
     image=$(inipars.get "default" "image" "$CONF_FILE")
     command_str=$(inipars.get "default" "command" "$CONF_FILE")
-    volume_mount=$(inipars.get "volumes" "env" "$CONF_FILE") # 'env' key used for volume_mount
+    volume_mount=$(inipars.get "volumes" "mount" "$CONF_FILE")
+    if [[ -z "$volume_mount" ]]; then
+        volume_mount=$(inipars.get "volumes" "env" "$CONF_FILE") # 'env' key fallback
+    fi
     port_mapping=$(inipars.get "volumes" "port" "$CONF_FILE")
     restart_policy=$(inipars.get "default" "restart_policy" "$CONF_FILE")
     user_name=$(inipars.get "user" "name" "$CONF_FILE")

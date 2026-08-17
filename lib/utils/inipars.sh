@@ -7,13 +7,8 @@
 #   $CONF_FILE if setted, you dont need to set [file] again
 
 # Helper function to escape regex metacharacters for sed/awk
-# _inipars_escape_regex() {
-#   echo "$1" | sed -e 's/[^^$.*+?|()\[{]/\\&/g'
-# }
-# Helper function to escape regex metacharacters for sed/awk
-# shellcheck disable=SC2001
 _inipars_escape_regex() {
-  echo "$1" | sed -e 's/[^^$.*+?|()\[{]/\\&/g'
+  printf '%s\n' "$1" | sed -e 's/[][\\.^$*+?|(){}]/\\&/g'
 }
 
 # Helper: Ensure file exists; if not, create it with the initial section and key/value
@@ -77,8 +72,6 @@ _inipars_update_key_in_file() {
   local key="$4"             # Original, unescaped key
   local value="$5"           # Original, unescaped value
 
-  # Use awk to update the key's value within its section
-  # This approach is more robust for passing variables and avoids sed's string interpolation issues.
   awk -v target_section="[$escaped_section]" \
       -v target_key_pattern="^[ \t]*${escaped_key}[ \t]*=" \
       -v new_line="${key} = ${value}" \
@@ -144,14 +137,21 @@ inipars.get() {
   local escaped_section
   escaped_section=$(_inipars_escape_regex "$section")
 
-  awk -F '=' -v section_name="$escaped_section" -v key_name="$escaped_key" '
+  awk -v section_name="$escaped_section" -v key_name="$escaped_key" '
     /^\[.*\]$/ {
-      current_section = gensub(/\[|\]/, "", "g", $0)
+      current_section = $0
+      gsub(/^\[|\]$/, "", current_section)
+      next
     }
-    current_section == section_name && $1 ~ "^"key_name"[ \t]*$" {
-      gsub(/^[ \t]+|[ \t]+$/, "", $2)
-      print $2
-      exit
+    current_section == section_name {
+      line = $0
+      sub(/^[ \t]+/, "", line)
+      if (line ~ "^" key_name "[ \t]*=") {
+        sub("^" key_name "[ \t]*=[ \t]*", "", line)
+        sub(/[ \t]+$/, "", line)
+        print line
+        exit
+      }
     }
   ' "$file"
 }
@@ -163,15 +163,19 @@ inipars.section() {
   local escaped_section
   escaped_section=$(_inipars_escape_regex "$section")
 
-  awk -F '=' -v section_name="$escaped_section" '
+  awk -v section_name="$escaped_section" '
     /^\[.*\]$/ {
-      current_section = gensub(/\[|\]/, "", "g", $0)
+      current_section = $0
+      gsub(/^\[|\]$/, "", current_section)
       next
     }
-    current_section == section_name && $1 !~ /^[#;]/ {
-      gsub(/^[ \t]+|[ \t]+$/, "", $1)
-      gsub(/^[ \t]+|[ \t]+$/, "", $2)
-      print $1 "=" $2
+    current_section == section_name && $0 !~ /^[ \t]*[#;]/ {
+      line = $0
+      sub(/^[ \t]+/, "", line)
+      sub(/[ \t]+$/, "", line)
+      if (line ~ /=/) {
+        print line
+      }
     }
   ' "$file"
 }

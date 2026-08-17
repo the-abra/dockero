@@ -58,5 +58,5 @@ mkdir -p "$DIST_DIR"
 
 } > "$OUTPUT_FILE"
 
-chmod +x "$OUTPUT_FILE"
+chmod +x "$OUTPUT_FILE" 2>/dev/null || true
 echo "Successfully compiled Dockero into ${OUTPUT_FILE} (using Bash)"
