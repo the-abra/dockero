@@ -50,7 +50,7 @@ env() {
             env_show
             ;;
         "create")
-            env_create "${args[2]:-./}"
+            env_create "${args[2]:-}"
             ;;
         "delete")
             env_delete "${args[2]:-}"

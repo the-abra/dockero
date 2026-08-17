@@ -96,7 +96,6 @@ show_commands() {
                 "start") desc="Start containers" ;;
                 "stop") desc="Stop containers" ;;
                 "setup") desc="Project container setup" ;;
-                "create") desc="Create resource (e.g., secrets)" ;;
                 "remove") desc="Remove containers/images" ;;
                 "rename") desc="Rename containers/images" ;;
                 "net") desc="Manage Docker networks" ;;

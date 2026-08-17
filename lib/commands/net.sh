@@ -174,8 +174,8 @@ net() {
     network_id=$(echo "$network_info" | jq -r '.Id')
     network_driver=$(echo "$network_info" | jq -r '.Driver')
     network_scope=$(echo "$network_info" | jq -r '.Scope')
-    network_subnet=$(echo "$network_info" | jq -r '.IPAM.Config[0].Subnet')
-    network_gateway=$(echo "$network_info" | jq -r '.IPAM.Config[0].IPAM.Config[0].Gateway') # Corrected path
+    network_subnet=$(echo "$network_info" | jq -r '.IPAM.Config[0].Subnet // empty')
+    network_gateway=$(echo "$network_info" | jq -r '.IPAM.Config[0].Gateway // empty')
     
     log.info "Network Details:"
     log.sub "ID:      ${BOLD}$network_id${RESET_COLOR}"

@@ -48,7 +48,7 @@ container_renaming() {
     # Check if current_name exists as a container
     if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$current_name$"; then
         log.info "Renaming container '${BOLD_YELLOW}$current_name${RESET_COLOR}' to '${BOLD_YELLOW}$new_name${RESET_COLOR}'."
-        if docker rename "$current_name" "$new_name"; then # Names are validated
+        if ${DOCKERO_RUNTIME:-docker} rename "$current_name" "$new_name"; then # Names are validated
             log.done "Container '${BOLD_GREEN}$current_name${RESET_COLOR}' renamed to '${BOLD_GREEN}$new_name${RESET_COLOR}' successfully."
             return 0
         else

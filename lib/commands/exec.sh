@@ -18,13 +18,13 @@ EOF
 }
 
 exec() {
-  if [[ ${#full_arr[@]} -lt 3 ]]; then
+  if [[ $# -lt 2 ]]; then
     log.hint "Usage: ${BOLD_YELLOW}dockero exec <command> [args...] <container>${RESET_COLOR}"
     return 1
   fi
 
-  local container_name="${full_arr[-1]}"
-  local command_args=("${full_arr[@]:1:${#full_arr[@]}-2}")
+  local container_name="${!#}"
+  local -a command_args=("${@:1:$#-1}")
 
   if ! validate_container_name "$container_name"; then
     return 1

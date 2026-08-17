@@ -365,11 +365,11 @@ system_cleanup() {
     case "$target" in
         "containers")
             log.info "Removing stopped containers..."
-            docker container prune -f > /dev/null && log.done "Stopped containers removed." || log.error "Failed to remove stopped containers."
+            ${DOCKERO_RUNTIME:-docker} container prune -f > /dev/null && log.done "Stopped containers removed." || log.error "Failed to remove stopped containers."
             ;;
         "images")
             log.info "Removing unused images..."
-            docker image prune -f > /dev/null && log.done "Unused images removed." || log.error "Failed to remove unused images."
+            ${DOCKERO_RUNTIME:-docker} image prune -f > /dev/null && log.done "Unused images removed." || log.error "Failed to remove unused images."
             ;;
         "volumes")
             log.info "Removing unused volumes..."

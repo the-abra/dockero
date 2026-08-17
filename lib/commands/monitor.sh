@@ -156,7 +156,7 @@ monitor_health() {
             status_color="${COLOR_WARN}"
         fi
 
-        log.sub "Status: $status"
+        log.sub "Status: ${status_color}${status}${RESET_COLOR}"
         log.sub "Failing Streak: $failing_streak"
 
         if [[ -n "$log_entries" ]]; then

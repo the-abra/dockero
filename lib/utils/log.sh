@@ -52,7 +52,7 @@ _log_prefix() {
     fi
 
     if [[ "$_DOCKERO_HAS_COLORS" == "true" ]]; then
-        printf '%s%s%s%s%s%s' \
+        printf '%s%s%s%s' \
             "$timestamp_str" \
             "${DIM}${COLOR_SUB}[${RESET_COLOR}" \
             "${BOLD}${level_color}${level_text}${RESET_COLOR}" \
