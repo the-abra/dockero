@@ -223,7 +223,7 @@ monitor_watch() {
         echo -e "${COLOR_DATE}$(date): Monitoring containers...\n${RESET_COLOR}"
         "${docker_stats_cmd[@]}"
         sleep "$interval"
-        (( count++ ))
+        (( count++ )) || true
     done
 
     log.done "Monitoring session ended."

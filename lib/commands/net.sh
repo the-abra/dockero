@@ -30,14 +30,13 @@ _net_validate_name() {
 }
 
 net() {
-  local subcmd="${args[1]:-}" # Safely get subcmd
-  local name1="${args[2]:-}" # Safely get name1
-  local name2="${args[3]:-}" # Safely get name2
+  local subcmd="${args[1]:-}"
+  local name1="${args[2]:-}"
+  local name2="${args[3]:-}"
 
-  # Ensure no unexpected params
-  [[ -z "${args[1]:-}" ]] && log.hint "net <command> [<args>]" && return 1
-  if [[ -n "${params[*]}" ]]; then
-      log.warn "The net command does not accept additional parameters."
+  if [[ -z "$subcmd" ]]; then
+      log.error "Subcommand required for net."
+      log.hint "Usage: ${BOLD_YELLOW}dockero net <create|delete|connect|disconnect|rename|prune|inspect|list>${RESET_COLOR}"
       return 1
   fi
 

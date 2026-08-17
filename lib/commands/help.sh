@@ -8,47 +8,46 @@ ${BOLD_CYAN}dockero help ${GREEN}[command]${RESET_COLOR}
 EOF
 }
 
-_show_general_help() { # Renamed to a private helper
-  log.setline "Dockero - V$DOCKERO_VERSION"
-  log.info "Dockero - Simplified Docker CLI"
+_show_general_help() {
+  log.setline "Dockero - v$DOCKERO_VERSION"
+  log.info "Dockero - Simplified Linux Docker & Podman CLI"
   echo -e "
 ${BOLD_CYAN}Usage:${RESET_COLOR}
+  dockero <command> [options] [arguments]
 
-${BOLD_GREEN}Container Management:${RESET_COLOR}
-  dockero create <name> [<image>] [-d] [--volume <host:container>] [--no-volume] [-p <port>]
-  dockero volume <list|create|remove|inspect|prune>
+${BOLD_GREEN}Container Lifecycle:${RESET_COLOR}
+  dockero run <name> [image] [-d] [-p <port>] [-e <VAR=val>] [--env-file <file>]
+  dockero create <name> [image] [-d] [-p <port>] [--volume <host:container>]
   dockero start <container> [-c <command>]
-  dockero stop <container> [--timeout <seconds>]
+  dockero stop <container> [-t <seconds>]
   dockero exec <command> [args...] <container>
-  dockero list [img]
-  dockero remove <container|image>[:tag]
+  dockero list [img] (aliases: ps, ls)
+  dockero remove <container|image>[:tag] (alias: rm)
   dockero rename <old-name>[:tag] <new-name>[:tag] [-img]
-  dockero export <container-name>
+  dockero inspect <container|image|volume|network>
+  dockero export <container-name> [-o <path.tar>]
   dockero import </path/to/archive.tar>
 
-${BOLD_GREEN}Project & Environment Setup:${RESET_COLOR}
-  dockero setup <project-path>
-  dockero env <list|use|show|create|delete>
+${BOLD_GREEN}Project & Multi-Container Setup:${RESET_COLOR}
+  dockero setup <init|run|update|teardown> [path] [--preset <name>]
   dockero compose <up|down|start|stop|restart|ps|logs>
-
-${BOLD_GREEN}Networking & Storage:${RESET_COLOR}
-  dockero net <create|delete|connect|disconnect|inspect|list|prune>
-  dockero volume <list|create|remove|inspect|attach|prune>
-
-${BOLD_GREEN}Monitoring & Management:${RESET_COLOR}
-  dockero monitor <top|stats|health|logs|watch>
-  dockero registry <login|push|pull|list|search|logout>
-  dockero secrets <create|list|show|remove>
-  dockero system <service|config|info|cleanup|install>
-  dockero heal <check|fix|auto|diagnose|cleanup>
   dockero validate [path] [config-file]
+
+${BOLD_GREEN}Storage & Networking:${RESET_COLOR}
+  dockero volume <list|create|remove|inspect|attach|prune>
+  dockero net <create|delete|connect|disconnect|inspect|list|prune>
+  dockero registry <login|push|pull|list|search|logout>
+
+${BOLD_GREEN}Linux System, Monitoring & Healing:${RESET_COLOR}
+  dockero dashboard (quick overview)
+  dockero monitor <top|stats|health|logs|watch>
+  dockero system <service|config|info|cleanup|install|dev>
+  dockero heal <check|fix|auto|diagnose|cleanup|restore>
   dockero plugin <list|install|remove>
 
-${BOLD_GREEN}Learning & Help:${RESET_COLOR}
-  dockero explain <command>
-  dockero show <commands|dashboard|demo|visual>
-  dockero learn <basic|intermediate|advanced|examples>
-  dockero wizard [start|setup|init]
+${BOLD_GREEN}Documentation & Help:${RESET_COLOR}
+  dockero explain <command> (or dockero <command> -h)
+  dockero version
 "
   log.hint "For detailed explanations of any command, use '${BOLD_YELLOW}dockero explain <command>${RESET_COLOR}'."
   log.endline ""
@@ -56,16 +55,12 @@ ${BOLD_GREEN}Learning & Help:${RESET_COLOR}
 }
 
 help() {
-  # This function is now only explicitly called as `dockero help <command>`
-  # The global -h flag is handled in dockero directly calling explain.
-
-  local target_command="${args[1]:-}" # Check for `dockero help <command>` format
+  local target_command="${args[1]:-}"
 
   if [[ -z "$target_command" ]]; then
-      _show_general_help # No specific command given, show general help
+      _show_general_help
   else
-      # We have a specific command. Redirect to explain directly.
-      explain "$target_command" "${args[@]:2}" # Pass the target command and any further args
+      explain "$target_command" "${args[@]:2}"
   fi
   exit 0
 }

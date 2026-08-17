@@ -79,10 +79,10 @@ heal_check() {
             log.sub "Checking Docker daemon..."
             if ! command -v docker &> /dev/null; then
                 log.error "Docker not installed."
-                ((issues_found++))
-            elif ! ${DOCKERO_RUNTIME:-docker} ps -q &> /dev/null; then # Faster check
+                ((issues_found++)) || true
+            elif ! ${DOCKERO_RUNTIME:-docker} ps -q &> /dev/null; then
                 log.error "Docker daemon not running."
-                ((issues_found++))
+                ((issues_found++)) || true
             else
                 log.done "Docker daemon OK."
             fi
@@ -96,14 +96,14 @@ heal_check() {
                 disk_usage=$(df "$docker_root" | awk 'NR==2 {print $5}' | sed 's/%//')
                 if [[ "$disk_usage" -gt 90 ]]; then
                     log.warn "Docker directory >90% full: ${disk_usage}% used."
-                    ((issues_found++))
-                    ((fixes_available++))
+                    ((issues_found++)) || true
+                    ((fixes_available++)) || true
                 else
                     log.done "Disk space OK (${disk_usage}% used)."
                 fi
             else
                 log.warn "Docker root directory not found: ${docker_root}"
-                ((issues_found++))
+                ((issues_found++)) || true
             fi
 
             # Check for stopped containers
@@ -112,8 +112,8 @@ heal_check() {
             stopped_containers_count=$(${DOCKERO_RUNTIME:-docker} ps -a --filter "status=exited" -q | wc -l)
             if [[ "$stopped_containers_count" -gt 20 ]]; then
                 log.warn "${stopped_containers_count} stopped containers found."
-                ((issues_found++))
-                ((fixes_available++))
+                ((issues_found++)) || true
+                ((fixes_available++)) || true
             elif [[ "$stopped_containers_count" -gt 0 ]]; then
                 log.info "${stopped_containers_count} stopped containers."
             else
@@ -126,8 +126,8 @@ heal_check() {
             dangling_images_count=$(${DOCKERO_RUNTIME:-docker} images -f "dangling=true" -q | wc -l)
             if [[ "$dangling_images_count" -gt 5 ]]; then
                 log.warn "${dangling_images_count} dangling images found."
-                ((issues_found++))
-                ((fixes_available++))
+                ((issues_found++)) || true
+                ((fixes_available++)) || true
             else
                 log.done "No dangling images."
             fi
@@ -138,8 +138,8 @@ heal_check() {
             unused_volumes_count=$(${DOCKERO_RUNTIME:-docker} volume ls -q -f "dangling=true" | wc -l)
             if [[ "$unused_volumes_count" -gt 5 ]]; then
                 log.warn "${unused_volumes_count} unused volumes found."
-                ((issues_found++))
-                ((fixes_available++))
+                ((issues_found++)) || true
+                ((fixes_available++)) || true
             else
                 log.done "No unused volumes."
             fi

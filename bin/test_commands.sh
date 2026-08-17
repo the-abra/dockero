@@ -43,9 +43,9 @@ else
     fail "Basic help command execution (-h)"
 fi
 
-# Test new commands exist in help
+# Test active commands exist in help
 print_section "Subcommand Discovery"
-for cmd in registry secrets monitor wizard setup compose env validate system heal volume; do
+for cmd in registry monitor setup compose validate system heal volume net inspect export import; do
     if "$DOCKERO" -h | grep -q "$cmd"; then
         pass "Subcommand '$cmd' listed in help manual"
     else
@@ -87,12 +87,12 @@ else
     fail "Alias 'ls' lists containers cleanly without error"
 fi
 
-# Test dashboard and show command
-print_section "Dashboard & Show Display"
-if "$DOCKERO" show dashboard > /dev/null 2>&1; then
-    pass "Show dashboard layout render"
+# Test dashboard and inspect command
+print_section "Dashboard & Inspect Display"
+if "$DOCKERO" inspect -h > /dev/null 2>&1; then
+    pass "Inspect command help execution"
 else
-    fail "Show dashboard layout render"
+    fail "Inspect command help execution"
 fi
 
 if "$DOCKERO" dashboard > /dev/null 2>&1; then

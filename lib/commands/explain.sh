@@ -15,8 +15,8 @@ explain() {
         log.hint "Usage: ${BOLD_YELLOW}explain <command>${RESET_COLOR}"
         log.sub "Shows what a Dockero command does and the equivalent Docker commands."
         
-        # Hardcoded list of built-in subcommands plus dynamic user plugins
-        local builtins="compose,create,dashboard,env,exec,explain,export,heal,help,import,learn,list,monitor,net,plugin,registry,remove,rename,secrets,setup,show,start,stop,system,validate,volume,wizard"
+        # Hardcoded list of active built-in subcommands plus dynamic user plugins
+        local builtins="compose,create,dashboard,exec,explain,export,heal,help,import,inspect,list,monitor,net,plugin,registry,remove,rename,setup,start,stop,system,validate,volume"
         local user_plugins=""
         if [[ -d "${HOME}/.dockero/commands" ]]; then
             user_plugins=$(find "${HOME}/.dockero/commands" -maxdepth 1 -name "*.sh" 2>/dev/null | sed 's|.*/||; s|\.sh$||' | sort | tr '\n' ',' | sed 's/,$//' || true)
@@ -44,7 +44,7 @@ explain() {
         "ps"|"ls") help_fn="list_help" ;;
         "rm"|"rmi") help_fn="remove_help" ;;
         "logs") help_fn="monitor_help" ;;
-        "inspect") help_fn="show_help" ;;
+        "inspect") help_fn="inspect_help" ;;
     esac
 
     # 1. If help function is already declared (built-ins in compiled script)

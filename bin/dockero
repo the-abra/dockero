@@ -137,7 +137,7 @@ load_command() {
       func_name="monitor_logs"
       ;;
     "inspect")
-      func_name="show"
+      func_name="inspect"
       ;;
   esac
 

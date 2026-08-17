@@ -213,7 +213,7 @@ compose_up() {
                         break
                     fi
                     sleep 1
-                    ((count++))
+                    ((count++)) || true
                 done
                 if [[ $count -eq $max_wait ]]; then
                     log.error "Dependency ${RED}$dep_service${RESET_COLOR} not ready after ${max_wait} seconds."
