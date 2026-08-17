@@ -4,17 +4,17 @@
 
 system_help() {
 cat << EOF
-dockero system <service|config|info|cleanup|install|dev> [options]
-   • Purpose: System integration and management.
-   • Subcommands:
-     - service   Manage containers as systemd services.
-     - config    Manage Dockero configuration (get/set/list/reset).
-     - info      Display system and Dockero environment info.
-     - cleanup   Clean up Docker resources.
-     - install   Install Dockero to a system location.
-     - dev       Convert installation to development symlinked setup.
-   • Equivalent Docker:
-     docker system prune / docker info
+${BOLD_CYAN}dockero system ${GREEN}<service|config|info|cleanup|install|dev> [options]${RESET_COLOR}
+   ${BOLD_WHITE}• Purpose:${RESET_COLOR} System integration and management.
+   ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
+     - ${GREEN}service${RESET_COLOR}   Manage containers as systemd services.
+     - ${GREEN}config${RESET_COLOR}    Manage Dockero configuration (get/set/list/reset).
+     - ${GREEN}info${RESET_COLOR}      Display system and Dockero environment info.
+     - ${GREEN}cleanup${RESET_COLOR}   Clean up Docker resources.
+     - ${GREEN}install${RESET_COLOR}   Install Dockero to a system location.
+     - ${GREEN}dev${RESET_COLOR}       Convert installation to development symlinked setup.
+   ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
+     ${YELLOW}docker system prune / docker info${RESET_COLOR}
 EOF
 }
 
@@ -365,15 +365,27 @@ system_cleanup() {
     case "$target" in
         "containers")
             log.info "Removing stopped containers..."
-            ${DOCKERO_RUNTIME:-docker} container prune -f > /dev/null && log.done "Stopped containers removed." || log.error "Failed to remove stopped containers."
+            if ${DOCKERO_RUNTIME:-docker} container prune -f > /dev/null; then
+                log.done "Stopped containers removed."
+            else
+                log.error "Failed to remove stopped containers."
+            fi
             ;;
         "images")
             log.info "Removing unused images..."
-            ${DOCKERO_RUNTIME:-docker} image prune -f > /dev/null && log.done "Unused images removed." || log.error "Failed to remove unused images."
+            if ${DOCKERO_RUNTIME:-docker} image prune -f > /dev/null; then
+                log.done "Unused images removed."
+            else
+                log.error "Failed to remove unused images."
+            fi
             ;;
         "volumes")
             log.info "Removing unused volumes..."
-            ${DOCKERO_RUNTIME:-docker} volume prune -f > /dev/null && log.done "Unused volumes removed." || log.error "Failed to remove unused volumes."
+            if ${DOCKERO_RUNTIME:-docker} volume prune -f > /dev/null; then
+                log.done "Unused volumes removed."
+            else
+                log.error "Failed to remove unused volumes."
+            fi
             ;;
         "networks")
             log.info "Removing unused networks using ${BOLD_YELLOW}dockero net prune${RESET_COLOR}..."
@@ -385,14 +397,20 @@ system_cleanup() {
             ;;
         "all")
             log.info "Removing all unused resources (containers, images, volumes, networks)..."
-            ${DOCKERO_RUNTIME:-docker} system prune -f --volumes > /dev/null && log.done "All unused resources removed." || log.error "Failed to remove all unused resources."
+            if ${DOCKERO_RUNTIME:-docker} system prune -f --volumes > /dev/null; then
+                log.done "All unused resources removed."
+            else
+                log.error "Failed to remove all unused resources."
+            fi
             ;;
         "temp")
             log.info "Cleaning up temporary files..."
             local removed_count=0
             while IFS= read -r -d $'\0' file; do
-                rm -f "$file" && ((removed_count++))
-            done < <(find /tmp -maxdepth 1 -name "dockero_*" -print0 2>/dev/null) # Clean dockero-specific temp files
+                if rm -f "$file"; then
+                    ((removed_count++)) || true
+                fi
+            done < <(find /tmp -maxdepth 1 -name "dockero_*" -print0 2>/dev/null)
             
             if [[ "$removed_count" -gt 0 ]]; then
                 log.done "Removed ${BOLD_GREEN}$removed_count${RESET_COLOR} temporary files from /tmp."

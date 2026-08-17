@@ -77,7 +77,7 @@ function log() {
 # ── Log levels ────────────────────────────────────────────────────────────────
 function log.info()  { log "INFO" "$1" "$COLOR_INFO"  "$COLOR_MSG_INFO"  "";    }
 function log.warn()  { log "WARN" "$1" "$COLOR_WARN"  "$COLOR_MSG_WARN"  "" >&2; }
-function log.error() { log "FAIL" "$1" "$COLOR_ERROR" "$COLOR_MSG_ERROR" "" >&2; return 1; }
+function log.error() { log "FAIL" "$1" "$COLOR_ERROR" "$COLOR_MSG_ERROR" "" >&2; }
 function log.done()  { log "DONE" "$1" "$COLOR_DONE"  "$COLOR_MSG_DONE"  "";    }
 function log.sub() {
     if [[ "$_DOCKERO_HAS_COLORS" == "true" ]]; then

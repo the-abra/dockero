@@ -254,7 +254,7 @@ sync_watch() {
             event=$(echo "$line" | cut -d' ' -f2-)
             
             # Extract relative path from host root
-            local rel_path="${file_path_and_name#$host_path/}"
+            local rel_path="${file_path_and_name#"$host_path"/}"
             rel_path="${rel_path#./}"
 
             log.info "File event: ${BOLD_YELLOW}$event${RESET_COLOR} on ${BOLD_YELLOW}$rel_path${RESET_COLOR}"

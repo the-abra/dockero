@@ -331,9 +331,11 @@ compose_start() {
                 log.sub "Service ${BOLD_YELLOW}$service${RESET_COLOR} already running."
             else
                 log.info "Starting service: ${BOLD_YELLOW}$service${RESET_COLOR}."
-                ${DOCKERO_RUNTIME:-docker} start "$container_name" > /dev/null 2>&1 && \
-                    log.sub "Service ${BOLD_GREEN}$service${RESET_COLOR} started." || \
+                if ${DOCKERO_RUNTIME:-docker} start "$container_name" > /dev/null 2>&1; then
+                    log.sub "Service ${BOLD_GREEN}$service${RESET_COLOR} started."
+                else
                     log.error "Failed to start service: ${RED}$service${RESET_COLOR}."
+                fi
             fi
         else
             log.warn "Container ${BOLD_YELLOW}$container_name${RESET_COLOR} for service ${BOLD_YELLOW}$service${RESET_COLOR} does not exist."
@@ -370,9 +372,11 @@ compose_stop() {
 
         if ${DOCKERO_RUNTIME:-docker} ps --format '{{.Names}}' | grep -q "^$container_name$"; then
             log.info "Stopping service: ${BOLD_YELLOW}$service${RESET_COLOR}."
-            ${DOCKERO_RUNTIME:-docker} stop "$container_name" > /dev/null 2>&1 && \
-                log.sub "Service ${BOLD_GREEN}$service${RESET_COLOR} stopped." || \
+            if ${DOCKERO_RUNTIME:-docker} stop "$container_name" > /dev/null 2>&1; then
+                log.sub "Service ${BOLD_GREEN}$service${RESET_COLOR} stopped."
+            else
                 log.error "Failed to stop service: ${RED}$service${RESET_COLOR}."
+            fi
         else
             log.sub "Service ${BOLD_YELLOW}$service${RESET_COLOR} not running."
         fi
@@ -421,7 +425,7 @@ compose_ps() {
             elif [[ "$raw_status" == "paused" ]]; then status_color="${YELLOW}"; fi
             status="${status_color}$raw_status${RESET_COLOR}"
 
-            ports=$(docker port "$container_name" 2>/dev/null | tr '\n' ',' | sed 's/,$//')
+            ports=$(${DOCKERO_RUNTIME:-docker} port "$container_name" 2>/dev/null | tr '\n' ',' | sed 's/,$//')
             if [[ -n "$ports" ]]; then
                 ports="${MAGENTA}$ports${RESET_COLOR}"
             else

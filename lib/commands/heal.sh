@@ -264,7 +264,7 @@ heal_fix() {
             stopped_count=$(echo "$stopped_containers" | wc -l)
                 if [[ "$stopped_count" -gt 0 ]]; then
                     log.info "Starting ${stopped_count} stopped containers..."
-                    echo "$stopped_containers" | xargs -r ${DOCKERO_RUNTIME:-docker} start > /dev/null 2>&1
+                    echo "$stopped_containers" | xargs -r "${DOCKERO_RUNTIME:-docker}" start > /dev/null 2>&1
                     log.done "Attempted to start all stopped containers."
                 else
                     log.info "No stopped containers to fix."
@@ -276,7 +276,7 @@ heal_fix() {
             local dangling_count
             dangling_count=$(${DOCKERO_RUNTIME:-docker} images -f "dangling=true" -q | wc -l)
             if [[ "$dangling_count" -gt 0 ]]; then
-                docker image prune -f > /dev/null 2>&1
+                ${DOCKERO_RUNTIME:-docker} image prune -f > /dev/null 2>&1
                 log.done "Removed ${BOLD_GREEN}$dangling_count${RESET_COLOR} dangling images."
             else
                 log.info "No dangling images to clean."
@@ -306,12 +306,20 @@ heal_fix() {
             heal_fix "volumes"
 
             # Check Docker daemon if needed
-            if ! ${DOCKERO_RUNTIME:-docker} ps -q &> /dev/null; then # Faster check
+            if ! ${DOCKERO_RUNTIME:-docker} ps -q &> /dev/null; then
                 log.info "Attempting to restart Docker service..."
                 if command -v systemctl &> /dev/null; then
-                    sudo systemctl restart docker 2>/dev/null && log.done "Docker service restarted." || log.warn "Could not restart Docker service automatically via systemctl."
+                    if sudo systemctl restart docker 2>/dev/null; then
+                        log.done "Docker service restarted."
+                    else
+                        log.warn "Could not restart Docker service automatically via systemctl."
+                    fi
                 elif command -v service &> /dev/null; then
-                    sudo service docker restart 2>/dev/null && log.done "Docker service restarted." || log.warn "Could not restart Docker service automatically via service command."
+                    if sudo service docker restart 2>/dev/null; then
+                        log.done "Docker service restarted."
+                    else
+                        log.warn "Could not restart Docker service automatically via service command."
+                    fi
                 else
                     log.warn "Could not restart Docker service automatically. No systemctl or service command found."
                 fi
@@ -403,13 +411,13 @@ heal_auto() {
 
         if [[ "$stopped_containers_count" -gt 0 ]]; then
             log.sub "Starting ${stopped_containers_count} stopped containers..."
-            ${DOCKERO_RUNTIME:-docker} ps -a --filter "status=exited" --format "{{.ID}}" | xargs -r ${DOCKERO_RUNTIME:-docker} start > /dev/null 2>&1 || true # Using xargs -r
+            ${DOCKERO_RUNTIME:-docker} ps -a --filter "status=exited" --format "{{.ID}}" | xargs -r "${DOCKERO_RUNTIME:-docker}" start > /dev/null 2>&1 || true
             log.done "Attempted to start stopped containers."
         fi
 
         if [[ "$dangling_images_count" -gt 0 ]]; then
             log.sub "Removing ${dangling_images_count} dangling images..."
-            docker image prune -f > /dev/null 2>&1
+            ${DOCKERO_RUNTIME:-docker} image prune -f > /dev/null 2>&1
             log.done "Removed dangling images."
         fi
 
@@ -507,7 +515,7 @@ heal_diagnose() {
             log.sub "Docker disk usage: ${BOLD_YELLOW}$disk_usage${RESET_COLOR}"
 
             # Check running container resource usage
-            if command -v ${DOCKERO_RUNTIME:-docker} stats &> /dev/null; then
+            if command -v "${DOCKERO_RUNTIME:-docker}" &> /dev/null; then
                 log.sub "Active container monitoring would show real-time stats."
                 log.hint "Run ${BOLD_YELLOW}${DOCKERO_RUNTIME:-docker} stats${RESET_COLOR} for live resource usage."
             fi
@@ -557,7 +565,7 @@ heal_cleanup() {
             unused_containers_count=$(${DOCKERO_RUNTIME:-docker} ps -a --filter "status=exited" -q | wc -l)
             if [[ "$unused_containers_count" -gt 0 ]]; then
                 log.info "Removing ${unused_containers_count} unused containers..."
-                ${DOCKERO_RUNTIME:-docker} ps -a --filter "status=exited" -q | xargs -r ${DOCKERO_RUNTIME:-docker} rm -v > /dev/null 2>&1
+                ${DOCKERO_RUNTIME:-docker} ps -a --filter "status=exited" -q | xargs -r "${DOCKERO_RUNTIME:-docker}" rm -v > /dev/null 2>&1
                 log.done "Removed unused containers."
             else
                 log.info "No unused containers to remove."
@@ -649,14 +657,12 @@ heal_restore() {
             
 
             for project_dir in "${project_dirs[@]}"; do
-                ( # Subshell to avoid cd affecting main script
-                cd "$project_dir" || { log.warn "Could not change to directory: $project_dir"; continue; }
-                
-                if [[ -f ".dockero" ]]; then
+                local conf_file="$project_dir/.dockero"
+                if [[ -f "$conf_file" ]]; then
                     local expected_name
-                    expected_name=$(inipars.get "default" "name" ".dockero")
+                    expected_name=$(inipars.get "default" "name" "$conf_file")
                     local expected_image
-                    expected_image=$(inipars.get "default" "image" ".dockero")
+                    expected_image=$(inipars.get "default" "image" "$conf_file")
                     
                     if [[ -n "$expected_name" ]]; then
                         # Check if container exists and matches configuration
@@ -671,16 +677,13 @@ heal_restore() {
                             if [[ "$actual_image" != "$expected_image" ]]; then
                                 log.warn "Container ${BOLD_YELLOW}$expected_name${RESET_COLOR} image mismatch: expected ${GREEN}$expected_image${RESET_COLOR}, got ${RED}$actual_image${RESET_COLOR}."
                                 log.hint "To fix: ${BOLD_YELLOW}dockero setup \"$project_dir\"${RESET_COLOR} to recreate with correct configuration."
-                                # Don't increment restored_count, as it's a manual step
                             fi
                         else
                             log.info "Container ${BOLD_YELLOW}$expected_name${RESET_COLOR} for project '$project_dir' is missing."
                             log.hint "To fix: ${BOLD_YELLOW}dockero setup \"$project_dir\"${RESET_COLOR} to create the container."
-                            # Don't increment restored_count, as it's a manual step
                         fi
                     fi
                 fi
-                ) # End subshell
             done
             
             log.done "Configuration restoration check completed. Manual intervention may be required."

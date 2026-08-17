@@ -32,6 +32,7 @@ plugin() {
                     echo -e "  • ${BOLD_GREEN}${plugin_name}${RESET_COLOR}"
                     # Check if a help function is defined by sourcing in a subshell
                     local help_desc=""
+                    # shellcheck disable=SC1090
                     if help_desc=$( (source "$file" && declare -f "${plugin_name}_help" >/dev/null && "${plugin_name}_help" | head -n 1) 2>/dev/null ); then
                         if [[ -n "$help_desc" ]]; then
                             echo -e "    ${help_desc}"

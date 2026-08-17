@@ -213,6 +213,13 @@ setup_init() {
                 volume_mount=""
                 custom_command=""
                 ;;
+            "mysql"|"mariadb")
+                container_name="${container_name_default}-mysql"
+                docker_image="mysql:8.0"
+                port_mapping="3306:3306"
+                volume_mount=""
+                custom_command=""
+                ;;
             "node"|"nodejs")
                 container_name="${container_name_default}-node"
                 docker_image="node:alpine"
@@ -222,10 +229,45 @@ setup_init() {
                 ;;
             "python")
                 container_name="${container_name_default}-python"
-                docker_image="python:3.10-alpine"
-                port_mapping=""
+                docker_image="python:3.11-alpine"
+                port_mapping="8000:8000"
                 volume_mount="$project_path:/app"
                 custom_command="python app.py"
+                ;;
+            "go"|"golang")
+                container_name="${container_name_default}-go"
+                docker_image="golang:alpine"
+                port_mapping="8080:8080"
+                volume_mount="$project_path:/app"
+                custom_command="go run ."
+                ;;
+            "rust")
+                container_name="${container_name_default}-rust"
+                docker_image="rust:alpine"
+                port_mapping="8080:8080"
+                volume_mount="$project_path:/app"
+                custom_command="cargo run"
+                ;;
+            "php")
+                container_name="${container_name_default}-php"
+                docker_image="php:8.2-apache"
+                port_mapping="8080:80"
+                volume_mount="$project_path:/var/www/html"
+                custom_command=""
+                ;;
+            "ruby")
+                container_name="${container_name_default}-ruby"
+                docker_image="ruby:alpine"
+                port_mapping="3000:3000"
+                volume_mount="$project_path:/app"
+                custom_command="ruby app.rb"
+                ;;
+            "java")
+                container_name="${container_name_default}-java"
+                docker_image="eclipse-temurin:21-jre-alpine"
+                port_mapping="8080:8080"
+                volume_mount="$project_path:/app"
+                custom_command="java -jar app.jar"
                 ;;
             "redis")
                 container_name="${container_name_default}-redis"
@@ -236,7 +278,7 @@ setup_init() {
                 ;;
             *)
                 log.error "Unknown preset: ${BOLD_RED}$preset${RESET_COLOR}"
-                log.hint "Supported presets: nginx, postgres, node, python, redis"
+                log.hint "Supported presets: node, python, go, rust, php, ruby, java, nginx, redis, postgres, mysql"
                 return 1
                 ;;
         esac

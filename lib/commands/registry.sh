@@ -1,27 +1,23 @@
 #!/usr/bin/env bash
 
-# Helper function to validate registry URLs for safe use
-
 registry_help() {
 cat << EOF
 ${BOLD_CYAN}dockero registry ${GREEN}<login|push|pull|list|search|logout> [options]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Manage Docker container registries.
    ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
-     - ${GREEN}login [url]${RESET_COLOR}     Authenticate to a registry.
-     - ${GREEN}logout [url]${RESET_COLOR}    Remove local credentials.
-     - ${GREEN}push <image>${RESET_COLOR}    Upload an image.
-     - ${GREEN}pull <image>${RESET_COLOR}    Download an image.
-     - ${GREEN}search <term>${RESET_COLOR}   Search Docker Hub.
-     - ${GREEN}list${RESET_COLOR}            List images in registry.
+     - ${GREEN}login [url] [-u <username>]${RESET_COLOR}  Authenticate to a registry.
+     - ${GREEN}logout [url]${RESET_COLOR}                 Remove local credentials.
+     - ${GREEN}push <image>${RESET_COLOR}                 Upload an image.
+     - ${GREEN}pull <image>${RESET_COLOR}                 Download an image.
+     - ${GREEN}search <term>${RESET_COLOR}                Search Docker Hub.
+     - ${GREEN}list${RESET_COLOR}                         List images in registry.
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
      ${YELLOW}docker login/logout/push/pull/search${RESET_COLOR}
 EOF
 }
 
-
 _registry_validate_url() {
     local url="$1"
-    # Basic validation: alphanumeric, dots, hyphens, and optional port. No slashes or spaces.
     if [[ ! "$url" =~ ^[a-zA-Z0-9.-]+(:[0-9]+)?$ ]]; then
         log.error "Invalid registry URL: '${RED}$url${RESET_COLOR}'. Registry URLs should be hostname[:port]."
         return 1
@@ -29,7 +25,6 @@ _registry_validate_url() {
     return 0
 }
 
-# Helper function to validate usernames for safe use
 _registry_validate_username() {
     local username="$1"
     if [[ ! "$username" =~ ^[a-zA-Z0-9_.-]+$ ]]; then
@@ -58,7 +53,7 @@ registry() {
     pull)
       registry_pull "${args[@]:2}"
       ;;
-    list|ls) # 'ls' is an alias for 'list'
+    list|ls)
       registry_list "${args[@]:2}"
       ;;
     search)
@@ -76,50 +71,22 @@ registry() {
 }
 
 registry_login() {
-  local registry_url_arg="" # Argument for registry URL
-  local username_arg=""     # Argument for username flag
-  
-  # Manually parse args for registry_url and username flag (u/username)
-  local current_arg
-  local i=0
-  local current_cmd_args=("${args[@]}") # All original arguments passed to registry_login
-  for current_arg in "${current_cmd_args[@]}"; do
-    case "$current_arg" in
-        -u|--username)
-            # Next argument is the username
-            if [[ -n "${current_cmd_args[$((i+1))]}" && ! "${current_cmd_args[$((i+1))]}" =~ ^- ]]; then
-                username_arg="${current_cmd_args[$((i+1))]}"
-                i=$((i+1)) # Consume the next argument
-            else
-                log.error "Missing value for ${BOLD_RED}$current_arg${RESET_COLOR}."
-                log.hint "Usage: ${BOLD_YELLOW}dockero registry login [-u <username>] [<registry-url>]${RESET_COLOR}"
-                return 1
-            fi
-            ;;
-        -*) # Ignore other flags
-            ;;
-        *) # Positional argument (assumed to be registry URL)
-            if [[ -z "$registry_url_arg" ]]; then # Only take the first positional arg as URL
-                registry_url_arg="$current_arg"
-            fi
-            ;;
-    esac
-    i=$((i+1))
-  done
+  local registry_url_arg="${1:-}"
+  local username_arg="${params[u]:-${params[username]:-}}"
 
-  # Validate registry_url_arg if provided
+  # If positional argument starts with flag, ignore it as url
+  [[ "$registry_url_arg" == -* ]] && registry_url_arg=""
+
   if [[ -n "$registry_url_arg" ]] && ! _registry_validate_url "$registry_url_arg"; then return 1; fi
-  # Validate username_arg if provided
   if [[ -n "$username_arg" ]] && ! _registry_validate_username "$username_arg"; then return 1; fi
 
-  # Prompt for username if not provided via flag
   if [[ -z "$username_arg" ]]; then
     read -rp "${BOLD_WHITE}Enter username for registry: ${RESET_COLOR}" username_arg
     if [[ -z "$username_arg" ]]; then
       log.error "Username cannot be empty."
       return 1
     fi
-    if ! _registry_validate_username "$username_arg"; then return 1; fi # Validate prompted username
+    if ! _registry_validate_username "$username_arg"; then return 1; fi
   fi
   
   log.setline "${BOLD_CYAN}Registry Login${RESET_COLOR}"
@@ -144,14 +111,14 @@ registry_login() {
 }
 
 registry_push() {
-  local image_name="$1"
+  local image_name="${1:-}"
   
   if [[ -z "$image_name" ]]; then
     log.error "Image name required."
     log.hint "Usage: ${BOLD_YELLOW}dockero registry push <image-name[:tag]>${RESET_COLOR}"
     return 1
   fi
-  if ! validate_image_name "$image_name"; then return 1; fi # Validate image name
+  if ! validate_image_name "$image_name"; then return 1; fi
   
   log.setline "${BOLD_CYAN}⬆️ Pushing Image${RESET_COLOR}"
   log.info "Pushing image: ${BOLD_YELLOW}$image_name${RESET_COLOR}"
@@ -164,14 +131,14 @@ registry_push() {
 }
 
 registry_pull() {
-  local image_name="$1"
+  local image_name="${1:-}"
   
   if [[ -z "$image_name" ]]; then
     log.error "Image name required."
     log.hint "Usage: ${BOLD_YELLOW}dockero registry pull <image-name[:tag]>${RESET_COLOR}"
     return 1
   fi
-  if ! validate_image_name "$image_name"; then return 1; fi # Validate image name
+  if ! validate_image_name "$image_name"; then return 1; fi
   
   log.setline "${BOLD_CYAN}⬇️ Pulling Image${RESET_COLOR}"
   log.info "Pulling image: ${BOLD_YELLOW}$image_name${RESET_COLOR}"
@@ -184,7 +151,7 @@ registry_pull() {
 }
 
 registry_list() {
-  local registry_url="${1:-}" # Currently unused, as Docker doesn't support
+  local registry_url="${1:-}"
   
   log.setline "${BOLD_CYAN}Registry List${RESET_COLOR}"
   log.info "Listing images in registry${registry_url:+ at ${BOLD_YELLOW}$registry_url${RESET_COLOR}}."
@@ -193,7 +160,7 @@ registry_list() {
 }
 
 registry_search() {
-  local term="$1"
+  local term="${1:-}"
   
   if [[ -z "$term" ]]; then
     log.error "Search term required."
@@ -220,7 +187,7 @@ registry_logout() {
       return 1
     fi
   else
-    if ! _registry_validate_url "$registry_url"; then return 1; fi # Validate URL
+    if ! _registry_validate_url "$registry_url"; then return 1; fi
     log.info "Attempting to logout from ${BOLD_YELLOW}$registry_url${RESET_COLOR}..."
     if ${DOCKERO_RUNTIME:-docker} logout "$registry_url"; then
       log.done "Successfully logged out from ${BOLD_GREEN}$registry_url${RESET_COLOR}."

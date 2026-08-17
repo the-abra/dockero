@@ -206,10 +206,7 @@ wizard_run_database() {
             echo  # New line after hidden input
             db_password="${db_password:-mysecretpassword}"
 
-            # Validate db_password for basic safety (no shell metacharacters)
-            # This is primarily to prevent unexpected behavior in the ${DOCKERO_RUNTIME:-docker} run command if db_password
-            # were to contain things like quotes, backticks, or other shell special chars.
-            if [[ "$db_password" =~ ['";`$()|&<>!{}[]'] ]]; then
+            if [[ ! "$db_password" =~ ^[a-zA-Z0-9_.@-]+$ ]]; then
                 log.error "Database password contains special characters that are not allowed for security reasons."
                 return 1
             fi

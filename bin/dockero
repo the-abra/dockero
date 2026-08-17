@@ -10,7 +10,6 @@ else
 fi ;
 PROJECT_ROOT=$(cd "${BIN_DIR}/.." && pwd)
 CORE_DIR="${PROJECT_ROOT}/lib"
-COMMANDS_DIR="${CORE_DIR}/commands"
 
 # === Load Configuration ===
 DEFAULT_CONFIG="${CORE_DIR}/utils/config.sh"

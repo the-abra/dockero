@@ -2,10 +2,10 @@
 
 stop_help() {
 cat << EOF
-${BOLD_CYAN}dockero stop ${GREEN}<container-name> [--timeout <seconds>]${RESET_COLOR}
+${BOLD_CYAN}dockero stop ${GREEN}<container-name> [--timeout|-t <seconds>]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} Gracefully stop a running container.
    ${BOLD_WHITE}• Parameters:${RESET_COLOR}
-     - ${GREEN}--timeout <seconds>${RESET_COLOR}: Wait time before SIGKILL (default: 10).
+     - ${GREEN}--timeout, -t <seconds>${RESET_COLOR}: Wait time before SIGKILL (default: 10).
    ${BOLD_WHITE}• Equivalent Docker:${RESET_COLOR}
      ${YELLOW}docker stop --time=<seconds> <name>${RESET_COLOR}
 EOF
@@ -13,10 +13,9 @@ EOF
 
 stop() {
   local container_name="${args[1]:-}"
-  local timeout="${params[timeout]:-1}" # Default timeout to 1 second
+  local timeout="${params[timeout]:-${params[t]:-10}}"
   
-  # shellcheck disable=SC2154
-  if [[ "${full_arr[1]}" =~ ^"-" ]]; then
+  if [[ "${full_arr[1]:-}" =~ ^"-" ]]; then
     log.warn "You cannot set parameter flags before the container name."
     log.hint "Usage: ${BOLD_YELLOW}dockero stop <container> [--timeout <seconds>]${RESET_COLOR}"
     return 1
@@ -39,15 +38,13 @@ stop() {
 
   log.setline "${BOLD_CYAN}🛑 Stopping Container: ${RED}$container_name${RESET_COLOR}"
 
-  # Improve container existence check for running containers
   if ${DOCKERO_RUNTIME:-docker} ps --format '{{.Names}}' | grep -q "^$container_name$"; then
     log.info "Attempting to stop container '${BOLD_YELLOW}$container_name${RESET_COLOR}' with timeout: ${BOLD_YELLOW}$timeout${RESET_COLOR} seconds."
     
-    # Use mktemp for secure temporary log file
     local stop_log
     stop_log=$(mktemp "/tmp/dockero_stop_${container_name}_XXXXXX.log")
 
-    if ${DOCKERO_RUNTIME:-docker} stop --time="$timeout" "$container_name" > "$stop_log" 2>&1; then # $container_name is validated
+    if ${DOCKERO_RUNTIME:-docker} stop --time="$timeout" "$container_name" > "$stop_log" 2>&1; then
         log.done "Container '${BOLD_GREEN}$container_name${RESET_COLOR}' stopped successfully."
         rm -f "$stop_log"
     else
@@ -57,7 +54,6 @@ stop() {
     fi
   else
     log.warn "Container '${BOLD_YELLOW}$container_name${RESET_COLOR}' is not running. Nothing to stop."
-    # Check if it exists at all (stopped, exited) using validated name
     if ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
         log.sub "Container '${BOLD_YELLOW}$container_name${RESET_COLOR}' is in a non-running state."
     else
