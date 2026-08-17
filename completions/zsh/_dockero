@@ -3,34 +3,34 @@
 _dockero_commands() {
     local -a commands
     commands=(
-        'create:Create and start a container'
-        'start:Start a container'
-        'stop:Stop a container'
-        'remove:Remove a container'
-        'rename:Rename a container'
-        'list:List containers'
-        'export:Export a container filesystem to tar'
-        'import:Import a tar to an image'
-        'registry:Registry authentications and operations'
-        'volume:Manage volumes'
-        'net:Manage networks'
-        'setup:Setup application templates'
-        'compose:Docker Compose wrapper'
-        'env:Manage environment files'
-        'validate:Validate config files'
-        'sync:Sync container directories'
-        'monitor:Monitor containers'
-        'dashboard:Terminal dashboard'
-        'heal:Remediate issues'
-        'secrets:Manage secrets'
-        'system:System commands'
-        'plugin:Manage custom subcommand plugins'
-        'learn:Interactive lessons'
-        'explain:Show subcommand help'
-        'show:Visual command dashboard'
-        'wizard:Guided config setup'
-        'version:Show version'
-        'help:Show general help'
+        'run:Create and start a new container (alias for create)'
+        'create:Create and start a new container'
+        'start:Start an existing stopped container'
+        'stop:Gracefully stop a running container'
+        'exec:Execute a command inside a running container'
+        'list:List Docker containers or images'
+        'ps:List Docker containers (alias for list)'
+        'ls:List Docker containers (alias for list)'
+        'remove:Remove a container or image'
+        'rm:Remove a container or image (alias for remove)'
+        'rename:Rename a container or retag an image'
+        'inspect:Display low-level information on Docker objects'
+        'export:Export container state to a tar archive'
+        'import:Import a tar archive as an image'
+        'setup:Initialize, run, or update project .dockero configurations'
+        'compose:Dockero lightweight multi-container compose orchestrator'
+        'validate:Validate .dockero configuration files syntax and structure'
+        'net:Manage Docker networks (create, connect, disconnect, inspect, prune)'
+        'volume:Manage Docker storage volumes (create, inspect, attach, prune)'
+        'registry:Manage container registries (login, push, pull, search, logout)'
+        'dashboard:Terminal dashboard showing status overview'
+        'monitor:Live monitoring (top, stats, health, logs, watch)'
+        'system:System integration (systemd units, OS & cgroup info, cleanup)'
+        'heal:Autonomous health monitoring, diagnostics, and self-healing'
+        'plugin:Manage custom user subcommands and plugins'
+        'explain:Show detailed explanation and equivalent Docker command'
+        'help:Show usage information and command list'
+        'version:Show Dockero CLI version and runtime information'
     )
     _describe -t commands 'dockero command' commands
 }
@@ -39,21 +39,42 @@ _dockero_containers() {
     local runtime="${DOCKERO_RUNTIME:-docker}"
     local -a containers
     containers=(${(f)"$($runtime ps -a --format '{{.Names}}' 2>/dev/null)"})
-    _describe -t containers 'container' containers
+    _describe -t containers 'all containers' containers
 }
 
 _dockero_running_containers() {
     local runtime="${DOCKERO_RUNTIME:-docker}"
     local -a containers
     containers=(${(f)"$($runtime ps --filter 'status=running' --format '{{.Names}}' 2>/dev/null)"})
-    _describe -t containers 'running container' containers
+    _describe -t containers 'running containers' containers
+}
+
+_dockero_stopped_containers() {
+    local runtime="${DOCKERO_RUNTIME:-docker}"
+    local -a containers
+    containers=(${(f)"$($runtime ps --filter 'status=exited' --format '{{.Names}}' 2>/dev/null)"})
+    _describe -t containers 'stopped containers' containers
+}
+
+_dockero_images() {
+    local runtime="${DOCKERO_RUNTIME:-docker}"
+    local -a images
+    images=(${(f)"$($runtime images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null)"})
+    _describe -t images 'images' images
 }
 
 _dockero_networks() {
     local runtime="${DOCKERO_RUNTIME:-docker}"
     local -a networks
     networks=(${(f)"$($runtime network ls --format '{{.Name}}' 2>/dev/null)"})
-    _describe -t networks 'network' networks
+    _describe -t networks 'networks' networks
+}
+
+_dockero_volumes() {
+    local runtime="${DOCKERO_RUNTIME:-docker}"
+    local -a volumes
+    volumes=(${(f)"$($runtime volume ls --format '{{.Name}}' 2>/dev/null)"})
+    _describe -t volumes 'volumes' volumes
 }
 
 _dockero() {
@@ -61,19 +82,97 @@ _dockero() {
     typeset -A opt_args
 
     _arguments -C \
-        '(-h --help)'{-h,--help}'[Show help info]' \
-        '(-v --version)'{-v,--version}'[Show version info]' \
+        '(-h --help)'{-h,--help}'[Show help information]' \
+        '(-v --version)'{-v,--version}'[Show version information]' \
         '1: :_dockero_commands' \
         '*:: :->args'
 
     case $state in
         args)
             case $words[1] in
-                create|rename|start|export|remove)
-                    _dockero_containers
+                run|create)
+                    if (( CURRENT == 2 )); then
+                        _dockero_images
+                    fi
+                    ;;
+                start)
+                    if (( CURRENT == 2 )); then
+                        _dockero_stopped_containers
+                    fi
                     ;;
                 stop)
+                    if (( CURRENT == 2 )); then
+                        _dockero_running_containers
+                    fi
+                    ;;
+                exec)
                     _dockero_running_containers
+                    ;;
+                remove|rm)
+                    if (( CURRENT == 2 )); then
+                        _dockero_containers
+                        _dockero_images
+                    fi
+                    ;;
+                rename)
+                    if (( CURRENT == 2 )); then
+                        _dockero_containers
+                    fi
+                    ;;
+                inspect)
+                    if (( CURRENT == 2 )); then
+                        _dockero_containers
+                        _dockero_images
+                        _dockero_networks
+                        _dockero_volumes
+                    fi
+                    ;;
+                export)
+                    if (( CURRENT == 2 )); then
+                        _dockero_containers
+                    fi
+                    ;;
+                import)
+                    _files -g "*.tar"
+                    ;;
+                list|ps|ls)
+                    local -a list_subcmds
+                    list_subcmds=('img:List local images instead of containers' 'images:List images')
+                    _describe -t list_subcmds 'list option' list_subcmds
+                    ;;
+                setup)
+                    local -a setup_subcmds
+                    setup_subcmds=(
+                        'init:Initialize a new .dockero configuration file'
+                        'run:Run the project defined in .dockero'
+                        'update:Rebuild and update a running project container'
+                        'teardown:Stop and remove the project container'
+                    )
+                    if (( CURRENT == 2 )); then
+                        _describe -t setup_subcmds 'setup subcommand' setup_subcmds
+                    elif (( CURRENT == 3 && words[2] == "init" )); then
+                        _values 'preset' '--preset[Choose project preset]'
+                    elif (( CURRENT == 4 && words[3] == "--preset" )); then
+                        local -a presets
+                        presets=('node' 'python' 'go' 'rust' 'php' 'ruby' 'java' 'nginx' 'redis' 'postgres' 'mysql')
+                        _describe -t presets 'preset type' presets
+                    fi
+                    ;;
+                compose)
+                    local -a compose_subcmds
+                    compose_subcmds=(
+                        'up:Build and start all services'
+                        'down:Stop and remove all services'
+                        'start:Start existing stopped services'
+                        'stop:Stop running services'
+                        'restart:Restart all services'
+                        'ps:List status of all services'
+                        'logs:View aggregated logs from all services'
+                    )
+                    _describe -t compose_subcmds 'compose subcommand' compose_subcmds
+                    ;;
+                validate)
+                    _files
                     ;;
                 net)
                     local -a net_subcmds
@@ -121,43 +220,101 @@ _dockero() {
                         'attach:Attach volume to a container'
                         'prune:Cleanup unused volumes'
                     )
-                    _describe -t vol_subcmds 'volume subcommand' vol_subcmds
+                    if (( CURRENT == 2 )); then
+                        _describe -t vol_subcmds 'volume subcommand' vol_subcmds
+                    elif (( CURRENT == 3 )); then
+                        case $words[2] in
+                            remove|rm|inspect)
+                                _dockero_volumes
+                                ;;
+                            attach)
+                                _dockero_containers
+                                ;;
+                        esac
+                    fi
+                    ;;
+                registry)
+                    local -a reg_subcmds
+                    reg_subcmds=(
+                        'login:Authenticate to a registry'
+                        'push:Upload an image to registry'
+                        'pull:Download an image from registry'
+                        'search:Search Docker Hub for images'
+                        'list:List repository images'
+                        'logout:Remove local credentials'
+                    )
+                    if (( CURRENT == 2 )); then
+                        _describe -t reg_subcmds 'registry subcommand' reg_subcmds
+                    elif (( CURRENT == 3 )); then
+                        case $words[2] in
+                            push|pull)
+                                _dockero_images
+                                ;;
+                        esac
+                    fi
                     ;;
                 monitor)
                     local -a mon_subcmds
                     mon_subcmds=(
                         'top:Show top processes in container'
-                        'stats:Show container usage stats'
-                        'health:Check health of containers'
-                        'logs:Fetch logs of container'
-                        'watch:Watch container execution'
+                        'stats:Show live resource usage stats'
+                        'health:Check health status of containers'
+                        'logs:Fetch container logs'
+                        'watch:Continuous monitoring dashboard'
                     )
-                    _describe -t mon_subcmds 'monitor subcommand' mon_subcmds
+                    if (( CURRENT == 2 )); then
+                        _describe -t mon_subcmds 'monitor subcommand' mon_subcmds
+                    elif (( CURRENT == 3 )); then
+                        _dockero_running_containers
+                    fi
                     ;;
-                learn)
-                    local -a learn_subcmds
-                    learn_subcmds=(
-                        'start:Start interactive learning'
-                        'basic:Basic Docker lessons'
-                        'intermediate:Intermediate network/env lessons'
-                        'advanced:Advanced security lessons'
-                        'docker:Core Docker CLI training'
-                        'concepts:Conceptual understanding'
-                        'examples:Real-world setup examples'
+                system)
+                    local -a system_subcmds
+                    system_subcmds=(
+                        'service:Manage containers as systemd services'
+                        'config:Manage configuration (get/set/list/reset)'
+                        'info:Display Linux OS, kernel, cgroup v2, and runtime info'
+                        'cleanup:Clean up Docker resources'
+                        'install:Install Dockero to a system location'
+                        'dev:Convert installation to development symlinked setup'
                     )
-                    _describe -t learn_subcmds 'learn category' learn_subcmds
+                    if (( CURRENT == 2 )); then
+                        _describe -t system_subcmds 'system subcommand' system_subcmds
+                    elif (( CURRENT == 3 && words[2] == "service" )); then
+                        local -a srv_subcmds
+                        srv_subcmds=('create:Generate and enable systemd unit' 'start:Start systemd service' 'stop:Stop service' 'enable:Enable service on boot' 'disable:Disable service' 'status:View systemctl status' 'logs:View journalctl logs')
+                        _describe -t srv_subcmds 'service action' srv_subcmds
+                    elif (( CURRENT == 4 && words[2] == "service" )); then
+                        _dockero_containers
+                    fi
                     ;;
-                show)
-                    local -a show_subcmds
-                    show_subcmds=(
-                        'dashboard:Launch terminal dashboard'
-                        'commands:List categorized commands'
-                        'demo:Launch interactive demo for subcommand'
-                        'visual:Visualize Docker concepts'
-                        'containers:Container status board'
-                        'status:Comprehensive system status report'
+                heal)
+                    local -a heal_subcmds
+                    heal_subcmds=(
+                        'check:Perform health checks (system, containers, networks)'
+                        'fix:Auto-fix identified issues'
+                        'auto:Run health check and apply fixes automatically'
+                        'diagnose:Deep diagnosis (startup, network, performance)'
+                        'cleanup:Clean up dangling resources'
+                        'restore:Restore environment configurations'
+                        'watch:Continuous autonomous health engine'
                     )
-                    _describe -t show_subcmds 'show category' show_subcmds
+                    if (( CURRENT == 2 )); then
+                        _describe -t heal_subcmds 'heal subcommand' heal_subcmds
+                    elif (( CURRENT == 3 )); then
+                        case $words[2] in
+                            check)
+                                local -a targets
+                                targets=('system' 'containers' 'networks' 'all')
+                                _describe -t targets 'target' targets
+                                ;;
+                            diagnose)
+                                local -a diag_types
+                                diag_types=('startup' 'network' 'performance' 'config' 'storage' 'permissions' 'all')
+                                _describe -t diag_types 'diagnosis type' diag_types
+                                ;;
+                        esac
+                    fi
                     ;;
                 plugin)
                     local -a plugin_subcmds
@@ -169,24 +326,8 @@ _dockero() {
                     )
                     _describe -t plugin_subcmds 'plugin subcommand' plugin_subcmds
                     ;;
-                list)
-                    local -a list_subcmds
-                    list_subcmds=(
-                        'img:List local images instead of containers'
-                    )
-                    _describe -t list_subcmds 'list parameter' list_subcmds
-                    ;;
-                system)
-                    local -a system_subcmds
-                    system_subcmds=(
-                        'service:Manage containers as systemd services'
-                        'config:Manage configuration (get/set/list/reset)'
-                        'info:Display environment information'
-                        'cleanup:Clean up Docker resources'
-                        'install:Install to a system location'
-                        'dev:Convert installation to development symlinked setup'
-                    )
-                    _describe -t system_subcmds 'system subcommand' system_subcmds
+                explain|help)
+                    _dockero_commands
                     ;;
             esac
             ;;

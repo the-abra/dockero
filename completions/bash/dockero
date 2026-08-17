@@ -14,7 +14,7 @@ _dockero_get_cache() {
   local age
   
   if [[ -f "$cache_file" ]]; then
-    age=$(( $(date +%s) - $(stat -c %Y "$cache_file" 2>/dev/null || stat -f %m "$cache_file" 2>/dev/null) ))
+    age=$(( $(date +%s) - $(stat -c %Y "$cache_file" 2>/dev/null || stat -f %m "$cache_file" 2>/dev/null || echo 0) ))
     if (( age < ttl )); then
       cat "$cache_file"
       return 0
@@ -34,7 +34,6 @@ _dockero_update_cache() {
 
 # Get all containers (cached)
 _dockero_get_containers() {
-  local containers
   if ! _dockero_get_cache "containers"; then
     _dockero_update_cache "containers" ${DOCKERO_RUNTIME:-docker} ps -a --format "{{.Names}}"
   fi
@@ -42,187 +41,327 @@ _dockero_get_containers() {
 
 # Get running containers only (cached)
 _dockero_get_running() {
-  local running
   if ! _dockero_get_cache "running"; then
     _dockero_update_cache "running" ${DOCKERO_RUNTIME:-docker} ps --filter "status=running" --format "{{.Names}}"
   fi
 }
 
-# Get tar files (cached with longer TTL since files change less)
+# Get stopped containers only (cached)
+_dockero_get_stopped() {
+  if ! _dockero_get_cache "stopped"; then
+    _dockero_update_cache "stopped" ${DOCKERO_RUNTIME:-docker} ps --filter "status=exited" --format "{{.Names}}"
+  fi
+}
+
+# Get local images (cached)
+_dockero_get_images() {
+  if ! _dockero_get_cache "images"; then
+    _dockero_update_cache "images" ${DOCKERO_RUNTIME:-docker} images --format "{{.Repository}}:{{.Tag}}"
+  fi
+}
+
+# Get tar files
 _dockero_get_tars() {
-  local tars
   if ! _dockero_get_cache "tars" 5; then
-    # Use printf instead of find for better performance
     _dockero_update_cache "tars" bash -c 'printf "%s\n" *.tar 2>/dev/null | grep -v "^\*\.tar$"'
   fi
 }
 
 # Get all networks (cached)
 _dockero_get_networks() {
-  local networks
   if ! _dockero_get_cache "networks"; then
     _dockero_update_cache "networks" ${DOCKERO_RUNTIME:-docker} network ls --format "{{.Name}}"
   fi
 }
 
+# Get all volumes (cached)
+_dockero_get_volumes() {
+  if ! _dockero_get_cache "volumes"; then
+    _dockero_update_cache "volumes" ${DOCKERO_RUNTIME:-docker} volume ls --format "{{.Name}}"
+  fi
+}
+
 _dockero_autocomplete() {
-  local cur prev
+  local cur prev words cword
   COMPREPLY=()
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD - 1]}"
 
-  # Static options - no need to compute
-  local base_opts="create volume list stop start exec export import rename setup remove net sync compose env validate system learn explain show heal registry secrets monitor wizard plugin --help --version"
+  # Active base commands and aliases
+  local base_cmds="run create start stop exec list ps ls remove rm rename inspect export import setup compose validate net volume registry dashboard monitor system heal plugin explain help version"
+  local base_opts="--help -h --version -v"
 
   case $COMP_CWORD in
   1)
     # First argument - complete base commands
     # shellcheck disable=SC2207
-    COMPREPLY=($(compgen -W "${base_opts}" -- "${cur}"))
+    COMPREPLY=($(compgen -W "${base_cmds} ${base_opts}" -- "${cur}"))
     ;;
   2)
     # Second argument - context-specific completions
     case "$prev" in
-    plugin)
+    run|create)
+      local images
+      images=$(_dockero_get_images)
       # shellcheck disable=SC2207
-      COMPREPLY=($(compgen -W "list install remove delete" -- "${cur}"))
+      COMPREPLY=($(compgen -W "${images} -d -p -v -e --env-file --net --restart --no-volume" -- "${cur}"))
       ;;
-    create|rename|start|export|remove)
-      # Use cached container list
+    start)
+      local stopped
+      stopped=$(_dockero_get_stopped)
+      # shellcheck disable=SC2207
+      COMPREPLY=($(compgen -W "${stopped} -c" -- "${cur}"))
+      ;;
+    stop)
+      local running
+      running=$(_dockero_get_running)
+      # shellcheck disable=SC2207
+      COMPREPLY=($(compgen -W "${running} -t --timeout" -- "${cur}"))
+      ;;
+    exec)
+      # For exec, don't complete command name; container comes at the end
+      ;;
+    remove|rm)
+      local containers images
+      containers=$(_dockero_get_containers)
+      images=$(_dockero_get_images)
+      # shellcheck disable=SC2207
+      COMPREPLY=($(compgen -W "${containers} ${images}" -- "${cur}"))
+      ;;
+    rename)
       local containers
       containers=$(_dockero_get_containers)
       # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "${containers}" -- "${cur}"))
       ;;
-    exec)
-      # For exec, don't complete at position 2 - user needs to type command first
-      ;;
-    stop)
-      # Use cached running containers
-      local running
-      running=$(_dockero_get_running)
+    inspect)
+      local containers images networks volumes
+      containers=$(_dockero_get_containers)
+      images=$(_dockero_get_images)
+      networks=$(_dockero_get_networks)
+      volumes=$(_dockero_get_volumes)
       # shellcheck disable=SC2207
-      COMPREPLY=($(compgen -W "${running}" -- "${cur}"))
+      COMPREPLY=($(compgen -W "${containers} ${images} ${networks} ${volumes}" -- "${cur}"))
+      ;;
+    export)
+      local containers
+      containers=$(_dockero_get_containers)
+      # shellcheck disable=SC2207
+      COMPREPLY=($(compgen -W "${containers}" -- "${cur}"))
       ;;
     import)
-      # Use cached tar file list
       local tars
       tars=$(_dockero_get_tars)
       # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "${tars}" -- "${cur}"))
       ;;
-    list)
+    list|ps|ls)
       # shellcheck disable=SC2207
-      COMPREPLY=($(compgen -W "img" -- "${cur}"))
+      COMPREPLY=($(compgen -W "img images" -- "${cur}"))
       ;;
-    net)
+    setup)
       # shellcheck disable=SC2207
-      COMPREPLY=($(compgen -W "new create delete add connect remove disconnect rename prune list inspect" -- "${cur}"))
-      ;;
-    sync)
-      # shellcheck disable=SC2207
-      COMPREPLY=($(compgen -W "push pull watch status init" -- "${cur}"))
+      COMPREPLY=($(compgen -W "init run update teardown --preset --dry-run" -- "${cur}"))
       ;;
     compose)
       # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "up down start stop restart ps logs" -- "${cur}"))
       ;;
-    env)
+    validate)
       # shellcheck disable=SC2207
-      COMPREPLY=($(compgen -W "list use show create delete switch" -- "${cur}"))
+      COMPREPLY=($(compgen -f -- "${cur}"))
       ;;
-    system)
+    net)
       # shellcheck disable=SC2207
-      COMPREPLY=($(compgen -W "service config info cleanup install dev" -- "${cur}"))
-      ;;
-    learn)
-      # shellcheck disable=SC2207
-      COMPREPLY=($(compgen -W "start basic intermediate advanced docker concepts examples" -- "${cur}"))
-      ;;
-    explain)
-      # Complete with common dockero commands (all top-level commands are explainable)
-      # shellcheck disable=SC2207
-      COMPREPLY=($(compgen -W "$(echo "$base_opts" | sed 's/--help//g' | sed 's/--version//g')" -- "${cur}"))
-      ;;
-    show)
-      # shellcheck disable=SC2207
-      COMPREPLY=($(compgen -W "dashboard commands demo visual containers status" -- "${cur}"))
-      ;;
-    heal)
-      # shellcheck disable=SC2207
-      COMPREPLY=($(compgen -W "check fix auto diagnose cleanup monitor" -- "${cur}"))
-      ;;
-    registry)
-      # shellcheck disable=SC2207
-      COMPREPLY=($(compgen -W "login push pull list ls search logout" -- "${cur}"))
-      ;;
-    secrets)
-      # shellcheck disable=SC2207
-      COMPREPLY=($(compgen -W "create ls list rm remove show inspect" -- "${cur}"))
-      ;;
-    monitor)
-      # shellcheck disable=SC2207
-      COMPREPLY=($(compgen -W "top stats health logs watch" -- "${cur}"))
-      ;;
-    wizard)
-      # shellcheck disable=SC2207
-      COMPREPLY=($(compgen -W "start setup init quickstart beginner" -- "${cur}"))
+      COMPREPLY=($(compgen -W "new create delete add connect remove disconnect rename prune list inspect" -- "${cur}"))
       ;;
     volume)
       # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "list ls create remove rm inspect attach prune" -- "${cur}"))
       ;;
+    registry)
+      # shellcheck disable=SC2207
+      COMPREPLY=($(compgen -W "login push pull list ls search logout" -- "${cur}"))
+      ;;
+    monitor)
+      # shellcheck disable=SC2207
+      COMPREPLY=($(compgen -W "top stats health logs watch" -- "${cur}"))
+      ;;
+    system)
+      # shellcheck disable=SC2207
+      COMPREPLY=($(compgen -W "service config info cleanup install dev" -- "${cur}"))
+      ;;
+    heal)
+      # shellcheck disable=SC2207
+      COMPREPLY=($(compgen -W "check fix auto diagnose cleanup restore watch" -- "${cur}"))
+      ;;
+    plugin)
+      # shellcheck disable=SC2207
+      COMPREPLY=($(compgen -W "list install remove delete" -- "${cur}"))
+      ;;
+    explain|help)
+      # shellcheck disable=SC2207
+      COMPREPLY=($(compgen -W "${base_cmds}" -- "${cur}"))
+      ;;
     esac
     ;;
-  *)
-    # Additional arguments for subcommands
+  3)
+    # Third argument - nested subcommand completions
     case "${COMP_WORDS[1]}" in
     exec)
-      # For exec command, suggest running containers at any position >= 3
-      # Format: dockero exec <command> [args...] <container>
-      if [[ "$COMP_CWORD" -ge 3 ]]; then
+      local running
+      running=$(_dockero_get_running)
+      # shellcheck disable=SC2207
+      COMPREPLY=($(compgen -W "${running}" -- "${cur}"))
+      ;;
+    setup)
+      if [[ "$prev" == "init" ]]; then
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "--preset" -- "${cur}"))
+      fi
+      ;;
+    system)
+      case "$prev" in
+      service)
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "create start stop enable disable status logs" -- "${cur}"))
+        ;;
+      config)
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "get set list reset" -- "${cur}"))
+        ;;
+      cleanup)
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "all containers images volumes builder system" -- "${cur}"))
+        ;;
+      esac
+      ;;
+    heal)
+      case "$prev" in
+      check)
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "system containers networks all" -- "${cur}"))
+        ;;
+      fix)
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "system containers images volumes networks all" -- "${cur}"))
+        ;;
+      diagnose)
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "startup network performance config storage permissions all" -- "${cur}"))
+        ;;
+      cleanup)
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "containers images volumes networks buildcache all" -- "${cur}"))
+        ;;
+      restore)
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "config workspace containers all" -- "${cur}"))
+        ;;
+      watch)
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "containers resources config all" -- "${cur}"))
+        ;;
+      esac
+      ;;
+    monitor)
+      case "$prev" in
+      top|stats|health|logs|watch)
         local running
         running=$(_dockero_get_running)
         # shellcheck disable=SC2207
         COMPREPLY=($(compgen -W "${running}" -- "${cur}"))
+        ;;
+      esac
+      ;;
+    net)
+      case "$prev" in
+      add|remove|connect|disconnect)
+        local containers
+        containers=$(_dockero_get_containers)
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "${containers}" -- "${cur}"))
+        ;;
+      delete|inspect|rename)
+        local networks
+        networks=$(_dockero_get_networks)
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "${networks}" -- "${cur}"))
+        ;;
+      esac
+      ;;
+    volume)
+      case "$prev" in
+      remove|rm|inspect)
+        local volumes
+        volumes=$(_dockero_get_volumes)
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "${volumes}" -- "${cur}"))
+        ;;
+      attach)
+        local containers
+        containers=$(_dockero_get_containers)
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "${containers}" -- "${cur}"))
+        ;;
+      esac
+      ;;
+    registry)
+      case "$prev" in
+      push|pull)
+        local images
+        images=$(_dockero_get_images)
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "${images}" -- "${cur}"))
+        ;;
+      esac
+      ;;
+    esac
+    ;;
+  4)
+    case "${COMP_WORDS[1]}" in
+    setup)
+      if [[ "${COMP_WORDS[2]}" == "init" && "$prev" == "--preset" ]]; then
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "node python go rust php ruby java nginx redis postgres mysql" -- "${cur}"))
+      fi
+      ;;
+    system)
+      if [[ "${COMP_WORDS[2]}" == "service" ]]; then
+        local containers
+        containers=$(_dockero_get_containers)
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "${containers}" -- "${cur}"))
       fi
       ;;
     net)
       local subcmd="${COMP_WORDS[2]}"
-      local containers
-      local networks
-
-      if [[ "$COMP_CWORD" -eq 3 ]]; then
-        case "$subcmd" in
-        add | remove | connect | disconnect)
-          containers=$(_dockero_get_containers)
-          # shellcheck disable=SC2207
-          COMPREPLY=($(compgen -W "${containers}" -- "${cur}"))
-          ;;
-        delete | inspect | rename)
-          networks=$(_dockero_get_networks)
-          # shellcheck disable=SC2207
-          COMPREPLY=($(compgen -W "${networks}" -- "${cur}"))
-          ;;
-        esac
-      elif [[ "$COMP_CWORD" -eq 4 ]]; then
-        case "$subcmd" in
-        add | remove | connect | disconnect | rename)
-          networks=$(_dockero_get_networks)
-          # shellcheck disable=SC2207
-          COMPREPLY=($(compgen -W "${networks}" -- "${cur}"))
-          ;;
-        esac
-      fi
+      case "$subcmd" in
+      add|remove|connect|disconnect|rename)
+        local networks
+        networks=$(_dockero_get_networks)
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "${networks}" -- "${cur}"))
+        ;;
+      esac
       ;;
     esac
+    ;;
+  *)
+    # Position >= 4 for exec or other trailing targets
+    if [[ "${COMP_WORDS[1]}" == "exec" ]]; then
+      local running
+      running=$(_dockero_get_running)
+      # shellcheck disable=SC2207
+      COMPREPLY=($(compgen -W "${running}" -- "${cur}"))
+    fi
     ;;
   esac
 }
 
-# Cleanup old cache files on shell exit (optional)
+# Cleanup old cache files on shell exit
 _dockero_cleanup() {
-  find "$DOCKERO_CACHE_DIR" -type f -mtime +1 -delete 2>/dev/null
+  find "$DOCKERO_CACHE_DIR" -type f -mtime +1 -delete 2>/dev/null || true
 }
 trap _dockero_cleanup EXIT
 
