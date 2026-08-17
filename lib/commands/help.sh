@@ -31,9 +31,9 @@ ${BOLD_GREEN}Project & Environment Setup:${RESET_COLOR}
   dockero env <list|use|show|create|delete>
   dockero compose <up|down|start|stop|restart|ps|logs>
 
-${BOLD_GREEN}Networking & Sync:${RESET_COLOR}
-  dockero net <command> [<args>]
-  dockero sync <push|pull|watch|status|init>
+${BOLD_GREEN}Networking & Storage:${RESET_COLOR}
+  dockero net <create|delete|connect|disconnect|inspect|list|prune>
+  dockero volume <list|create|remove|inspect|attach|prune>
 
 ${BOLD_GREEN}Monitoring & Management:${RESET_COLOR}
   dockero monitor <top|stats|health|logs|watch>

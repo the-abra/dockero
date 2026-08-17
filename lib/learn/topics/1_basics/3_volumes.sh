@@ -28,7 +28,7 @@ run_lesson() {
     _subheading "Volumes in Dockero"
     echo "Dockero uses volumes extensively for development and data persistence."
     log.sub "When you use ${BOLD_GREEN}dockero setup .${RESET_COLOR}, your project directory is typically mounted as a volume."
-    log.sub "The ${BOLD_GREEN}dockero sync${RESET_COLOR} command also leverages volumes for file synchronization."
+    log.sub "The ${BOLD_GREEN}dockero volume${RESET_COLOR} command lets you create, inspect, and manage persistent volumes."
     log.sub "You can define volumes in your '.dockero' configuration files."
     echo ""
 

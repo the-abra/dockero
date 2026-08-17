@@ -118,7 +118,7 @@ fi
 # Test 7: Help function coverage in codebase
 print_section "Help Documentation Coverage"
 missing=0
-for cmd in create volume list monitor heal net sync compose env; do
+for cmd in create volume list monitor heal net system compose env; do
     if ! grep -q "${cmd}_help()" "${SCRIPT_DIR}/lib/commands/${cmd}.sh" 2>/dev/null; then
         ((missing++)) || true
     fi

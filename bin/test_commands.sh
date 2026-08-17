@@ -45,7 +45,7 @@ fi
 
 # Test new commands exist in help
 print_section "Subcommand Discovery"
-for cmd in registry secrets monitor wizard setup compose env sync validate system heal; do
+for cmd in registry secrets monitor wizard setup compose env validate system heal volume; do
     if "$DOCKERO" -h | grep -q "$cmd"; then
         pass "Subcommand '$cmd' listed in help manual"
     else

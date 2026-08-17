@@ -7,9 +7,9 @@ cat << EOF
 ${BOLD_CYAN}dockero system ${GREEN}<service|config|info|cleanup|install|dev> [options]${RESET_COLOR}
    ${BOLD_WHITE}• Purpose:${RESET_COLOR} System integration and management.
    ${BOLD_WHITE}• Subcommands:${RESET_COLOR}
-     - ${GREEN}service${RESET_COLOR}   Manage containers as systemd services.
+     - ${GREEN}service${RESET_COLOR}   Manage containers as systemd units (create, start, stop, enable, disable, status, logs).
      - ${GREEN}config${RESET_COLOR}    Manage Dockero configuration (get/set/list/reset).
-     - ${GREEN}info${RESET_COLOR}      Display system and Dockero environment info.
+     - ${GREEN}info${RESET_COLOR}      Display Linux OS, kernel, cgroups v2, and runtime info.
      - ${GREEN}cleanup${RESET_COLOR}   Clean up Docker resources.
      - ${GREEN}install${RESET_COLOR}   Install Dockero to a system location.
      - ${GREEN}dev${RESET_COLOR}       Convert installation to development symlinked setup.
@@ -160,11 +160,19 @@ system_service() {
             ;;
         "status")
             log.info "Checking status of systemd service: ${BOLD_YELLOW}$service_name${RESET_COLOR}."
-            systemctl --user status "$service_name" || systemctl status "$service_name" # $service_name is validated
+            systemctl --user status "$service_name" 2>/dev/null || systemctl status "$service_name"
+            ;;
+        "logs")
+            log.info "Showing journalctl logs for systemd service: ${BOLD_YELLOW}$service_name${RESET_COLOR}."
+            if systemctl --user is-active "$service_name" &>/dev/null; then
+                journalctl --user -u "$service_name" -n 50 --no-pager
+            else
+                journalctl -u "$service_name" -n 50 --no-pager 2>/dev/null || journalctl --user -u "$service_name" -n 50 --no-pager
+            fi
             ;;
         *)
             log.error "Unknown service operation: ${BOLD_RED}$operation${RESET_COLOR}"
-            log.sub "Supported operations: ${BOLD_GREEN}create${RESET_COLOR}, ${BOLD_GREEN}start${RESET_COLOR}, ${BOLD_GREEN}stop${RESET_COLOR}, ${BOLD_GREEN}enable${RESET_COLOR}, ${BOLD_GREEN}disable${RESET_COLOR}, ${BOLD_GREEN}status${RESET_COLOR}"
+            log.sub "Supported operations: ${BOLD_GREEN}create${RESET_COLOR}, ${BOLD_GREEN}start${RESET_COLOR}, ${BOLD_GREEN}stop${RESET_COLOR}, ${BOLD_GREEN}enable${RESET_COLOR}, ${BOLD_GREEN}disable${RESET_COLOR}, ${BOLD_GREEN}status${RESET_COLOR}, ${BOLD_GREEN}logs${RESET_COLOR}"
             return 1
             ;;
     esac
@@ -178,24 +186,25 @@ system_create_service_file() {
     log.info "Creating systemd service file for container: ${BOLD_YELLOW}$container_name${RESET_COLOR} at ${BOLD_YELLOW}$service_file${RESET_COLOR}."
     
     # Check if the container exists
-    if ! ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then # $container_name is validated
+    if ! ${DOCKERO_RUNTIME:-docker} ps -a --format '{{.Names}}' | grep -q "^$container_name$"; then
         log.error "Container '${RED}$container_name${RESET_COLOR}' does not exist. Cannot create service file."
         return 1
     fi
 
-    # Create the systemd service file (container_name and service_name are validated)
+    local runtime_bin
+    runtime_bin=$(command -v "${DOCKERO_RUNTIME:-docker}" || echo "/usr/bin/docker")
+
+    # Create the systemd service file
     cat > "$service_file" << EOF
 [Unit]
-Description=Dockero Container - $container_name
+Description=Dockero Container Service - $container_name
 After=docker.service
 Requires=docker.service
 
 [Service]
 Restart=always
-ExecStartPre=-/usr/bin/${DOCKERO_RUNTIME:-docker} stop $container_name
-ExecStartPre=-/usr/bin/${DOCKERO_RUNTIME:-docker} rm $container_name
-ExecStart=/usr/bin/${DOCKERO_RUNTIME:-docker} start -a $container_name
-ExecStop=/usr/bin/${DOCKERO_RUNTIME:-docker} stop $container_name
+ExecStart=$runtime_bin start -a $container_name
+ExecStop=$runtime_bin stop -t 10 $container_name
 TimeoutStartSec=0
 
 [Install]
@@ -211,10 +220,10 @@ EOF
     fi
     
     log.done "Systemd service '${BOLD_GREEN}$service_name${RESET_COLOR}' created: ${BOLD_GREEN}$service_file${RESET_COLOR}."
-    log.info "You can now manage the service with:"
-    log.sub "${BOLD_YELLOW}systemctl (--user) start $service_name${RESET_COLOR}"
-    log.sub "${BOLD_YELLOW}systemctl (--user) enable $service_name${RESET_COLOR}"
-    log.sub "${BOLD_YELLOW}journalctl (--user) -u $service_name -f${RESET_COLOR}"
+    log.info "Manage service via:"
+    log.sub "${BOLD_YELLOW}dockero system service start $container_name${RESET_COLOR}"
+    log.sub "${BOLD_YELLOW}dockero system service enable $container_name${RESET_COLOR}"
+    log.sub "${BOLD_YELLOW}dockero system service logs $container_name${RESET_COLOR}"
 }
 
 system_config() {
@@ -295,59 +304,79 @@ system_config() {
 }
 
 system_info() {
-    log.setline "${BOLD_CYAN}ℹ️ System Information${RESET_COLOR}"
+    log.setline "${BOLD_CYAN}ℹ️ Linux System & Runtime Information${RESET_COLOR}"
     
-    # Check Docker installation
-    if command -v docker &> /dev/null; then
-        log.info "Docker: ${BOLD_GREEN}$(docker --version | head -n 1)${RESET_COLOR}"
-        local docker_daemon_status
-        if ${DOCKERO_RUNTIME:-docker} ps -q &> /dev/null; then # Faster check
-            docker_daemon_status="${BOLD_GREEN}Running${RESET_COLOR}"
-        else
-            docker_daemon_status="${RED}Not running${RESET_COLOR}"
-        fi
-        log.sub "Docker daemon: $docker_daemon_status (Version: $(${DOCKERO_RUNTIME:-docker} info --format '{{.ServerVersion}}' 2>/dev/null || echo 'N/A'))"
-    else
-        log.warn "Docker: ${RED}Not installed${RESET_COLOR}"
-        # Check for Podman as alternative
-        if command -v podman &> /dev/null; then
-            log.info "Podman: ${BOLD_GREEN}$(podman --version | head -n 1)${RESET_COLOR}"
-        fi
+    # 1. Host OS & Kernel Info
+    local os_name="Linux"
+    if [[ -f "/etc/os-release" ]]; then
+        # shellcheck disable=SC1091
+        os_name=$(grep -E '^PRETTY_NAME=' /etc/os-release | cut -d= -f2 | tr -d '"')
     fi
+    log.info "Host OS: ${BOLD_GREEN}${os_name}${RESET_COLOR} ($(uname -m))"
+    log.sub "Kernel: ${BOLD_YELLOW}$(uname -s -r)${RESET_COLOR}"
     
-    # Check systemd availability
+    # 2. Linux cgroups Detection
+    local cgroup_ver="v1"
+    if [[ -f "/sys/fs/cgroup/cgroup.controllers" ]]; then
+        cgroup_ver="v2 (unified hierarchy)"
+    fi
+    log.sub "Control Groups: ${BOLD_GREEN}cgroup ${cgroup_ver}${RESET_COLOR}"
+
+    # 3. Systemd & Init System Status
     if command -v systemctl &> /dev/null; then
-        log.info "Systemd: ${BOLD_GREEN}Available${RESET_COLOR}"
+        if systemctl is-system-running &>/dev/null; then
+            log.sub "Init System: ${BOLD_GREEN}systemd (active)${RESET_COLOR}"
+        else
+            log.sub "Init System: ${BOLD_YELLOW}systemd (available)${RESET_COLOR}"
+        fi
     else
-        log.warn "Systemd: ${BOLD_RED}Not available${RESET_COLOR}"
+        log.warn "Init System: ${BOLD_RED}systemctl not available${RESET_COLOR}"
     fi
-    
-    # Check file system type for Docker
-    local docker_root_dir
-    docker_root_dir=$(${DOCKERO_RUNTIME:-docker} info --format '{{.DockerRootDir}}' 2>/dev/null || echo "/var/lib/docker")
-    if [[ -d "$docker_root_dir" ]]; then
-        local fs_type
-        fs_type=$(df -T "$docker_root_dir" | tail -1 | awk '{print $2}')
-        log.info "Docker storage filesystem: ${BOLD_YELLOW}$fs_type${RESET_COLOR}"
+
+    echo ""
+    # 4. Container Runtime Info
+    local runtime="${DOCKERO_RUNTIME:-docker}"
+    if command -v "$runtime" &> /dev/null; then
+        log.info "Runtime: ${BOLD_GREEN}$("$runtime" --version | head -n 1)${RESET_COLOR}"
+        local daemon_status
+        if "$runtime" ps -q &> /dev/null; then
+            daemon_status="${BOLD_GREEN}Active / Running${RESET_COLOR}"
+        else
+            daemon_status="${RED}Inactive / Not running${RESET_COLOR}"
+        fi
+        log.sub "Daemon Status: $daemon_status"
+        
+        local server_ver
+        server_ver=$("$runtime" info --format '{{.ServerVersion}}' 2>/dev/null || echo 'N/A')
+        local storage_driver
+        storage_driver=$("$runtime" info --format '{{.Driver}}' 2>/dev/null || echo 'N/A')
+        local root_dir
+        root_dir=$("$runtime" info --format '{{.DockerRootDir}}' 2>/dev/null || echo '/var/lib/docker')
+        
+        log.sub "Server Version: ${BOLD_YELLOW}${server_ver}${RESET_COLOR}"
+        log.sub "Storage Driver: ${BOLD_YELLOW}${storage_driver}${RESET_COLOR}"
+        log.sub "Data Root Directory: ${BOLD_YELLOW}${root_dir}${RESET_COLOR}"
+        
+        if command -v df &> /dev/null && [[ -d "$root_dir" ]]; then
+            local docker_space
+            docker_space=$(df -h "$root_dir" 2>/dev/null | tail -1 | awk '{print $4}')
+            local docker_fs
+            docker_fs=$(df -T "$root_dir" 2>/dev/null | tail -1 | awk '{print $2}')
+            log.sub "Filesystem: ${BOLD_YELLOW}${docker_fs}${RESET_COLOR} (Available Space: ${BOLD_GREEN}${docker_space:-Unknown}${RESET_COLOR})"
+        fi
     else
-        log.warn "Docker root directory not found: ${BOLD_YELLOW}$docker_root_dir${RESET_COLOR}"
+        log.error "Container Runtime: ${RED}$runtime is not installed${RESET_COLOR}"
     fi
     
-    # Check available disk space
-    if command -v df &> /dev/null; then
-        local docker_space
-        docker_space=$(df -h "$docker_root_dir" 2>/dev/null | tail -1 | awk '{print $4}')
-        log.info "Available Docker space: ${BOLD_GREEN}${docker_space:-Unknown}${RESET_COLOR}"
-    fi
-    
-    # Check for additional utilities
-    local -a utilities=("inotifywait" "rsync" "systemctl" "tput" "lsof" "netstat" "jq")
-    log.info "System utilities status:"
+    echo ""
+    # 5. Core Linux DevOps Utilities
+    local -a utilities=("systemctl" "journalctl" "jq" "curl" "tput" "lsof")
+    log.info "Linux Host Toolchain:"
     for util in "${utilities[@]}"; do
         if command -v "$util" &> /dev/null; then
-            log.sub "✓ ${GREEN}$util${RESET_COLOR}"
+            log.sub "✓ ${GREEN}$util${RESET_COLOR} ($(command -v "$util"))"
         else
-            log.sub "✗ ${RED}$util${RESET_COLOR}"
+            log.sub "✗ ${RED}$util${RESET_COLOR} (not found)"
         fi
     done
 }

@@ -16,7 +16,7 @@ explain() {
         log.sub "Shows what a Dockero command does and the equivalent Docker commands."
         
         # Hardcoded list of built-in subcommands plus dynamic user plugins
-        local builtins="compose,create,dashboard,env,exec,explain,export,heal,help,import,learn,list,monitor,net,plugin,registry,remove,rename,secrets,setup,show,start,stop,sync,system,validate,volume,wizard"
+        local builtins="compose,create,dashboard,env,exec,explain,export,heal,help,import,learn,list,monitor,net,plugin,registry,remove,rename,secrets,setup,show,start,stop,system,validate,volume,wizard"
         local user_plugins=""
         if [[ -d "${HOME}/.dockero/commands" ]]; then
             user_plugins=$(find "${HOME}/.dockero/commands" -maxdepth 1 -name "*.sh" 2>/dev/null | sed 's|.*/||; s|\.sh$||' | sort | tr '\n' ',' | sed 's/,$//' || true)
