@@ -30,8 +30,8 @@ rename() {
 }
 
 container_renaming() {
-    local current_name="$1"
-    local new_name="$2"
+    local current_name="${1:-}"
+    local new_name="${2:-}"
 
     log.setline "${BOLD_CYAN}🔄 Renaming Container${RESET_COLOR}"
 
@@ -62,8 +62,8 @@ container_renaming() {
 }
 
 image_renaming() {
-    local current_image_tag="$1"
-    local new_image_tag="$2"
+    local current_image_tag="${1:-}"
+    local new_image_tag="${2:-}"
 
     log.setline "${BOLD_CYAN}🔄 Retagging Image${RESET_COLOR}"
     log.info "Note: This operation retags the image. The old tag '${BOLD_YELLOW}$current_image_tag${RESET_COLOR}' will still exist unless you remove it manually."

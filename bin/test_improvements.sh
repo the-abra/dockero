@@ -162,6 +162,31 @@ else
 fi
 rm -rf "$TEST_PROJ_DIR"
 
+# Test 9: Unbound Variable Robustness (set -u)
+print_section "Unbound Variable Robustness"
+unbound_errors=0
+for test_cmd in \
+    "run" "create" "start" "stop" "exec" "list" "remove" "rename" "inspect" "export" "import" \
+    "setup" "compose" "validate" "net" "volume" "registry" "dashboard" "monitor" "system" "heal" "plugin" \
+    "system service" "system config" "system cleanup" \
+    "heal check" "heal fix" "heal diagnose" "heal cleanup" "heal restore" "heal policy" \
+    "net new" "net delete" "net add" "net remove" "net rename" "net inspect" \
+    "volume create" "volume remove" "volume inspect" "volume attach" \
+    "registry login" "registry push" "registry pull" "registry search" "registry logout"; do
+    if out=$("$DOCKERO" $test_cmd < /dev/null 2>&1); then
+        :
+    else
+        if echo "$out" | grep -q "unbound variable"; then
+            ((unbound_errors++)) || true
+        fi
+    fi
+done
+if [[ $unbound_errors -eq 0 ]]; then
+    pass "All 40+ subcommands handle zero/empty arguments without unbound variable crashes"
+else
+    fail "$unbound_errors subcommands crashed with unbound variable errors"
+fi
+
 # Summary
 TOTAL=$((PASS + FAIL))
 echo -e "\n${BOLD}${BLUE}========================================================================${NC}"

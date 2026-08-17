@@ -43,8 +43,8 @@ columns=$(tput cols 2>/dev/null || echo "${COLUMNS:-80}")
 
 # ── Internal prefix builder ───────────────────────────────────────────────────
 _log_prefix() {
-    local level_text="$1"
-    local level_color="$2"
+    local level_text="${1:-}"
+    local level_color="${2:-}"
     local timestamp_str=""
 
     if [[ "${DOCKERO_LOG_TIMESTAMPS:-true}" == "true" ]]; then
@@ -64,7 +64,7 @@ _log_prefix() {
 
 # ── Core log function ─────────────────────────────────────────────────────────
 function log() {
-    local level="$1" message="$2" prefix_color="$3" msg_color="$4" indent="$5"
+    local level="${1:-}" message="${2:-}" prefix_color="${3:-}" msg_color="${4:-}" indent="${5:-}"
     local prefix
     prefix="$(_log_prefix "$level" "$prefix_color")"
     if [[ "$_DOCKERO_HAS_COLORS" == "true" ]]; then
@@ -75,27 +75,27 @@ function log() {
 }
 
 # ── Log levels ────────────────────────────────────────────────────────────────
-function log.info()  { log "INFO" "$1" "$COLOR_INFO"  "$COLOR_MSG_INFO"  "";    }
-function log.warn()  { log "WARN" "$1" "$COLOR_WARN"  "$COLOR_MSG_WARN"  "" >&2; }
-function log.error() { log "FAIL" "$1" "$COLOR_ERROR" "$COLOR_MSG_ERROR" "" >&2; }
-function log.done()  { log "DONE" "$1" "$COLOR_DONE"  "$COLOR_MSG_DONE"  "";    }
+function log.info()  { log "INFO" "${1:-}" "$COLOR_INFO"  "$COLOR_MSG_INFO"  "";    }
+function log.warn()  { log "WARN" "${1:-}" "$COLOR_WARN"  "$COLOR_MSG_WARN"  "" >&2; }
+function log.error() { log "FAIL" "${1:-}" "$COLOR_ERROR" "$COLOR_MSG_ERROR" "" >&2; }
+function log.done()  { log "DONE" "${1:-}" "$COLOR_DONE"  "$COLOR_MSG_DONE"  "";    }
 function log.sub() {
     if [[ "$_DOCKERO_HAS_COLORS" == "true" ]]; then
-        echo -e "              ${COLOR_SUB}›${RESET_COLOR} ${COLOR_MSG_SUB}${1}${RESET_COLOR}"
+        echo -e "              ${COLOR_SUB}›${RESET_COLOR} ${COLOR_MSG_SUB}${1:-}${RESET_COLOR}"
     else
-        echo -e "               › ${1}"
+        echo -e "               › ${1:-}"
     fi
 }
-function log.hint()  { log "HINT" "$1" "$COLOR_HINT"  "$COLOR_MSG_HINT"  ""; }
+function log.hint()  { log "HINT" "${1:-}" "$COLOR_HINT"  "$COLOR_MSG_HINT"  ""; }
 function log.debug() {
     if [[ "${DOCKERO_DEBUG:-false}" == "true" ]]; then
-        log "DEBG" "$1" "$COLOR_SUB" "$COLOR_MSG_SUB" ""
+        log "DEBG" "${1:-}" "$COLOR_SUB" "$COLOR_MSG_SUB" ""
     fi
 }
 
 # ── Section line ──────────────────────────────────────────────────────────────
 function log.setline() {
-    local title="$1"
+    local title="${1:-}"
     local line_char="─"
     local total=$columns
     local line=""
@@ -107,9 +107,8 @@ function log.setline() {
         [[ $side -lt 1 ]] && side=1
 
         local left="" right=""
-        for ((i=0; i<side; i++));       do left+="$line_char";  done
-        for ((i=0; i<side; i++));       do right+="$line_char"; done
-        # pad right by 1 if total is odd
+        for ((i=0; i<side; i++)); do left+="$line_char"; done
+        for ((i=0; i<side; i++)); do right+="$line_char"; done
         (( (side * 2 + plain_len) < total )) && right+="$line_char"
 
         if [[ "$_DOCKERO_HAS_COLORS" == "true" ]]; then
@@ -125,4 +124,6 @@ function log.setline() {
     echo -e "$line"
 }
 
-function log.endline() { echo ""; }
+function log.endline() {
+    echo ""
+}

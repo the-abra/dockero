@@ -21,7 +21,7 @@ EOF
 }
 
 _net_validate_name() {
-    local name="$1"
+    local name="${1:-}"
     if [[ ! "$name" =~ ^[a-zA-Z0-9_-]+$ ]]; then
         log.error "Invalid network name: '${RED}$name${RESET_COLOR}'. Network names can only contain alphanumeric characters, underscores, and hyphens."
         return 1

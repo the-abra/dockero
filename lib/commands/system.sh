@@ -20,7 +20,7 @@ EOF
 
 
 _system_validate_service_name() {
-    local name="$1"
+    local name="${1:-}"
     # systemd service names generally allow alphanumeric, hyphens, and dots.
     if [[ ! "$name" =~ ^[a-zA-Z0-9.-]+$ ]]; then
         log.error "Invalid service name: '${RED}$name${RESET_COLOR}'. Service names can only contain alphanumeric characters, hyphens, and dots."
@@ -31,7 +31,7 @@ _system_validate_service_name() {
 
 # Helper function to validate installation path
 _system_validate_install_path() {
-    local path="$1"
+    local path="${1:-}"
     # Basic path validation: no '..' for directory traversal
     if [[ "$path" =~ \.\. ]]; then
         log.error "Invalid installation path: '${RED}$path${RESET_COLOR}'. Path traversal sequences (..) are not allowed."
@@ -78,9 +78,9 @@ system() {
 }
 
 system_service() {
-    local operation="$1"
-    local container_name_arg="$2" # User-supplied container name
-    local service_name_arg="$3" # User-supplied service name
+    local operation="${1:-}"
+    local container_name_arg="${2:-}" # User-supplied container name
+    local service_name_arg="${3:-}" # User-supplied service name
     
     # Validate user inputs early
     if [[ -n "$container_name_arg" ]] && ! validate_container_name "$container_name_arg"; then return 1; fi
@@ -160,14 +160,17 @@ system_service() {
             ;;
         "status")
             log.info "Checking status of systemd service: ${BOLD_YELLOW}$service_name${RESET_COLOR}."
-            systemctl --user status "$service_name" 2>/dev/null || systemctl status "$service_name"
+            if ! systemctl --user status "$service_name" --no-pager 2>/dev/null && ! sudo systemctl status "$service_name" --no-pager 2>/dev/null; then
+                log.warn "Service '${BOLD_YELLOW}$service_name${RESET_COLOR}' is not active or does not exist."
+            fi
             ;;
         "logs")
-            log.info "Showing journalctl logs for systemd service: ${BOLD_YELLOW}$service_name${RESET_COLOR}."
-            if systemctl --user is-active "$service_name" &>/dev/null; then
-                journalctl --user -u "$service_name" -n 50 --no-pager
+            log.info "Displaying journalctl logs for systemd service: ${BOLD_YELLOW}$service_name${RESET_COLOR}."
+            if command -v journalctl &>/dev/null; then
+                journalctl -u "$service_name" -n 50 --no-pager 2>/dev/null || sudo journalctl -u "$service_name" -n 50 --no-pager 2>/dev/null || log.warn "No journal logs available."
             else
-                journalctl -u "$service_name" -n 50 --no-pager 2>/dev/null || journalctl --user -u "$service_name" -n 50 --no-pager
+                log.error "journalctl command not found on host."
+                return 1
             fi
             ;;
         *)
@@ -176,12 +179,13 @@ system_service() {
             return 1
             ;;
     esac
+    return 0
 }
 
 system_create_service_file() {
-    local container_name="$1"
-    local service_name="$2"
-    local service_file="$3"
+    local container_name="${1:-}"
+    local service_name="${2:-}"
+    local service_file="${3:-}"
     
     log.info "Creating systemd service file for container: ${BOLD_YELLOW}$container_name${RESET_COLOR} at ${BOLD_YELLOW}$service_file${RESET_COLOR}."
     
@@ -227,9 +231,9 @@ EOF
 }
 
 system_config() {
-    local operation="$1"
-    local key="$2"
-    local value="$3"
+    local operation="${1:-}"
+    local key="${2:-}"
+    local value="${3:-}"
     
     local config_dir="$HOME/.dockero"
     mkdir -p "$config_dir"
@@ -382,11 +386,7 @@ system_info() {
 }
 
 system_cleanup() {
-    local target="$1" # "${args[@]:2}" for subcommand args, but cleanup only takes 1 (target)
-    
-    if [[ -z "$target" ]]; then
-        target="all"
-    fi
+    local target="${1:-all}"
 
     log.setline "${BOLD_CYAN}🧹 System Cleanup${RESET_COLOR}"
     log.info "Performing cleanup for target: ${BOLD_YELLOW}$target${RESET_COLOR}."

@@ -65,7 +65,7 @@ heal() {
 
 # Health monitoring system
 heal_check() {
-    local target="$1"
+    local target="${1:-all}"
     local issues_found=0
     local fixes_available=0
 
@@ -210,7 +210,7 @@ heal_check() {
 
 # Auto-recovery mechanisms
 heal_fix() {
-    local target="$1"
+    local target="${1:-}"
     local specific_item="${2:-}"
 
     if [[ -z "$target" ]]; then
@@ -429,7 +429,7 @@ heal_auto() {
 
 # Monitoring daemon (would run in background in real implementation)
 heal_monitor() {
-    local monitor_type="$1"
+    local monitor_type="${1:-all}"
     
     log.setline "${BOLD_CYAN}👁️  Real-time Monitor${RESET_COLOR}"
     log.info "Real-time monitoring would start in background..."
@@ -443,7 +443,7 @@ heal_monitor() {
 
 # Diagnostic tools
 heal_diagnose() {
-    local issue_type="$1"
+    local issue_type="${1:-startup}"
 
     log.setline "${BOLD_CYAN}Deep Diagnosis${RESET_COLOR}"
 
@@ -548,11 +548,7 @@ heal_diagnose() {
 
 # Proactive cleanup
 heal_cleanup() {
-    local target="$1"
-
-    if [[ -z "$target" ]]; then
-        target="all"
-    fi
+    local target="${1:-all}"
 
     log.setline "${BOLD_CYAN}🧹 Proactive Cleanup${RESET_COLOR}"
 
@@ -635,7 +631,7 @@ heal_cleanup() {
 
 # Environment restoration
 heal_restore() {
-    local target="$1"
+    local target="${1:-}"
     
     if [[ -z "$target" ]]; then
         log.hint "Usage: heal restore <target>"
@@ -767,7 +763,7 @@ heal_watch() {
 
 # Health policies and automated rules
 heal_policy() {
-    local action="$1"
+    local action="${1:-list}"
     local policy_type="${2:-}"
     
     if [[ -z "$action" ]]; then

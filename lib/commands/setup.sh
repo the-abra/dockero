@@ -157,7 +157,7 @@ setup_run() {
 }
 
 setup_init() {
-    local project_path="$1"
+    local project_path="${1:-.}"
     
     if [[ -z "$project_path" ]]; then
         log.hint "Usage: ${BOLD_YELLOW}dockero setup init <project-path> [--preset <type>]${RESET_COLOR}"

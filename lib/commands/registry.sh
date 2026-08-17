@@ -17,7 +17,7 @@ EOF
 }
 
 _registry_validate_url() {
-    local url="$1"
+    local url="${1:-}"
     if [[ ! "$url" =~ ^[a-zA-Z0-9.-]+(:[0-9]+)?$ ]]; then
         log.error "Invalid registry URL: '${RED}$url${RESET_COLOR}'. Registry URLs should be hostname[:port]."
         return 1
@@ -26,7 +26,7 @@ _registry_validate_url() {
 }
 
 _registry_validate_username() {
-    local username="$1"
+    local username="${1:-}"
     if [[ ! "$username" =~ ^[a-zA-Z0-9_.-]+$ ]]; then
         log.error "Invalid username: '${RED}$username${RESET_COLOR}'. Usernames can only contain alphanumeric characters, underscores, hyphens, and dots."
         return 1
@@ -81,7 +81,13 @@ registry_login() {
   if [[ -n "$username_arg" ]] && ! _registry_validate_username "$username_arg"; then return 1; fi
 
   if [[ -z "$username_arg" ]]; then
-    read -rp "${BOLD_WHITE}Enter username for registry: ${RESET_COLOR}" username_arg
+    if [[ -t 0 ]]; then
+      read -rp "${BOLD_WHITE}Enter username for registry: ${RESET_COLOR}" username_arg
+    else
+      log.error "Username required for registry login."
+      log.hint "Usage: ${BOLD_YELLOW}dockero registry login [url] -u <username>${RESET_COLOR}"
+      return 1
+    fi
     if [[ -z "$username_arg" ]]; then
       log.error "Username cannot be empty."
       return 1

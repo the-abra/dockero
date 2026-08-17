@@ -13,7 +13,7 @@ EOF
 
 
 _compose_get_services() {
-    local compose_file="$1"
+    local compose_file="${1:-}"
     local -a services=()
     if [[ -f "$compose_file" ]]; then
         while IFS= read -r line; do
@@ -439,7 +439,7 @@ compose_ps() {
 }
 
 compose_logs() {
-    local service_name_arg="$1" # Renamed to avoid conflict with local service_name
+    local service_name_arg="${1:-}" # Renamed to avoid conflict with local service_name
     local compose_file
     compose_file=$(find_compose_file) || return 1
     

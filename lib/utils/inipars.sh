@@ -8,15 +8,15 @@
 
 # Helper function to escape regex metacharacters for sed/awk
 _inipars_escape_regex() {
-  printf '%s\n' "$1" | sed -e 's/[][\\.^$*+?|(){}]/\\&/g'
+  printf '%s\n' "${1:-}" | sed -e 's/[][\\.^$*+?|(){}]/\\&/g'
 }
 
 # Helper: Ensure file exists; if not, create it with the initial section and key/value
 _inipars_ensure_file_exists() {
-  local file="$1"
-  local section="$2"
-  local key="$3"
-  local value="$4"
+  local file="${1:-}"
+  local section="${2:-}"
+  local key="${3:-}"
+  local value="${4:-}"
 
   if [[ ! -f "$file" ]]; then
     log.info "Creating new INI file: ${BOLD_YELLOW}$file${RESET_COLOR}"
@@ -29,16 +29,16 @@ _inipars_ensure_file_exists() {
 
 # Helper: Check if a section exists in the file
 _inipars_section_exists() {
-  local file="$1"
-  local escaped_section="$2"
+  local file="${1:-}"
+  local escaped_section="${2:-}"
   grep -q "^\[$escaped_section\]$" "$file" 2>/dev/null
 }
 
 # Helper: Check if a key exists within a specific section
 _inipars_key_exists_in_section() {
-  local file="$1"
-  local escaped_section="$2"
-  local escaped_key="$3"
+  local file="${1:-}"
+  local escaped_section="${2:-}"
+  local escaped_key="${3:-}"
 
   awk -v sec="[$escaped_section]" -v k="^[ \t]*${escaped_key}[ \t]*=" '
     BEGIN { in_sec = 0; found = 0 }
@@ -51,11 +51,11 @@ _inipars_key_exists_in_section() {
 
 # Helper: Update an existing key's value within a section
 _inipars_update_key_in_file() {
-  local file="$1"
-  local escaped_section="$2"
-  local escaped_key="$3"
-  local key="$4"
-  local value="$5"
+  local file="${1:-}"
+  local escaped_section="${2:-}"
+  local escaped_key="${3:-}"
+  local key="${4:-}"
+  local value="${5:-}"
 
   awk -v target_section="[$escaped_section]" \
       -v target_key_pattern="^[ \t]*${escaped_key}[ \t]*=" \
@@ -80,10 +80,10 @@ _inipars_update_key_in_file() {
 
 # Helper: Add a new key/value to an existing section
 _inipars_add_key_to_section_in_file() {
-  local file="$1"
-  local escaped_section="$2"
-  local key="$3"
-  local value="$4"
+  local file="${1:-}"
+  local escaped_section="${2:-}"
+  local key="${3:-}"
+  local value="${4:-}"
 
   awk -v target_section="[$escaped_section]" \
       -v new_line="${key} = ${value}" \
@@ -112,10 +112,10 @@ _inipars_add_key_to_section_in_file() {
 
 # Helper: Append a new section and key/value to the end of the file
 _inipars_add_section_and_key_to_file() {
-  local file="$1"
-  local section="$2"
-  local key="$3"
-  local value="$4"
+  local file="${1:-}"
+  local section="${2:-}"
+  local key="${3:-}"
+  local value="${4:-}"
 
   [[ -s "$file" ]] && echo "" >> "$file"
   echo "[$section]" >> "$file"
@@ -123,8 +123,8 @@ _inipars_add_section_and_key_to_file() {
 }
 
 inipars.get() {
-  local section="$1"
-  local key="$2"
+  local section="${1:-}"
+  local key="${2:-}"
   local file="${3:-${CONF_FILE:-}}"
 
   [[ -z "$file" || ! -f "$file" ]] && return 1
@@ -154,7 +154,7 @@ inipars.get() {
 }
 
 inipars.section() {
-  local section="$1"
+  local section="${1:-}"
   local file="${2:-${CONF_FILE:-}}"
 
   [[ -z "$file" || ! -f "$file" ]] && return 1
@@ -180,9 +180,9 @@ inipars.section() {
 }
 
 inipars.set() {
-  local section="$1"
-  local key="$2"
-  local value="$3"
+  local section="${1:-}"
+  local key="${2:-}"
+  local value="${3:-}"
   local file="${4:-${CONF_FILE:-}}"
 
   [[ -z "$file" ]] && return 1

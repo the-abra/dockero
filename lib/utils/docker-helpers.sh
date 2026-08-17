@@ -4,7 +4,7 @@
 
 # Function to pull a Docker image
 image_pulling() { # Renamed from image_clonning for clarity
-  local image_name="$1"
+  local image_name="${1:-}"
   log.info "Pulling image: ${BOLD_YELLOW}$image_name${RESET_COLOR}"
   
   # Use mktemp for secure temporary log file
@@ -25,15 +25,15 @@ image_pulling() { # Renamed from image_clonning for clarity
 # Function to run a Docker container with various options
 # Arguments: container_name, image_name, detach_mode, cmd_args_str, volume_mount, port_mapping, restart_policy, user_name, user_gid, network_mode, env_var, env_file
 docker_run() {
-  local container_name="$1"
-  local image_name="$2"
-  local detach_mode="$3"
-  local cmd_args_str="$4"
-  local volume_mount="$5"
-  local port_mapping="$6"
-  local restart_policy="$7"
-  local user_name="$8"
-  local user_gid="$9"
+  local container_name="${1:-}"
+  local image_name="${2:-}"
+  local detach_mode="${3:-false}"
+  local cmd_args_str="${4:-}"
+  local volume_mount="${5:-}"
+  local port_mapping="${6:-}"
+  local restart_policy="${7:-}"
+  local user_name="${8:-}"
+  local user_gid="${9:-}"
   local network_mode="${10:-}"
   local env_var="${11:-}"
   local env_file="${12:-}"
