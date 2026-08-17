@@ -43,7 +43,7 @@ create() {
   local volume_mount=""
   if [[ -n "${params[volume]+set}" ]]; then
     volume_mount="${params[volume]}"
-  elif [[ -n "${params[v]+set}" && "${params[v]}" == *:* ]]; then
+  elif [[ -n "${params[v]+set}" && "${params[v]}" != "true" ]]; then
     volume_mount="${params[v]}"
   else
     volume_mount="/opt/${container_name}:/workspace"

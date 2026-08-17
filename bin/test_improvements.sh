@@ -58,7 +58,7 @@ else
     skip "jq utility is installed (skipped: jq unavailable)"
 fi
 
-# Test 2: Parameter parsing with values
+# Test 2: Parameter parsing with values and boolean flags
 print_section "Parameter Parsing"
 if (
     declare -A params
@@ -70,6 +70,18 @@ if (
     pass "Handles 'mycontainer -t 50 -f' parameter indexing"
 else
     fail "Handles 'mycontainer -t 50 -f' parameter indexing"
+fi
+
+if (
+    declare -A params
+    args=()
+    source "${SCRIPT_DIR}/lib/parameter-indexing.sh"
+    parameter-indexing run -d mycontainer nginx -p 8080:80
+    [[ "${params[d]}" == "true" && "${params[p]}" == "8080:80" && "${args[0]}" == "run" && "${args[1]}" == "mycontainer" && "${args[2]}" == "nginx" ]]
+); then
+    pass "Handles '-d mycontainer' without eating container name"
+else
+    fail "Handles '-d mycontainer' without eating container name"
 fi
 
 # Test 3: Standalone execution of help

@@ -16,21 +16,29 @@ parameter-indexing() {
         params["$key"]="true"
         shift
         ;;
+      --no-volume|--detach|--dry-run|--daemon|--force|--follow|--all|--quiet) # Known long boolean flags
+        key="${1##--}"
+        params["$key"]="true"
+        shift
+        ;;
       --*) # Long named params: --key value
         key="${1##--}"
         if [[ -n "${2:-}" && "${2}" != -* ]]; then
           params["$key"]="$2"
           shift 2
         else
-          # Treat as boolean if no value follows
           params["$key"]="true"
           shift
         fi
         ;;
-      -*) # Short flags: -f value or -f (boolean)
+      -d|-f|-h|-q|-a|-n|-y|-i) # Strict boolean short flags (do not consume next argument)
+        key="${1##-}"
+        params["$key"]="true"
+        shift
+        ;;
+      -*) # Short flags with optional value: -p 8080, -c "bash", -v host:cont
         key="${1##-}"
         if [[ ${#key} -eq 1 && -n "${2:-}" && "${2}" != -* ]]; then
-          # Single-char flag followed by a non-flag value → treat as key=value
           params["$key"]="$2"
           shift 2
         else

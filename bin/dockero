@@ -139,6 +139,9 @@ load_command() {
     "inspect")
       func_name="inspect"
       ;;
+    "exec")
+      func_name="exec_cmd"
+      ;;
   esac
 
   # 2. Check if the function is already loaded (compiled built-in or loaded plugin)

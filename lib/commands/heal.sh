@@ -689,28 +689,27 @@ heal_restore() {
             log.done "Configuration restoration check completed. Manual intervention may be required."
             ;;
         "workspace")
-            log.info "Checking workspace synchronizations..."
-            # This would check for .dockero-sync files and ensure sync is working
-            local -a sync_files=()
+            log.info "Checking workspace project configurations..."
+            local -a proj_files=()
             while IFS= read -r -d '' file; do
-                sync_files+=("$file")
-            done < <(find . -name ".dockero-sync" -not -path "*/\.*" -print0 2>/dev/null)
+                proj_files+=("$file")
+            done < <(find . -name ".dockero" -not -path "*/\.*" -print0 2>/dev/null)
             
-            if [[ ${#sync_files[@]} -gt 0 ]]; then
-                log.sub "Found ${BOLD_GREEN}${#sync_files[@]}${RESET_COLOR} sync configuration files."
-                for sync_file in "${sync_files[@]}"; do
-                    log.sub "  - ${YELLOW}$sync_file${RESET_COLOR}"
+            if [[ ${#proj_files[@]} -gt 0 ]]; then
+                log.sub "Found ${BOLD_GREEN}${#proj_files[@]}${RESET_COLOR} project configuration files."
+                for proj_file in "${proj_files[@]}"; do
+                    log.sub "  - ${YELLOW}$proj_file${RESET_COLOR}"
                 done
-                log.hint "To manage sync: ${BOLD_YELLOW}dockero sync status <container-name>${RESET_COLOR} or ${BOLD_YELLOW}dockero sync watch <container-name>${RESET_COLOR}"
+                log.hint "To validate configurations: ${BOLD_YELLOW}dockero validate${RESET_COLOR}"
             else
-                log.info "No sync configurations found."
+                log.info "No .dockero project configurations found."
             fi
-            log.done "Workspace restoration check completed."
+            log.done "Workspace project check completed."
             ;;
         "containers"|"container")
             log.info "Restoring container health..."
             
-            # Get all containers that have .dockero references in their names or labels
+            # Get all containers
             local all_containers_names
             all_containers_names=$(${DOCKERO_RUNTIME:-docker} ps -a --format "{{.Names}}")
             
@@ -719,15 +718,15 @@ heal_restore() {
                 if ${DOCKERO_RUNTIME:-docker} ps --format "{{.Names}}" | grep -q "^$container_name$"; then
                     log.sub "✓ ${GREEN}$container_name${RESET_COLOR} running."
                 else
-                    log.sub "~ ${YELLOW}$container_name${RESET_COLOR} stopped. Checking if it should be running..."
-                    echo "STOPPED" # Indicate a stopped container
+                    log.sub "~ ${YELLOW}$container_name${RESET_COLOR} stopped."
+                    echo "STOPPED"
                 fi
             done)
             local containers_to_restore
             containers_to_restore=$(echo "$containers_to_restore_output" | grep -c "STOPPED")
             if [[ "$containers_to_restore" -gt 0 ]]; then
-                log.warn "${BOLD_YELLOW}$containers_to_restore${RESET_COLOR} stopped containers found that may need manual restart."
-                log.hint "Consider: ${BOLD_YELLOW}dockero start <container-name>${RESET_COLOR} or ${BOLD_YELLOW}dockero heal fix containers${RESET_COLOR}"
+                log.warn "${BOLD_YELLOW}$containers_to_restore${RESET_COLOR} stopped containers found."
+                log.hint "Auto-start: ${BOLD_YELLOW}dockero heal fix containers${RESET_COLOR}"
             else
                 log.done "All containers appear in their expected state."
             fi
@@ -748,47 +747,22 @@ heal_restore() {
     esac
 }
 
-# Real-time monitoring and alerting
+# Real-time continuous healing engine
 heal_watch() {
-    local monitor_type="$1"
+    local monitor_type="${1:-all}"
     
-    if [[ -z "$monitor_type" ]]; then
-        monitor_type="all"
-    fi
+    log.setline "${BOLD_CYAN}👁️  Continuous Self-Healing Watch Engine${RESET_COLOR}"
+    log.info "Live monitoring & auto-healing active for: ${BOLD_GREEN}$monitor_type${RESET_COLOR}"
+    log.sub "Press Ctrl+C to stop."
     
-    log.setline "${BOLD_CYAN}👁️  Real-time Watch System${RESET_COLOR}"
-    log.info "Monitoring: ${BOLD_GREEN}$monitor_type${RESET_COLOR}"
-    
-    case "$monitor_type" in
-        "containers"|"container")
-            log.info "Monitoring container health..."
-            log.sub "Press Ctrl+C to stop monitoring."
-            
-            # In a real implementation, this would run continuously
-            # For this demo, we'll just simulate the check
-            log.sub "Checking container status every 30s..."
-            log.sub "Would monitor for: crashes, resource issues, network problems."
-            ;;
-        "resources"|"resource")
-            log.info "Monitoring system resources..."
-            log.sub "Would monitor for: disk space, memory usage, CPU limits."
-            ;;
-        "config"|"configuration")
-            log.info "Monitoring configuration drift..."
-            log.sub "Would watch for changes to .dockero files and sync state."
-            ;;
-        "all")
-            log.info "Monitoring all system aspects..."
-            log.sub "Containers, resources, and configuration changes."
-            ;;
-        *)
-            log.error "Unknown watch type: ${BOLD_RED}$monitor_type${RESET_COLOR}"
-            log.sub "Valid types: ${BOLD_GREEN}containers${RESET_COLOR}, ${BOLD_GREEN}resources${RESET_COLOR}, ${BOLD_GREEN}config${RESET_COLOR}, ${BOLD_GREEN}all${RESET_COLOR}"
-            return 1
-            ;;
-    esac
-    
-    log.sub "To run continuously: ${BOLD_YELLOW}dockero heal watch $monitor_type --daemon${RESET_COLOR}"
+    local interval=10
+    while true; do
+        clear
+        echo -e "${COLOR_GENERIC}${BOLD}=== Dockero Autonomous Health Engine ===${RESET_COLOR}"
+        echo -e "${COLOR_DATE}$(date): System checks active...${RESET_COLOR}\n"
+        heal_check "$monitor_type"
+        sleep "$interval"
+    done
 }
 
 # Health policies and automated rules

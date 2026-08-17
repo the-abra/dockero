@@ -83,7 +83,7 @@ image_renaming() {
         log.info "Retagging image '${BOLD_YELLOW}$current_image_tag${RESET_COLOR}' as '${BOLD_YELLOW}$new_image_tag${RESET_COLOR}'."
         if ${DOCKERO_RUNTIME:-docker} tag "$current_image_tag" "$new_image_tag"; then # Tags are validated
             log.done "Image '${BOLD_GREEN}$current_image_tag${RESET_COLOR}' retagged as '${BOLD_GREEN}$new_image_tag${RESET_COLOR}' successfully."
-            log.hint "To remove the old tag, use: ${BOLD_YELLOW}dockero remove '$current_image_tag' -img${RESET_COLOR}"
+            log.hint "To remove the old tag, use: ${BOLD_YELLOW}dockero remove '$current_image_tag'${RESET_COLOR}"
             return 0
         else
             log.error "Failed to tag image '${RED}$current_image_tag${RESET_COLOR}'."

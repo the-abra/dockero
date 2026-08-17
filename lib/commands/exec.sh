@@ -17,7 +17,7 @@ ${BOLD_CYAN}dockero exec ${GREEN}<command> [args...] <container>${RESET_COLOR}
 EOF
 }
 
-exec() {
+exec_cmd() {
   if [[ $# -lt 2 ]]; then
     log.hint "Usage: ${BOLD_YELLOW}dockero exec <command> [args...] <container>${RESET_COLOR}"
     return 1

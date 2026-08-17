@@ -29,21 +29,22 @@ setup() {
 
     # Default to 'run' subcommand if no explicit subcommand is provided
     if [[ -z "$subcommand" ]] || [[ "$subcommand" != "init" && "$subcommand" != "run" && "$subcommand" != "create" && "$subcommand" != "build" && "$subcommand" != "update" && "$subcommand" != "teardown" && "$subcommand" != "delete" ]]; then
-        # If the first argument is a path and not a known subcommand, assume 'run'
-        setup_run "${args[1]:-}" "$has_dry_run"
+        # If no argument or a path is given, assume 'run' on given path or current dir
+        local target_path="${args[1]:-.}"
+        setup_run "$target_path" "$has_dry_run"
     else
         case "$subcommand" in
             "init"|"create")
                 setup_init "${args[2]:-./}"
                 ;;
             "run"|"build")
-                setup_run "${args[2]:-}" "$has_dry_run"
+                setup_run "${args[2]:-.}" "$has_dry_run"
                 ;;
             "update")
-                setup_update "${args[2]:-}"
+                setup_update "${args[2]:-.}"
                 ;;
             "teardown"|"delete")
-                setup_teardown "${args[2]:-}"
+                setup_teardown "${args[2]:-.}"
                 ;;
             *)
                 log.error "Unknown setup subcommand: ${BOLD_RED}$subcommand${RESET_COLOR}"
@@ -55,13 +56,8 @@ setup() {
 }
 
 setup_run() {
-    local project_path="${1:-}"
+    local project_path="${1:-.}"
     local dry_run="${2:-0}" # 0 for normal run, 1 for dry-run
-
-    if [[ -z "$project_path" ]]; then
-        log.hint "Usage: ${BOLD_YELLOW}dockero setup run <project-path> [--dry-run]${RESET_COLOR}"
-        return 1
-    fi
 
     [[ "$project_path" != /* ]] && project_path="$PWD/$project_path"
     local CONF_FILE="$project_path/.dockero"

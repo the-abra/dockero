@@ -12,7 +12,7 @@ EOF
 }
 
 list() {
-  if [[ "${args[1]:-}" == "img" ]]; then
+  if [[ "${args[1]:-}" == "img" || "${args[1]:-}" == "images" || "${args[1]:-}" == "image" ]]; then
     ${DOCKERO_RUNTIME:-docker} images
   else
     log.setline "Container List"

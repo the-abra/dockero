@@ -92,7 +92,7 @@ system_service() {
     
     if [[ -z "$operation" ]] || [[ -z "$container_name" ]]; then
         log.error "Operation and container name required."
-        log.hint "Usage: ${BOLD_YELLOW}dockero system service <create|start|stop|enable|disable|status> <container-name> [service-name]${RESET_COLOR}"
+        log.hint "Usage: ${BOLD_YELLOW}dockero system service <create|start|stop|enable|disable|status|logs> <container-name> [service-name]${RESET_COLOR}"
         return 1
     fi
     
