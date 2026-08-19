@@ -56,7 +56,12 @@ _dockero_get_stopped() {
 # Get local images (cached)
 _dockero_get_images() {
   if ! _dockero_get_cache "images"; then
-    _dockero_update_cache "images" ${DOCKERO_RUNTIME:-docker} images --format "{{.Repository}}:{{.Tag}}"
+    local imgs
+    imgs=$(${DOCKERO_RUNTIME:-docker} images --format "{{.Repository}}:{{.Tag}}" 2>/dev/null | grep -v '<none>' || true)
+    if [[ -n "$imgs" ]]; then
+      echo "$imgs" > "$DOCKERO_CACHE_DIR/images"
+      echo "$imgs"
+    fi
   fi
 }
 
@@ -81,6 +86,16 @@ _dockero_get_volumes() {
   fi
 }
 
+__dockero_ltrim_colon() {
+  if [[ "$cur" == *:* ]]; then
+    local colon_prefix="${cur%"${cur##*:}"}"
+    local i
+    for i in "${!COMPREPLY[@]}"; do
+      COMPREPLY[i]="${COMPREPLY[i]#"$colon_prefix"}"
+    done
+  fi
+}
+
 _dockero_autocomplete() {
   local cur prev words cword
   COMPREPLY=()
@@ -90,6 +105,23 @@ _dockero_autocomplete() {
   # Active base commands and aliases
   local base_cmds="run create start stop exec list ps ls remove rm rename inspect export import setup compose validate net volume registry dashboard monitor system heal plugin explain help version"
   local base_opts="--help -h --version -v"
+
+  # Handle image tag completions when cur contains colon
+  local first_cmd="${COMP_WORDS[1]}"
+  if [[ "$first_cmd" =~ ^(remove|rm|run|create|inspect)$ ]] && [[ "$cur" == *:* || "$prev" == ":" ]]; then
+    local full_word=""
+    local idx=2
+    while [[ $idx -le $COMP_CWORD ]]; do
+      full_word="${full_word}${COMP_WORDS[$idx]}"
+      ((idx++))
+    done
+    local images
+    images=$(_dockero_get_images)
+    # shellcheck disable=SC2207
+    COMPREPLY=($(compgen -W "${images}" -- "${full_word}"))
+    __dockero_ltrim_colon
+    return 0
+  fi
 
   case $COMP_CWORD in
   1)
@@ -105,6 +137,7 @@ _dockero_autocomplete() {
       images=$(_dockero_get_images)
       # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "${images} -d -p -v -e --env-file --net --restart --no-volume" -- "${cur}"))
+      __dockero_ltrim_colon
       ;;
     start)
       local stopped
@@ -127,6 +160,7 @@ _dockero_autocomplete() {
       images=$(_dockero_get_images)
       # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "${containers} ${images}" -- "${cur}"))
+      __dockero_ltrim_colon
       ;;
     rename)
       local containers
@@ -142,6 +176,7 @@ _dockero_autocomplete() {
       volumes=$(_dockero_get_volumes)
       # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "${containers} ${images} ${networks} ${volumes}" -- "${cur}"))
+      __dockero_ltrim_colon
       ;;
     export)
       local containers

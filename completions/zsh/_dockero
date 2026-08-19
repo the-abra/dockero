@@ -39,28 +39,28 @@ _dockero_containers() {
     local runtime="${DOCKERO_RUNTIME:-docker}"
     local -a containers
     containers=(${(f)"$($runtime ps -a --format '{{.Names}}' 2>/dev/null)"})
-    _describe -t containers 'all containers' containers
+    compadd -a containers
 }
 
 _dockero_running_containers() {
     local runtime="${DOCKERO_RUNTIME:-docker}"
     local -a containers
     containers=(${(f)"$($runtime ps --filter 'status=running' --format '{{.Names}}' 2>/dev/null)"})
-    _describe -t containers 'running containers' containers
+    compadd -a containers
 }
 
 _dockero_stopped_containers() {
     local runtime="${DOCKERO_RUNTIME:-docker}"
     local -a containers
     containers=(${(f)"$($runtime ps --filter 'status=exited' --format '{{.Names}}' 2>/dev/null)"})
-    _describe -t containers 'stopped containers' containers
+    compadd -a containers
 }
 
 _dockero_images() {
     local runtime="${DOCKERO_RUNTIME:-docker}"
     local -a images
-    images=(${(f)"$($runtime images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null)"})
-    _describe -t images 'images' images
+    images=(${(f)"$($runtime images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null | grep -v '<none>')"})
+    compadd -a images
 }
 
 _dockero_networks() {
